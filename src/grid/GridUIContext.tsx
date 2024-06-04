@@ -18,10 +18,8 @@ export type GridUIContextValue = CanvasElementEventHandlers & {
   viewport: { top: number; bottom: number; left: number; right: number };
   focusedIndices: number[];
   selectedIndices: number[];
-  cellsToShow: {
-    numColumnsToShow: number;
-    numRowsToShow: number;
-  };
+
+  draw: () => void;
 };
 
 const createFilledArray = (size: number, value: number) => {
@@ -32,7 +30,7 @@ const createFilledArray = (size: number, value: number) => {
 
 const GridUIContext = React.createContext<GridUIContextValue | null>(null);
 
-export const GridUIContextProvider = (props: { children: ReactNode }) => {
+export const GridUIContextProvider = () => {
   const webGpuContext = useWebGPUContext();
   const viewportContext = useViewportContext();
   const gridContext = useGridContext();
@@ -57,16 +55,6 @@ export const GridUIContextProvider = (props: { children: ReactNode }) => {
     left: number;
     right: number;
   } | null>(null);
-
-  const cellsToShow = useRef<{
-    numColumnsToShow: number;
-    numRowsToShow: number;
-  }>({
-    numColumnsToShow:
-      Math.ceil(viewport.current.right) - Math.floor(viewport.current.left) + 1,
-    numRowsToShow:
-      Math.ceil(viewport.current.bottom) - Math.floor(viewport.current.top) + 1,
-  });
 
   const eventHandlers = useRef<boolean>(false);
 
@@ -173,16 +161,22 @@ export const GridUIContextProvider = (props: { children: ReactNode }) => {
       };
 
       if (
-        0 <= newLeft &&
-        newRight <= gridContext.gridSize.numColumns &&
-        0 <= newTop &&
-        newBottom <= gridContext.gridSize.numRows
+        newLeft < 0 ||
+        gridContext.gridSize.numColumns < newRight ||
+        newTop < 0 ||
+        gridContext.gridSize.numRows < newBottom
       ) {
-        onUpdateViewport(canvasContext.canvasId, newViewport);
+        console.log(
+          newViewport,
+          newLeft < 0,
+          gridContext.gridSize.numColumns < newRight,
+          newTop < 0,
+          gridContext.gridSize.numRows < newBottom
+        );
         return;
-      } else {
-        // console.log(newRange);
       }
+
+      onUpdateViewport(canvasContext.canvasId, newViewport);
     } else {
       dragStart.current = null;
       dragRange.current = { ...viewport.current };
@@ -224,12 +218,22 @@ export const GridUIContextProvider = (props: { children: ReactNode }) => {
     const newEndRow = cy + (viewport.current.bottom - cy) * scale;
 
     if (
-      (newStartColumn < 0 && gridContext.gridSize.numColumns < newEndColumn) ||
-      (newStartRow < 0 && gridContext.gridSize.numRows < newEndRow) ||
-      (newEndColumn - newStartColumn < 1 && newEndRow - newStartRow < 1)
+      newStartColumn < 0 ||
+      gridContext.gridSize.numColumns < newEndColumn ||
+      newStartRow < 0 ||
+      gridContext.gridSize.numRows < newEndRow ||
+      newEndColumn - newStartColumn < 1 ||
+      newEndRow - newStartRow < 1
     ) {
       return;
     }
+    if (
+      newEndColumn - newStartColumn > gridContext.gridSize.numColumns ||
+      newEndRow - newStartRow > gridContext.gridSize.numRows
+    ) {
+      return;
+    }
+
     const newViewport = {
       left: newStartColumn,
       right: newEndColumn,
@@ -294,6 +298,49 @@ export const GridUIContextProvider = (props: { children: ReactNode }) => {
     debounceTimerRef.current = setTimeout(() => {
       viewport.current = { ...newViewport };
 
+      const numColumnsToShow = Math.min(
+        Math.ceil(viewport.current.right) -
+          Math.floor(viewport.current.left) +
+          1,
+        gridContext.gridSize.numColumns
+      );
+      const numRowsToShow = Math.min(
+        Math.ceil(viewport.current.bottom) -
+          Math.floor(viewport.current.top) +
+          1,
+        gridContext.gridSize.numRows
+      );
+
+      if (webGpuContext?.renderBundleBuilder) {
+        webGpuContext.renderBundleBuilder.updateF32UniformBuffer(
+          gridContext,
+          viewport.current,
+          numColumnsToShow,
+          numRowsToShow
+        );
+        webGpuContext.renderBundleBuilder.updateU32UniformBuffer(
+          gridContext,
+          numColumnsToShow,
+          numRowsToShow
+        );
+        webGpuContext.renderBundleBuilder.updateDrawIndirectBuffer(
+          numColumnsToShow,
+          numRowsToShow
+        );
+
+        requestAnimationFrame(() => {
+          if (webGpuContext.renderBundleBuilder) {
+            webGpuContext.renderBundleBuilder.execute();
+          }
+        });
+      }
+
+      debounceTimerRef.current = undefined;
+    }, 10);
+  };
+
+  const draw = () => {
+    if (webGpuContext?.renderBundleBuilder) {
       const numColumnsToShow =
         Math.ceil(viewport.current.right) -
         Math.floor(viewport.current.left) +
@@ -303,37 +350,35 @@ export const GridUIContextProvider = (props: { children: ReactNode }) => {
         Math.floor(viewport.current.top) +
         1;
 
-      cellsToShow.current = {
+      const data = gridContext.data;
+
+      webGpuContext.renderBundleBuilder.setDataBufferStorage(data);
+
+      webGpuContext.renderBundleBuilder.setSelectedIndicesStorage(
+        selectedIndices.current
+      );
+      webGpuContext.renderBundleBuilder.setFocusedIndicesStorage(
+        focusedIndices.current
+      );
+      webGpuContext.renderBundleBuilder.updateU32UniformBuffer(
+        gridContext,
         numColumnsToShow,
-        numRowsToShow,
-      };
+        numRowsToShow
+      );
 
-      if (webGpuContext?.renderBundleBuilder) {
-        console.log('onUpdateViewport', round(viewport.current, 1000));
+      webGpuContext.renderBundleBuilder.updateF32UniformBuffer(
+        gridContext,
+        viewport.current,
+        numColumnsToShow,
+        numRowsToShow
+      );
 
-        webGpuContext.renderBundleBuilder.setF32UniformBuffer(
-          gridContext,
-          viewport.current,
-          numColumnsToShow,
-          numRowsToShow
-        );
-
-        // webGpuContext.renderBundleBuilder?.executeRenderBundles(bundles);
-
-        requestAnimationFrame(() => {
-          if (webGpuContext.renderBundleBuilder) {
-            const bundles = [
-              webGpuContext.renderBundleBuilder.createBodyRenderBundle(),
-              webGpuContext.renderBundleBuilder.createTopHeaderRenderBundle(),
-              webGpuContext.renderBundleBuilder.createLeftHeaderRenderBundle(),
-            ];
-            webGpuContext.renderBundleBuilder.executeRenderBundles(bundles);
-          }
-        });
-      }
-
-      debounceTimerRef.current = undefined;
-    }, 10);
+      webGpuContext.renderBundleBuilder.updateDrawIndirectBuffer(
+        numColumnsToShow,
+        numRowsToShow
+      );
+      webGpuContext.renderBundleBuilder.execute();
+    }
   };
 
   const value: GridUIContextValue = {
@@ -348,7 +393,7 @@ export const GridUIContextProvider = (props: { children: ReactNode }) => {
     viewport: viewport.current,
     focusedIndices: focusedIndices.current,
     selectedIndices: selectedIndices.current,
-    cellsToShow: cellsToShow.current,
+    draw,
   };
 
   useEffect(() => {
@@ -374,11 +419,9 @@ export const GridUIContextProvider = (props: { children: ReactNode }) => {
     };
   }, [canvasContext.canvasRef, onMouseDown, onMouseMove, onWheel]);
 
-  return (
-    <GridUIContext.Provider value={value}>
-      {props.children}
-    </GridUIContext.Provider>
-  );
+  useEffect(() => draw(), []);
+
+  return <GridUIContext.Provider value={value}></GridUIContext.Provider>;
 };
 
 export const useGridUIContext = () => {

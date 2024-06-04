@@ -114,6 +114,7 @@ export const WebGPUContextProvider = ({
             textureView,
             format,
             canvasElementContext,
+            canvasContext,
             gridContextProps
           );
 

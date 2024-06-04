@@ -14,9 +14,9 @@ import { gridCellVertices } from './GridCellVertices';
 export class WebGPURenderBundleBuilder {
   device: GPUDevice;
   canvasElementContext: CanvasElementContextValue;
+  canvasContext: GPUCanvasContext;
   canvasFormat: GPUTextureFormat;
-  bindGroupLayout: GPUBindGroupLayout;
-  bindGroup: GPUBindGroup | undefined;
+  bindGroup: GPUBindGroup;
   renderPassDescriptor: GPURenderPassDescriptor;
 
   f32UniformBuffer: GPUBuffer;
@@ -24,24 +24,29 @@ export class WebGPURenderBundleBuilder {
   gridDataBufferStorage: GPUBuffer;
   focusedIndicesStorage: GPUBuffer;
   selectedIndicesStorage: GPUBuffer;
+  drawIndirectBufferSource: Uint32Array;
+  drawIndirectBuffer: GPUBuffer;
 
   bodyPipeline: GPURenderPipeline;
   leftHeaderPipeline: GPURenderPipeline;
   topHeaderPipeline: GPURenderPipeline;
   verticesBuffer: GPUBuffer;
 
-  numColumnsToShow: number;
-  numRowsToShow: number;
+  bodyRenderBundle: GPURenderBundle;
+  topHeaderRenderBundle: GPURenderBundle;
+  leftHeaderRenderBundle: GPURenderBundle;
 
   constructor(
     device: GPUDevice,
     view: GPUTextureView,
     canvasFormat: GPUTextureFormat,
     canvasElementContext: CanvasElementContextValue,
+    canvasContext: GPUCanvasContext,
     gridContext: GridContextProps
   ) {
-    this.canvasElementContext = canvasElementContext;
     this.canvasFormat = canvasFormat;
+    this.canvasElementContext = canvasElementContext;
+
     const cellShaderModule = device.createShaderModule({
       label: 'Cell shader',
       code: cellShaderCode,
@@ -105,7 +110,7 @@ export class WebGPURenderBundleBuilder {
     };
 
     this.device = device;
-    this.bindGroupLayout = bindGroupLayout;
+    this.canvasContext = canvasContext;
 
     const createPipeline = (
       label: string,
@@ -171,14 +176,12 @@ export class WebGPURenderBundleBuilder {
       'fragmentTopHeader'
     );
 
-    this.numColumnsToShow = 0;
-    this.numRowsToShow = 0;
-
     this.verticesBuffer = createVertexBuffer(
       'Vertices',
       device,
       gridCellVertices.length * 4
     );
+
     updateBuffer(
       this.device,
       this.verticesBuffer,
@@ -206,9 +209,36 @@ export class WebGPURenderBundleBuilder {
       device,
       gridContext.gridSize.numColumns * gridContext.gridSize.numRows * 4
     );
+
+    this.bindGroup = this.createBindGroup(bindGroupLayout);
+
+    this.drawIndirectBuffer = device.createBuffer({
+      size: 16 * 3, // 4つのuint32で足りるサイズ * 3バンドル
+      usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
+    });
+
+    this.drawIndirectBufferSource = new Uint32Array([
+      gridCellVertices.length / 2, // vertexCount
+      0, // instanceCount
+      0, // firstVertex
+      0, // firstInstance
+      gridCellVertices.length / 2, // vertexCount
+      0, // instanceCount
+      0, // firstVertex
+      0, // firstInstance
+      gridCellVertices.length / 2, // vertexCount
+      0, // instanceCount
+      0, // firstVertex
+      0, // firstInstance
+    ]);
+    this.updateDrawIndirectBuffer(1, 1);
+
+    this.bodyRenderBundle = this.createBodyRenderBundle();
+    this.topHeaderRenderBundle = this.createTopHeaderRenderBundle();
+    this.leftHeaderRenderBundle = this.createLeftHeaderRenderBundle();
   }
 
-  setF32UniformBuffer(
+  updateF32UniformBuffer(
     gridContext: GridContextProps,
     viewport: {
       left: number;
@@ -230,12 +260,9 @@ export class WebGPURenderBundleBuilder {
         numRowsToShow
       )
     );
-    this.numColumnsToShow = numColumnsToShow;
-    this.numRowsToShow = numRowsToShow;
-    this.bindGroup = undefined;
   }
 
-  setU32UniformBuffer(
+  updateU32UniformBuffer(
     gridContext: GridContextProps,
     numColumnsToShow: number,
     numRowsToShow: number
@@ -245,14 +272,10 @@ export class WebGPURenderBundleBuilder {
       this.u32UniformBuffer,
       createUint32BufferSource(gridContext, numColumnsToShow, numRowsToShow)
     );
-    this.numColumnsToShow = numColumnsToShow;
-    this.numRowsToShow = numRowsToShow;
-    this.bindGroup = undefined;
   }
 
   setDataBufferStorage(data: Float32Array) {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
-    this.bindGroup = undefined;
   }
 
   setFocusedIndicesStorage(focusedIndices: number[]) {
@@ -261,7 +284,6 @@ export class WebGPURenderBundleBuilder {
       this.focusedIndicesStorage,
       new Uint32Array(focusedIndices)
     );
-    this.bindGroup = undefined;
   }
 
   setSelectedIndicesStorage(selectedIndices: number[]) {
@@ -270,22 +292,12 @@ export class WebGPURenderBundleBuilder {
       this.selectedIndicesStorage,
       new Uint32Array(selectedIndices)
     );
-    this.bindGroup = undefined;
   }
 
-  createBindGroup() {
-    if (
-      !this.f32UniformBuffer ||
-      !this.u32UniformBuffer ||
-      !this.focusedIndicesStorage ||
-      !this.selectedIndicesStorage ||
-      !this.gridDataBufferStorage
-    ) {
-      throw new Error();
-    }
+  createBindGroup(bindGroupLayout: GPUBindGroupLayout) {
     return this.device.createBindGroup({
       label: 'Cell renderer bind group',
-      layout: this.bindGroupLayout,
+      layout: bindGroupLayout,
       entries: [
         {
           binding: 0,
@@ -311,20 +323,10 @@ export class WebGPURenderBundleBuilder {
     });
   }
 
-  getUpdatedBindGroup() {
-    if (this.bindGroup) {
-      return this.bindGroup;
-    } else {
-      return (this.bindGroup = this.createBindGroup());
-    }
-  }
-
   createRenderBundle(
     label: string,
     pipeline: GPURenderPipeline,
-    bindGroup: GPUBindGroup,
-    numVertices: number,
-    numInstances: number
+    indirectOffset: number
   ) {
     const encoder = this.device.createRenderBundleEncoder({
       label,
@@ -332,49 +334,56 @@ export class WebGPURenderBundleBuilder {
     });
     encoder.setPipeline(pipeline);
     encoder.setVertexBuffer(0, this.verticesBuffer);
-    encoder.setBindGroup(0, bindGroup);
-    encoder.draw(numVertices, numInstances);
+    encoder.setBindGroup(0, this.bindGroup);
+    encoder.drawIndirect(this.drawIndirectBuffer, indirectOffset);
     return encoder.finish();
   }
 
-  createBodyRenderBundle() {
-    return this.createRenderBundle(
-      'body',
-      this.bodyPipeline,
-      this.getUpdatedBindGroup(),
-      gridCellVertices.length / 2,
-      this.numColumnsToShow * this.numRowsToShow
+  updateDrawIndirectBuffer(numColumnsToShow: number, numRowsToShow: number) {
+    this.drawIndirectBufferSource[1] = numColumnsToShow * numRowsToShow;
+    this.drawIndirectBufferSource[5] = numColumnsToShow;
+    this.drawIndirectBufferSource[9] = numRowsToShow;
+    this.device.queue.writeBuffer(
+      this.drawIndirectBuffer,
+      0,
+      this.drawIndirectBufferSource
     );
+  }
+
+  createBodyRenderBundle() {
+    return this.createRenderBundle('body', this.bodyPipeline, 0);
   }
 
   createTopHeaderRenderBundle() {
-    return this.createRenderBundle(
-      'topHeader',
-      this.topHeaderPipeline,
-      this.getUpdatedBindGroup(),
-      gridCellVertices.length / 2,
-      this.numColumnsToShow
-    );
+    return this.createRenderBundle('topHeader', this.topHeaderPipeline, 16);
   }
 
   createLeftHeaderRenderBundle() {
-    return this.createRenderBundle(
-      'leftHeader',
-      this.leftHeaderPipeline,
-      this.getUpdatedBindGroup(),
-      gridCellVertices.length / 2,
-      this.numRowsToShow
-    );
+    return this.createRenderBundle('leftHeader', this.leftHeaderPipeline, 32);
   }
 
   executeRenderBundles(renderBundles: GPURenderBundle[]) {
     const commandEncoder = this.device.createCommandEncoder();
-    const passEncoder = commandEncoder.beginRenderPass(
-      this.renderPassDescriptor
-    );
+    const passEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: this.canvasContext.getCurrentTexture().createView(),
+          clearValue: { r: 1, g: 1, b: 1, a: 1 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    });
     passEncoder.executeBundles(renderBundles);
     passEncoder.end();
     this.device.queue.submit([commandEncoder.finish()]);
-    console.log('[WebGPURenderBundleBuilder.executeRenderBundles] done');
+  }
+
+  execute() {
+    this.executeRenderBundles([
+      this.bodyRenderBundle,
+      this.topHeaderRenderBundle,
+      this.leftHeaderRenderBundle,
+    ]);
   }
 }

@@ -82,15 +82,11 @@ fn vertexBody(
     let gridY: u32 = cellY + u32(f32uniforms.viewportLeftTop.y);
     output.position = vec4f(transform(cellX, cellY, input.position), 0.0, 1.0);
     output.vertexIndex = input.vertexIndex;
-    if(input.instanceIndex == 0){
-      output.cellValue = 0.333;
-    } else {
-      let gridIndex = gridX + gridY * u32uniforms.numColumnsToShow;
-      if(gridIndex % 5 != 0){
-        output.cellValue = gridData[gridIndex];
-      }else{
-        output.cellValue = 0.999;
-      }
+    let gridIndex = gridX + gridY * u32uniforms.gridSize.x;
+    if(gridIndex % 5 != 0){
+      output.cellValue = gridData[gridIndex];
+    }else{
+      output.cellValue = 0.999;
     }
     output.isInfinity = select(FALSE, TRUE, checkInfinity(output.cellValue));
     output.isFocused = select(FALSE, TRUE, checkColumnFocused(cellX) || checkRowFocused(cellY));
@@ -197,10 +193,6 @@ fn checkSelected(index: u32) -> bool {
 
 @fragment
 fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
-
-  if(input.cellValue == 0.333){
-    return vec4f(0,0,0,1.0);
-  }
   if(isTrue(input.isInfinity)) {
     if(isTrue(input.isFocused)) {
       if(isTrue(input.isSelected)) {

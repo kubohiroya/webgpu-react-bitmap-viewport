@@ -6,7 +6,7 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-const gridSize = { numColumns: 64, numRows: 64 };
+const gridSize = { numColumns: 16, numRows: 16 };
 
 const TRUE = true;
 const dataById = new Map<string, Float32Array>();
@@ -17,7 +17,7 @@ const dataById = new Map<string, Float32Array>();
       if (!TRUE) {
         data[i] = i / data.length;
       } else {
-        if (Math.random() < 1.0) {
+        if (Math.random() < 0.9) {
           data[i] = i / data.length;
         } else {
           data[i] = Infinity;
@@ -39,15 +39,15 @@ const render = () => {
     <>
       <Grid
         canvasId={'adjacencyMatrix'}
-        headerOffset={{ left: 128, top: 128 }}
+        headerOffset={{ left: 28, top: 28 }}
         canvasSize={{ width: 256, height: 256 }}
         gridSize={gridSize}
         data={dataById.get('adjacencyMatrix')!}
         initialViewport={{
-          top: 4,
-          bottom: 9,
-          left: 5,
-          right: 10,
+          top: 8,
+          bottom: 16,
+          left: 8,
+          right: 16,
         }}
       />
     </>
