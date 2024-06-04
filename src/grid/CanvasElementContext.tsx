@@ -1,0 +1,78 @@
+import React, { ReactNode } from 'react';
+
+export type CanvasElementContextCommons = {
+  canvasId: string;
+  canvasSize: {
+    width: number;
+    height: number;
+  };
+  headerOffset: {
+    top: number;
+    left: number;
+  };
+};
+
+export type CanvasElementContextProps = CanvasElementContextCommons;
+export type CanvasElementEventHandlers = {
+  onMouseUp: (event: MouseEvent) => void;
+  onMouseDown: (event: MouseEvent) => void;
+  onMouseOut: (event: MouseEvent) => void;
+  onMouseMove: (event: MouseEvent) => void;
+  onWheel: (event: WheelEvent) => void;
+};
+
+export type CanvasElementContextValue = CanvasElementContextCommons &
+  CanvasElementEventHandlers & {
+    canvasRef: React.RefObject<HTMLCanvasElement>;
+  };
+
+export const CanvasElementContext =
+  React.createContext<CanvasElementContextValue | null>(null);
+
+export const CanvasElementContextProvider = (
+  props: CanvasElementContextProps & { children?: ReactNode }
+) => {
+  const canvasRef = React.createRef<HTMLCanvasElement>();
+  const value: CanvasElementContextValue = {
+    ...props,
+    canvasRef,
+    onMouseDown: (event: MouseEvent) => {
+      console.log('onMouseDown');
+    },
+    onMouseUp: (event: MouseEvent) => {
+      console.log('onMouseUp');
+    },
+    onMouseOut: (event: MouseEvent) => {
+      console.log('onMouseOut');
+    },
+    onMouseMove: (event: MouseEvent) => {
+      console.log('onMouseMove');
+    },
+    onWheel: (event: MouseEvent) => {
+      console.log('onWheel');
+    },
+  };
+  return (
+    <CanvasElementContext.Provider value={value}>
+      <canvas
+        id={props.canvasId}
+        ref={canvasRef}
+        width={props.canvasSize.width}
+        height={props.canvasSize.height}
+      ></canvas>
+      {props.children}
+    </CanvasElementContext.Provider>
+  );
+};
+
+export const useCanvasElementContext = () => {
+  const context = React.useContext(CanvasElementContext);
+  if (!context) {
+    throw new Error(
+      'useLayoutContext must be used within a LayoutContextProvider'
+    );
+  }
+  return context;
+};
+
+export default CanvasElementContext;
