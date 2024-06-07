@@ -17,7 +17,7 @@ const dataById = new Map<string, Float32Array>();
       if (!TRUE) {
         data[i] = i / data.length;
       } else {
-        if (Math.random() < 0.9) {
+        if (Math.random() < 0.99) {
           data[i] = i / data.length;
         } else {
           data[i] = Infinity;

@@ -1,12 +1,12 @@
 import { GridContextProps } from './GridContext';
 import { CanvasElementContextProps } from './CanvasElementContext';
 
+export const F32UniformByteLength = 14 * 4;
 export const createF32UniformBufferSource = (
   canvasContext: CanvasElementContextProps,
   gridContext: GridContextProps,
   viewport: { left: number; top: number; right: number; bottom: number },
-  numColumnsToShow: number,
-  numRowsToShow: number
+  viewportOffset: { x: number; y: number }
 ) => {
   return new Float32Array([
     gridContext.gridSize.numColumns,
@@ -21,21 +21,21 @@ export const createF32UniformBufferSource = (
     viewport.bottom,
     viewport.right - viewport.left,
     viewport.bottom - viewport.top,
-    numColumnsToShow,
-    numRowsToShow,
+    viewportOffset.x,
+    viewportOffset.y,
   ]);
 };
 
+export const U32UniformByteLength = 4 * 4;
 export const createUint32BufferSource = (
   gridContext: GridContextProps,
-  numColumnsToShow: number,
-  numRowsToShow: number
+  numCellsToShow: { numColumnsToShow: number; numRowsToShow: number }
 ) => {
   return new Uint32Array([
     gridContext.gridSize.numColumns,
     gridContext.gridSize.numRows,
-    numColumnsToShow,
-    numRowsToShow,
+    numCellsToShow.numColumnsToShow,
+    numCellsToShow.numRowsToShow,
   ]);
 };
 

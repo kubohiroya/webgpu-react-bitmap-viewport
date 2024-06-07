@@ -19,12 +19,11 @@ struct VertexOutput {
 struct F32Uniforms {
   gridSize: vec2f,
   canvasSize: vec2f,
-  headerOffset: vec2f,
+  header: vec2f,
   viewportLeftTop: vec2f,
   viewportRightBottom: vec2f,
   viewportSize: vec2f,
-  numColumnsToShow: f32,
-  numRowsToShow: f32,
+  viewportOffset: vec2f,
 };
 @group(0) @binding(0) var<uniform> f32uniforms: F32Uniforms;
 
@@ -48,11 +47,11 @@ fn worldToViewport(world: vec2f) -> vec2f {
 }
 
 fn viewportToFrame(viewport: vec2f) -> vec2f {
-  return (f32uniforms.headerOffset * viewport + f32uniforms.canvasSize * (1 - viewport)) / f32uniforms.canvasSize;
+  return (f32uniforms.header * viewport + f32uniforms.canvasSize * (1 - viewport)) / f32uniforms.canvasSize;
 }
 
 fn frameToCanvas(frame: vec2f) -> vec2f {
-  return frame - f32uniforms.headerOffset / f32uniforms.canvasSize;
+  return frame + ( f32uniforms.viewportOffset - f32uniforms.header) / f32uniforms.canvasSize;
 }
 
 fn canvasToDimension(canvas: vec2f) -> vec2f {
@@ -105,9 +104,9 @@ fn vertexLeftHeader(input: VertexInput) -> VertexOutput  {
   if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
     output.position.x = -1.0;
   }else{
-       output.position.x = -1 + 2 * f32uniforms.headerOffset.x / f32uniforms.canvasSize.x;
+       output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
       if(input.instanceIndex == 0u && (input.vertexIndex == 2u || input.vertexIndex == 4u)){
-        output.position.y = 1 - 2 * f32uniforms.headerOffset.y / f32uniforms.canvasSize.y;
+        output.position.y = 1 - 2 * f32uniforms.header.y / f32uniforms.canvasSize.y;
       }
   }
   if(input.instanceIndex == 0u && input.vertexIndex == 5u){
@@ -128,9 +127,9 @@ fn vertexTopHeader(input: VertexInput) -> VertexOutput  {
   if(input.vertexIndex == 2u || input.vertexIndex == 4u || input.vertexIndex == 5u){
     output.position.y = 1.0;
   }else{
-    output.position.y = 1 - 2 * f32uniforms.headerOffset.y / f32uniforms.canvasSize.y;
+    output.position.y = 1 - 2 * f32uniforms.header.y / f32uniforms.canvasSize.y;
     if(input.instanceIndex == 0u && (input.vertexIndex == 0u || input.vertexIndex == 3u)){
-      output.position.x = -1 + 2 * f32uniforms.headerOffset.x / f32uniforms.canvasSize.x;
+      output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
     }
   }
   if(input.instanceIndex == 0u && input.vertexIndex == 5u){

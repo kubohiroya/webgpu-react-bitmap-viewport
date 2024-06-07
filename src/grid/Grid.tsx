@@ -3,7 +3,7 @@ import React from 'react';
 import { GridContextProvider } from './GridContext';
 import { WebGPUContextProvider } from './WebGPUContext';
 import { ViewportContextProvider } from './ViewportContext';
-import { GridUIContextProvider } from './GridUIContext';
+import GridUI from './GridUI';
 
 export type GridProps = {
   canvasId: string;
@@ -37,7 +37,7 @@ export const Grid = (props: GridProps) => {
       <GridContextProvider gridSize={props.gridSize} data={props.data}>
         <WebGPUContextProvider>
           <ViewportContextProvider initialViewport={props.initialViewport}>
-            <GridUIContextProvider />
+            <GridUI />
           </ViewportContextProvider>
         </WebGPUContextProvider>
       </GridContextProvider>

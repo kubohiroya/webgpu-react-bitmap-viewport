@@ -5,6 +5,8 @@ import {
   createUint32BufferSource,
   createStorageBuffer,
   createVertexBuffer,
+  F32UniformByteLength,
+  U32UniformByteLength,
 } from './WebGPUBufferFactories';
 import { GridContextProps } from './GridContext';
 import cellShaderCode from './CellShader.wgsl?raw';
@@ -187,9 +189,16 @@ export class WebGPURenderBundleBuilder {
       this.verticesBuffer,
       new Float32Array(gridCellVertices)
     );
-
-    this.f32UniformBuffer = createUniformBuffer('F32Uniforms', device, 14 * 4);
-    this.u32UniformBuffer = createUniformBuffer('U32Uniforms', device, 4 * 4);
+    this.f32UniformBuffer = createUniformBuffer(
+      'F32Uniforms',
+      device,
+      F32UniformByteLength
+    );
+    this.u32UniformBuffer = createUniformBuffer(
+      'U32Uniforms',
+      device,
+      U32UniformByteLength
+    );
 
     const numCells =
       Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows) *
@@ -231,7 +240,7 @@ export class WebGPURenderBundleBuilder {
       0, // firstVertex
       0, // firstInstance
     ]);
-    this.updateDrawIndirectBuffer(1, 1);
+    this.updateDrawIndirectBuffer({ numColumnsToShow: 1, numRowsToShow: 1 });
 
     this.bodyRenderBundle = this.createBodyRenderBundle();
     this.topHeaderRenderBundle = this.createTopHeaderRenderBundle();
@@ -246,8 +255,7 @@ export class WebGPURenderBundleBuilder {
       right: number;
       bottom: number;
     },
-    numColumnsToShow: number,
-    numRowsToShow: number
+    viewportOffset: { x: number; y: number }
   ) {
     updateBuffer(
       this.device,
@@ -256,21 +264,19 @@ export class WebGPURenderBundleBuilder {
         this.canvasElementContext,
         gridContext,
         viewport,
-        numColumnsToShow,
-        numRowsToShow
+        viewportOffset
       )
     );
   }
 
   updateU32UniformBuffer(
     gridContext: GridContextProps,
-    numColumnsToShow: number,
-    numRowsToShow: number
+    numCellsToShow: { numColumnsToShow: number; numRowsToShow: number }
   ) {
     updateBuffer(
       this.device,
       this.u32UniformBuffer,
-      createUint32BufferSource(gridContext, numColumnsToShow, numRowsToShow)
+      createUint32BufferSource(gridContext, numCellsToShow)
     );
   }
 
@@ -339,7 +345,13 @@ export class WebGPURenderBundleBuilder {
     return encoder.finish();
   }
 
-  updateDrawIndirectBuffer(numColumnsToShow: number, numRowsToShow: number) {
+  updateDrawIndirectBuffer({
+    numColumnsToShow,
+    numRowsToShow,
+  }: {
+    numColumnsToShow: number;
+    numRowsToShow: number;
+  }) {
     this.drawIndirectBufferSource[1] = numColumnsToShow * numRowsToShow;
     this.drawIndirectBufferSource[5] = numColumnsToShow;
     this.drawIndirectBufferSource[9] = numRowsToShow;
