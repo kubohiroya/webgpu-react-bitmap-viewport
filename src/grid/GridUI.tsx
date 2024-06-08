@@ -116,7 +116,7 @@ export const GridUI = () => {
     const cellWidth = canvasContext.canvasSize.width / viewportWidth;
     const cellHeight = canvasContext.canvasSize.height / viewportHeight;
 
-    const edgeStress = 1;
+    const edgeStress = 2;
 
     if (newLeft < 0) {
       overscroll.current.x = (-newLeft * cellWidth) / edgeStress;
@@ -283,18 +283,14 @@ export const GridUI = () => {
     if (!canvasContext.canvasRef.current || !dragStart.current) {
       throw new Error();
     }
-    const rect = canvasContext.canvasRef.current.getBoundingClientRect();
+    //const rect = canvasContext.canvasRef.current.getBoundingClientRect();
     const x =
       event.clientX -
-      rect.left -
-      canvasContext.headerOffset.left -
       //overscroll.current.x -
       dragStart.current.x;
 
     const y =
       event.clientY -
-      rect.top -
-      canvasContext.headerOffset.top -
       //overscroll.current.y -
       dragStart.current.y;
 
@@ -304,14 +300,14 @@ export const GridUI = () => {
   const tick = () => {
     updateViewport();
     updateNumCellsToShow();
-    //decreaseOverscroll();
-    //decreaseVelocity();
+    // decreaseOverscroll();
+    decreaseVelocity();
     executeRenderBundles();
     //requestAnimationFrame(tick);
   };
 
   const calculateCellPosition = (event: MouseEvent) => {
-    console.log(overscroll.current.y, overscroll.current.y);
+    // console.log(overscroll.current.y, overscroll.current.y);
 
     const rect = canvasContext.canvasRef.current!.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -349,11 +345,11 @@ export const GridUI = () => {
       return;
     }
     canvasContext.canvasRef.current.style.cursor = 'grab';
-    const rect = canvasContext.canvasRef.current.getBoundingClientRect();
+    // const rect = canvasContext.canvasRef.current.getBoundingClientRect();
     if (!dragStart.current) {
       dragStart.current = {
-        x: event.clientX - rect.left - canvasContext.headerOffset.left,
-        y: event.clientY - rect.top - canvasContext.headerOffset.top,
+        x: event.clientX,
+        y: event.clientY,
       };
       dragStartViewport.current = { ...viewport.current };
     } else {
