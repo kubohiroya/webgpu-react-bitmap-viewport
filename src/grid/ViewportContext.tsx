@@ -8,6 +8,10 @@ export type ViewportContextProps = {
     left: number;
     right: number;
   };
+  initialOverscroll: {
+    x: number;
+    y: number;
+  };
 };
 const ViewportContext = React.createContext<ViewportContextProps | null>(null);
 
@@ -18,10 +22,16 @@ export const ViewportContextProvider = (
 ) => {
   const gridContext = useGridContext();
   const value = props || {
-    top: 0,
-    bottom: gridContext.gridSize.numRows,
-    left: 0,
-    right: gridContext.gridSize.numColumns,
+    initialViewport: {
+      top: 0,
+      bottom: gridContext.gridSize.numRows,
+      left: 0,
+      right: gridContext.gridSize.numColumns,
+    },
+    initialViewportContext: {
+      x: 0,
+      y: 0,
+    },
   };
 
   return (

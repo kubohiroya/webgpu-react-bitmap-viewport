@@ -26,6 +26,10 @@ export type GridProps = {
     left: number;
     right: number;
   };
+  initialOverscroll: {
+    x: number;
+    y: number;
+  };
 };
 export const Grid = (props: GridProps) => {
   return (
@@ -36,7 +40,10 @@ export const Grid = (props: GridProps) => {
     >
       <GridContextProvider gridSize={props.gridSize} data={props.data}>
         <WebGPUContextProvider>
-          <ViewportContextProvider initialViewport={props.initialViewport}>
+          <ViewportContextProvider
+            initialViewport={props.initialViewport}
+            initialOverscroll={props.initialOverscroll}
+          >
             <GridUI />
           </ViewportContextProvider>
         </WebGPUContextProvider>

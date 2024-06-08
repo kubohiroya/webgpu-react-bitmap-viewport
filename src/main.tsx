@@ -40,15 +40,16 @@ const render = () => {
       <Grid
         canvasId={'adjacencyMatrix'}
         headerOffset={{ left: 28, top: 28 }}
-        canvasSize={{ width: 256, height: 256 }}
+        canvasSize={{ width: 512, height: 512 }}
         gridSize={gridSize}
         data={dataById.get('adjacencyMatrix')!}
         initialViewport={{
-          top: 8,
-          bottom: 16,
-          left: 8,
-          right: 16,
+          top: 3,
+          bottom: 13,
+          left: 3,
+          right: 13,
         }}
+        initialOverscroll={{ x: 0, y: 0 }}
       />
     </>
   );

@@ -23,7 +23,7 @@ struct F32Uniforms {
   viewportLeftTop: vec2f,
   viewportRightBottom: vec2f,
   viewportSize: vec2f,
-  viewportOffset: vec2f,
+  overscroll: vec2f,
 };
 @group(0) @binding(0) var<uniform> f32uniforms: F32Uniforms;
 
@@ -51,7 +51,7 @@ fn viewportToFrame(viewport: vec2f) -> vec2f {
 }
 
 fn frameToCanvas(frame: vec2f) -> vec2f {
-  return frame + ( f32uniforms.viewportOffset - f32uniforms.header) / f32uniforms.canvasSize;
+  return frame - ( f32uniforms.overscroll + f32uniforms.header) / f32uniforms.canvasSize;
 }
 
 fn canvasToDimension(canvas: vec2f) -> vec2f {
@@ -82,7 +82,7 @@ fn vertexBody(
     output.position = vec4f(transform(cellX, cellY, input.position), 0.0, 1.0);
     output.vertexIndex = input.vertexIndex;
     let gridIndex = gridX + gridY * u32uniforms.gridSize.x;
-    if(gridIndex % 5 != 0){
+    if(gridIndex % 10 != 0){
       output.cellValue = gridData[gridIndex];
     }else{
       output.cellValue = 0.999;
@@ -101,16 +101,22 @@ fn vertexLeftHeader(input: VertexInput) -> VertexOutput  {
   var transformed: vec2f = transform(0, cellY, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   output.vertexIndex = input.vertexIndex;
-  if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
-    output.position.x = -1.0;
+
+  if(input.instanceIndex == 0){
+    if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
+      output.position.x = -1.0;
+    }else{
+      output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
+    }
+    if(input.vertexIndex == 2u || input.vertexIndex == 4u || input.vertexIndex == 5u){
+      output.position.y = 1.0;
+    }
   }else{
-       output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
-      if(input.instanceIndex == 0u && (input.vertexIndex == 2u || input.vertexIndex == 4u)){
-        output.position.y = 1 - 2 * f32uniforms.header.y / f32uniforms.canvasSize.y;
-      }
-  }
-  if(input.instanceIndex == 0u && input.vertexIndex == 5u){
-    output.position.y = 1.0;
+    if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
+      output.position.x = -1.0;
+    }else{
+      output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
+    }
   }
   output.isFocused = select(FALSE, TRUE, checkColumnFocused(u32uniforms.numRowsToShow + input.instanceIndex));
   return output;
@@ -124,17 +130,24 @@ fn vertexTopHeader(input: VertexInput) -> VertexOutput  {
   var transformed: vec2f = transform(cellX, 0, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   output.vertexIndex = input.vertexIndex;
-  if(input.vertexIndex == 2u || input.vertexIndex == 4u || input.vertexIndex == 5u){
-    output.position.y = 1.0;
+
+  if(input.instanceIndex == 0){
+    if(input.vertexIndex == 2u || input.vertexIndex == 4u || input.vertexIndex == 5u){
+      output.position.y = 1.0;
+    }else{
+      output.position.y = 1 - 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
+    }
+    if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
+      output.position.x = -1.0;
+    }
   }else{
-    output.position.y = 1 - 2 * f32uniforms.header.y / f32uniforms.canvasSize.y;
-    if(input.instanceIndex == 0u && (input.vertexIndex == 0u || input.vertexIndex == 3u)){
-      output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
+    if(input.vertexIndex == 2u || input.vertexIndex == 3u || input.vertexIndex == 4u){
+      output.position.y = 1.0;
+    }else{
+      output.position.y = 1 + -2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
     }
   }
-  if(input.instanceIndex == 0u && input.vertexIndex == 5u){
-    output.position.x = -1.0;
-  }
+
   output.isFocused = select(FALSE, TRUE, checkColumnFocused(u32uniforms.numColumnsToShow + input.instanceIndex));
   return output;
 }
@@ -226,11 +239,13 @@ fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
     }
   }
 }
+
 @fragment
 fn fragmentLeftHeader(input: VertexOutput) -> @location(0) vec4f {
   return vec4f(0.8, 0.6, 0.8, 1.0);
 
 }
+
 @fragment
 fn fragmentTopHeader(input: VertexOutput) -> @location(0) vec4f {
   return vec4f(0.8, 0.6, 0.8, 1.0);
