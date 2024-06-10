@@ -32,11 +32,15 @@ export class WebGPURenderBundleBuilder {
   bodyPipeline: GPURenderPipeline;
   leftHeaderPipeline: GPURenderPipeline;
   topHeaderPipeline: GPURenderPipeline;
+  columnFocusPipeline: GPURenderPipeline;
+  rowFocusPipeline: GPURenderPipeline;
   verticesBuffer: GPUBuffer;
 
   bodyRenderBundle: GPURenderBundle;
   topHeaderRenderBundle: GPURenderBundle;
   leftHeaderRenderBundle: GPURenderBundle;
+  columnFocusRenderBundle: GPURenderBundle;
+  rowFocusRenderBundle: GPURenderBundle;
 
   constructor(
     device: GPUDevice,
@@ -177,6 +181,22 @@ export class WebGPURenderBundleBuilder {
       'vertexTopHeader',
       'fragmentTopHeader'
     );
+    this.columnFocusPipeline = createPipeline(
+      'columnFocus',
+      pipelineLayout,
+      cellShaderModule,
+      canvasFormat,
+      'vertexColumnFocus',
+      'fragmentColumnFocus'
+    );
+    this.rowFocusPipeline = createPipeline(
+      'rowFocus',
+      pipelineLayout,
+      cellShaderModule,
+      canvasFormat,
+      'vertexRowFocus',
+      'fragmentRowFocus'
+    );
 
     this.verticesBuffer = createVertexBuffer(
       'Vertices',
@@ -245,6 +265,8 @@ export class WebGPURenderBundleBuilder {
     this.bodyRenderBundle = this.createBodyRenderBundle();
     this.topHeaderRenderBundle = this.createTopHeaderRenderBundle();
     this.leftHeaderRenderBundle = this.createLeftHeaderRenderBundle();
+    this.columnFocusRenderBundle = this.createColumnFocusRenderBundle();
+    this.rowFocusRenderBundle = this.createRowFocusRenderBundle();
   }
 
   updateF32UniformBuffer(
@@ -362,16 +384,24 @@ export class WebGPURenderBundleBuilder {
     );
   }
 
-  createBodyRenderBundle() {
-    return this.createRenderBundle('body', this.bodyPipeline, 0);
-  }
-
   createTopHeaderRenderBundle() {
     return this.createRenderBundle('topHeader', this.topHeaderPipeline, 16);
   }
 
   createLeftHeaderRenderBundle() {
     return this.createRenderBundle('leftHeader', this.leftHeaderPipeline, 32);
+  }
+
+  createColumnFocusRenderBundle() {
+    return this.createRenderBundle('columnFocus', this.columnFocusPipeline, 16);
+  }
+
+  createRowFocusRenderBundle() {
+    return this.createRenderBundle('rowFocus', this.rowFocusPipeline, 32);
+  }
+
+  createBodyRenderBundle() {
+    return this.createRenderBundle('body', this.bodyPipeline, 0);
   }
 
   executeRenderBundles(renderBundles: GPURenderBundle[]) {
@@ -393,6 +423,8 @@ export class WebGPURenderBundleBuilder {
 
   execute() {
     this.executeRenderBundles([
+      this.columnFocusRenderBundle,
+      this.rowFocusRenderBundle,
       this.bodyRenderBundle,
       this.topHeaderRenderBundle,
       this.leftHeaderRenderBundle,

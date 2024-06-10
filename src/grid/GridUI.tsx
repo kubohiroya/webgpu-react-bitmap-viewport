@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCanvasElementContext } from './CanvasElementContext';
 import { useViewportContext } from './ViewportContext';
 import { useGridContext } from './GridContext';
 import { useWebGPUContext } from './WebGPUContext';
-import { vi } from 'vitest';
 
 const createFilledArray = (size: number, value: number) => {
   const newArray = new Array<number>(size);
@@ -11,26 +10,36 @@ const createFilledArray = (size: number, value: number) => {
   return newArray;
 };
 
-const friction = 0.99;
+const edgeFriction = 0.8;
+const translateFriction = 0.975;
 
 export const GridUI = () => {
   const webGpuContext = useWebGPUContext();
   const viewportContext = useViewportContext();
   const gridContext = useGridContext();
   const canvasContext = useCanvasElementContext();
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const tickerRef = useRef<NodeJS.Timeout>();
 
   const viewport = useRef<{
     top: number;
     bottom: number;
     left: number;
     right: number;
-  }>({
-    ...viewportContext.initialViewport,
-  });
-  const overscroll = useRef<{ x: number; y: number }>({
-    ...viewportContext.initialOverscroll,
-  });
+  }>(
+    viewportContext.initialViewport || {
+      top: 0,
+      bottom: gridContext.gridSize.numRows,
+      left: 0,
+      right: gridContext.gridSize.numColumns,
+    }
+  );
+
+  const overscroll = useRef<{ x: number; y: number }>(
+    viewportContext.initialOverscroll || {
+      x: 0,
+      y: 0,
+    }
+  );
 
   const numCellsToShow = useRef<{
     numColumnsToShow: number;
@@ -43,155 +52,144 @@ export const GridUI = () => {
   const focusedIndices = useRef<number[]>([]);
   const selectedIndices = useRef<number[]>([]);
 
-  const dragStart = useRef<{ x: number; y: number } | null>(null);
-  const dragStartViewport = useRef<{
-    top: number;
-    bottom: number;
-    left: number;
-    right: number;
+  const pointerState = useRef<{
+    start: { x: number; y: number };
+    previous: { x: number; y: number };
+    startViewport: { top: number; bottom: number; left: number; right: number };
+    startViewportSize: { width: number; height: number };
+    startCellSize: { width: number; height: number };
+    delta: { x: number; y: number };
   } | null>(null);
 
-  const delta = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const velocity = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const lastTime = useRef<number>(0);
-
-  const isMouseOut = useRef<boolean>(true);
   const eventHandlers = useRef<boolean>(false);
 
-  const initRenderBundleBuilder = () => {
-    if (webGpuContext?.renderBundleBuilder) {
-      webGpuContext.renderBundleBuilder.setDataBufferStorage(gridContext.data);
-      webGpuContext.renderBundleBuilder.setSelectedIndicesStorage(
-        selectedIndices.current
-      );
-      webGpuContext.renderBundleBuilder.setFocusedIndicesStorage(
-        focusedIndices.current
-      );
-    } else {
-      throw new Error();
+  const regulateViewport = (
+    startViewportSize: {
+      width: number;
+      height: number;
+    },
+    startCellSize: {
+      width: number;
+      height: number;
+    },
+    newViewport: {
+      left: number;
+      top: number;
+      right: number;
+      bottom: number;
     }
-  };
+  ) => {
+    const horizontalUnderflow = newViewport.left < 0;
+    const horizontalOverflow =
+      newViewport.right > gridContext.gridSize.numColumns;
+    const verticalUnderflow = newViewport.top < 0;
+    const verticalOverflow = newViewport.bottom > gridContext.gridSize.numRows;
 
-  const executeRenderBundles = () => {
-    if (webGpuContext?.renderBundleBuilder) {
-      webGpuContext.renderBundleBuilder.updateF32UniformBuffer(
-        gridContext,
-        viewport.current,
-        overscroll.current
-      );
-      webGpuContext.renderBundleBuilder.updateU32UniformBuffer(
-        gridContext,
-        numCellsToShow.current
-      );
-      webGpuContext.renderBundleBuilder.updateDrawIndirectBuffer(
-        numCellsToShow.current
-      );
+    if (horizontalUnderflow) {
+      velocity.current.x = 0;
+      if (horizontalOverflow) {
+        overscroll.current.x = 0;
+        viewport.current.left = 0;
+        viewport.current.right = gridContext.gridSize.numColumns;
+      } else {
+        overscroll.current.x = newViewport.left * startCellSize.width;
+        viewport.current.left = 0;
+        viewport.current.right = startViewportSize.width;
+      }
+    } else if (horizontalOverflow) {
+      velocity.current.x = 0;
+      overscroll.current.x =
+        (newViewport.right - gridContext.gridSize.numColumns) *
+        startCellSize.width;
+      viewport.current.left =
+        gridContext.gridSize.numColumns - startViewportSize.width;
+      viewport.current.right = gridContext.gridSize.numColumns;
+    } else if (!verticalOverflow && !verticalUnderflow) {
+      viewport.current.left = newViewport.left;
+      viewport.current.right = newViewport.right;
+      overscroll.current.x = 0;
+    }
 
-      webGpuContext.renderBundleBuilder.execute();
+    if (verticalUnderflow) {
+      velocity.current.y = 0;
+      if (verticalOverflow) {
+        overscroll.current.y = 0;
+        viewport.current.top = 0;
+        viewport.current.bottom = gridContext.gridSize.numRows;
+      } else {
+        overscroll.current.y = newViewport.top * startCellSize.height;
+        viewport.current.top = 0;
+        viewport.current.bottom = startViewportSize.height;
+      }
+    } else if (verticalOverflow) {
+      velocity.current.y = 0;
+      overscroll.current.y =
+        (newViewport.bottom - gridContext.gridSize.numRows) *
+        startCellSize.height;
+      viewport.current.top =
+        gridContext.gridSize.numRows - startViewportSize.height;
+      viewport.current.bottom = gridContext.gridSize.numRows;
+    } else if (!horizontalOverflow && !horizontalUnderflow) {
+      viewport.current.top = newViewport.top;
+      viewport.current.bottom = newViewport.bottom;
+      overscroll.current.y = 0;
     }
   };
 
   const updateViewport = () => {
-    if (!dragStartViewport.current) {
-      return;
-    }
+    if (pointerState.current) {
+      const viewportWidth =
+        pointerState.current.startViewport.right -
+        pointerState.current.startViewport.left;
+      const viewportHeight =
+        pointerState.current.startViewport.bottom -
+        pointerState.current.startViewport.top;
+      const dx =
+        (viewportWidth * pointerState.current.delta.x) /
+        (canvasContext.canvasSize.width - canvasContext.headerOffset.left);
+      const dy =
+        (viewportHeight * pointerState.current.delta.y) /
+        (canvasContext.canvasSize.height - canvasContext.headerOffset.top);
+      const newViewport = {
+        left: pointerState.current.startViewport.left - dx,
+        right: pointerState.current.startViewport.right - dx,
+        top: pointerState.current.startViewport.top - dy,
+        bottom: pointerState.current.startViewport.bottom - dy,
+      };
 
-    const viewportWidth =
-      dragStartViewport.current.right - dragStartViewport.current.left;
-    const viewportHeight =
-      dragStartViewport.current.bottom - dragStartViewport.current.top;
-
-    const dx_cells =
-      (viewportWidth * (delta.current.x - overscroll.current.x)) /
-      (canvasContext.headerOffset.left - canvasContext.canvasSize.width);
-    const dy_cells =
-      (viewportHeight * (delta.current.y - overscroll.current.y)) /
-      (canvasContext.headerOffset.top - canvasContext.canvasSize.height);
-
-    let newLeft = dragStartViewport.current.left + dx_cells;
-    let newRight = dragStartViewport.current.right + dx_cells;
-    let newTop = dragStartViewport.current.top + dy_cells;
-    let newBottom = dragStartViewport.current.bottom + dy_cells;
-
-    const cellWidth = canvasContext.canvasSize.width / viewportWidth;
-    const cellHeight = canvasContext.canvasSize.height / viewportHeight;
-
-    const edgeStress = 2;
-
-    if (newLeft < 0) {
-      overscroll.current.x = (-newLeft * cellWidth) / edgeStress;
-      // velocity.current.x = 0;
-      newLeft = 0;
-      newRight = viewportWidth;
-    } else if (newRight > gridContext.gridSize.numColumns) {
-      overscroll.current.x =
-        ((gridContext.gridSize.numColumns - newRight) * cellWidth) / edgeStress;
-      // velocity.current.x = 0;
-      newLeft = gridContext.gridSize.numColumns - viewportHeight;
-      newRight = gridContext.gridSize.numColumns;
+      regulateViewport(
+        pointerState.current.startViewportSize,
+        pointerState.current.startCellSize,
+        newViewport
+      );
     } else {
-      //
+      const startViewportSize = {
+        width: viewport.current.right - viewport.current.left,
+        height: viewport.current.bottom - viewport.current.top,
+      };
+
+      regulateViewport(
+        startViewportSize,
+        {
+          width:
+            (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
+            startViewportSize.width,
+          height:
+            (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
+            startViewportSize.height,
+        },
+        {
+          left: viewport.current.left + velocity.current.x,
+          right: viewport.current.right + velocity.current.x,
+          top: viewport.current.top + velocity.current.y,
+          bottom: viewport.current.bottom + velocity.current.y,
+        }
+      );
     }
-
-    if (newTop < 0) {
-      overscroll.current.y = (-newTop * cellHeight) / edgeStress;
-      // velocity.current.y = 0;
-      newTop = 0;
-      newBottom = viewportHeight;
-    } else if (newBottom > gridContext.gridSize.numRows) {
-      overscroll.current.y =
-        ((gridContext.gridSize.numRows - newBottom) * cellHeight) / edgeStress;
-      // velocity.current.y = 0;
-      newTop = gridContext.gridSize.numRows - viewportHeight;
-      newBottom = gridContext.gridSize.numRows;
-    } else {
-      //
-    }
-
-    viewport.current = {
-      left: newLeft,
-      right: newRight,
-      top: newTop,
-      bottom: newBottom,
-    };
-
-    debounceTimerRef.current = undefined;
-  };
-
-  const decreaseOverscroll = () => {
-    if (isMouseOut.current || !dragStart.current) {
-      if (
-        Math.abs(overscroll.current.x) > 0.001 ||
-        Math.abs(overscroll.current.y) > 0.001
-      ) {
-        const x = overscroll.current.x * friction;
-        const y = overscroll.current.y * friction;
-        overscroll.current = { x, y };
-      } else {
-        overscroll.current = { x: 0, y: 0 };
-      }
-    }
-  };
-  /*
-    !debounceTimerRef.current && clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = setTimeout(() => {
-    }, 10);
-     */
-
-  const updateNumCellsToShow = () => {
-    const numColumnsToShow = Math.min(
-      Math.ceil(viewport.current.right) - Math.floor(viewport.current.left),
-      gridContext.gridSize.numColumns
-    );
-    const numRowsToShow = Math.min(
-      Math.ceil(viewport.current.bottom) - Math.floor(viewport.current.top),
-      gridContext.gridSize.numRows
-    );
-    numCellsToShow.current = { numColumnsToShow, numRowsToShow };
   };
 
   const updateFocusedIndices = (indices: number[]) => {
-    // DEBUG && console.debug(`${id} updated focused indices:`, indices);
     const newFocusedIndices = createFilledArray(
       Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows),
       0
@@ -202,7 +200,6 @@ export const GridUI = () => {
     if (indices.length >= 2 && indices[1] >= 0) {
       newFocusedIndices[indices[1]] += 2;
     }
-    // DEBUG && console.debug(newFocusedIndices);
     focusedIndices.current = newFocusedIndices;
   };
 
@@ -254,64 +251,47 @@ export const GridUI = () => {
     selectedIndices.current = newSelectedIndices;
   };
 
-  const decreaseVelocity = () => {
-    if (
-      Math.abs(velocity.current.x) > 0.0001 ||
-      Math.abs(velocity.current.y) > 0.0001
-    ) {
-      velocity.current.x *= friction;
-      velocity.current.y *= friction;
-    } else {
-      velocity.current.x = 0;
-      velocity.current.y = 0;
-    }
-
-    /*
-    const currentTime = performance.now();
-    if (lastTime.current !== 0) {
-      const timeDelta = currentTime - lastTime.current;
-      velocity.current = {
-        x: (-1 * velocity.current.x) / timeDelta,
-        y: (-1 * velocity.current.y) / timeDelta,
-      };
-    }
-    lastTime.current = currentTime;
-     */
-  };
-
-  function calculateDelta(event: MouseEvent): { x: number; y: number } {
-    if (!canvasContext.canvasRef.current || !dragStart.current) {
-      throw new Error();
-    }
-    //const rect = canvasContext.canvasRef.current.getBoundingClientRect();
-    const x =
-      event.clientX -
-      //overscroll.current.x -
-      dragStart.current.x;
-
-    const y =
-      event.clientY -
-      //overscroll.current.y -
-      dragStart.current.y;
-
-    return { x, y };
-  }
-
   const tick = () => {
+    const updateNumCellsToShow = () => {
+      const numColumnsToShow = Math.min(
+        Math.ceil(viewport.current.right) - Math.floor(viewport.current.left),
+        gridContext.gridSize.numColumns
+      );
+      const numRowsToShow = Math.min(
+        Math.ceil(viewport.current.bottom) - Math.floor(viewport.current.top),
+        gridContext.gridSize.numRows
+      );
+      numCellsToShow.current = { numColumnsToShow, numRowsToShow };
+    };
+
+    const executeRenderBundles = () => {
+      if (webGpuContext?.renderBundleBuilder) {
+        webGpuContext.renderBundleBuilder.updateF32UniformBuffer(
+          gridContext,
+          viewport.current,
+          overscroll.current
+        );
+        webGpuContext.renderBundleBuilder.updateU32UniformBuffer(
+          gridContext,
+          numCellsToShow.current
+        );
+        webGpuContext.renderBundleBuilder.updateDrawIndirectBuffer(
+          numCellsToShow.current
+        );
+
+        webGpuContext.renderBundleBuilder.execute();
+      }
+    };
+
     updateViewport();
     updateNumCellsToShow();
-    // decreaseOverscroll();
-    decreaseVelocity();
     executeRenderBundles();
-    //requestAnimationFrame(tick);
   };
 
-  const calculateCellPosition = (event: MouseEvent) => {
-    // console.log(overscroll.current.y, overscroll.current.y);
-
+  const calculateCellPosition = (clientX: number, clientY: number) => {
     const rect = canvasContext.canvasRef.current!.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
     const columnWidth =
       (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
@@ -327,69 +307,171 @@ export const GridUI = () => {
       (y - overscroll.current.y - canvasContext.headerOffset.top) / rowHeight;
 
     return {
-      columnIndex:
+      columnIndex: Math.floor(
         columnIndex >= 0 &&
-        columnIndex + viewport.current.left < gridContext.gridSize.numColumns
+          columnIndex + viewport.current.left < gridContext.gridSize.numColumns
           ? columnIndex + viewport.current.left
-          : -1,
-      rowIndex:
+          : -1
+      ),
+      rowIndex: Math.floor(
         rowIndex >= 0 &&
-        rowIndex + viewport.current.top < gridContext.gridSize.numRows
+          rowIndex + viewport.current.top < gridContext.gridSize.numRows
           ? rowIndex + viewport.current.top
-          : -1,
+          : -1
+      ),
     };
   };
 
-  const onMouseDown = (event: MouseEvent) => {
+  const onDown = (x: number, y: number) => {
     if (canvasContext.canvasRef.current === null) {
       return;
     }
     canvasContext.canvasRef.current.style.cursor = 'grab';
-    // const rect = canvasContext.canvasRef.current.getBoundingClientRect();
-    if (!dragStart.current) {
-      dragStart.current = {
-        x: event.clientX,
-        y: event.clientY,
+
+    const cellPosition = calculateCellPosition(x, y);
+    if (cellPosition.columnIndex !== -1 && cellPosition.rowIndex !== -1) {
+      pointerState.current = {
+        start: {
+          x,
+          y,
+        },
+        previous: {
+          x,
+          y,
+        },
+        startViewportSize: {
+          width: viewport.current.right - viewport.current.left,
+          height: viewport.current.bottom - viewport.current.top,
+        },
+        startCellSize: {
+          width:
+            (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
+            (viewport.current.right - viewport.current.left),
+          height:
+            (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
+            (viewport.current.bottom - viewport.current.top),
+        },
+        startViewport: { ...viewport.current },
+        delta: {
+          x: 0,
+          y: 0,
+        },
       };
-      dragStartViewport.current = { ...viewport.current };
     } else {
-      const cellPosition = calculateCellPosition(event);
       updateSelectedIndices(cellPosition.columnIndex, cellPosition.rowIndex);
+      webGpuContext?.renderBundleBuilder?.setSelectedIndicesStorage(
+        selectedIndices.current
+      );
+      console.log(selectedIndices.current);
+      startInertia();
     }
   };
 
-  const onMouseUp = () => {
-    dragStart.current = null;
-    dragStartViewport.current = null;
+  const onMouseDown = (event: MouseEvent) => {
+    onDown(event.clientX, event.clientY);
+  };
+
+  const onTouchStart = (event: TouchEvent) => {
+    onDown(event.touches[0].clientX, event.touches[0].clientY);
+  };
+
+  const onUp = () => {
     canvasContext.canvasRef.current!.style.cursor = 'default';
-    tick();
+    pointerState.current = null;
+    updateFocusedIndices([]);
+    webGpuContext?.renderBundleBuilder?.setFocusedIndicesStorage(
+      focusedIndices.current
+    );
+    startInertia();
+  };
+
+  const onMouseUp = () => {
+    onUp();
+  };
+
+  const onTouchEnd = (event: TouchEvent) => {
+    onUp();
   };
 
   const onMouseOut = () => {
-    focusedIndices.current = [];
-    isMouseOut.current = true;
-    tick();
+    canvasContext.canvasRef.current!.style.cursor = 'default';
+    pointerState.current = null;
+    updateFocusedIndices([]);
+    webGpuContext?.renderBundleBuilder?.setFocusedIndicesStorage(
+      focusedIndices.current
+    );
+    startInertia();
   };
 
   const onMouseEnter = () => {
-    isMouseOut.current = false;
-    tick();
+    startInertia();
+  };
+
+  const onMove = (
+    clientX: number,
+    clientY: number,
+    movementX: number,
+    movementY: number
+  ) => {
+    if (!canvasContext.canvasRef.current || !pointerState.current) {
+      throw new Error();
+    }
+    const x = clientX - pointerState.current.start.x;
+    const y = clientY - pointerState.current.start.y;
+    pointerState.current.delta = { x, y };
+    velocity.current = {
+      x: -movementX / canvasContext.canvasSize.width,
+      y: -movementY / canvasContext.canvasSize.height,
+    };
+  };
+
+  const onSelect = (clientX: number, clientY: number) => {
+    const cellPosition = calculateCellPosition(clientX, clientY);
+    const regulatedCellPosition = [
+      cellPosition.columnIndex,
+      cellPosition.rowIndex,
+    ];
+    updateFocusedIndices(regulatedCellPosition);
+    webGpuContext?.renderBundleBuilder?.setFocusedIndicesStorage(
+      focusedIndices.current
+    );
   };
 
   const onMouseMove = (event: MouseEvent) => {
     if (
       canvasContext.canvasRef.current &&
       event.buttons === 1 &&
-      dragStart.current
+      pointerState.current
     ) {
       canvasContext.canvasRef.current.style.cursor = 'grabbing';
-      delta.current = calculateDelta(event);
-      tick();
+      onMove(event.clientX, event.clientY, event.movementX, event.movementY);
     } else {
-      const cellPosition = calculateCellPosition(event);
-
-      updateFocusedIndices([cellPosition.columnIndex, cellPosition.rowIndex]);
+      onSelect(event.clientX, event.clientY);
     }
+    startInertia();
+  };
+
+  const onTouchMove = (event: TouchEvent) => {
+    if (
+      canvasContext.canvasRef.current &&
+      event.touches.length >= 2 &&
+      pointerState.current
+    ) {
+      canvasContext.canvasRef.current.style.cursor = 'grabbing';
+      onMove(
+        event.touches[0].clientX,
+        event.touches[0].clientY,
+        event.touches[0].clientX - pointerState.current.previous.x,
+        event.touches[0].clientY - pointerState.current.previous.y
+      );
+      pointerState.current.previous = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+      };
+    } else {
+      onSelect(event.touches[0].clientX, event.touches[0].clientY);
+    }
+    startInertia();
   };
 
   const onWheel = (event: WheelEvent) => {
@@ -402,72 +484,173 @@ export const GridUI = () => {
     const dx = event.clientX - rect.left - canvasContext.headerOffset.left;
     const dy = event.clientY - rect.top - canvasContext.headerOffset.top;
 
+    const viewportSize = {
+      width: viewport.current.right - viewport.current.left,
+      height: viewport.current.bottom - viewport.current.top,
+    };
+
     const cx =
-      ((viewport.current.right - viewport.current.left) * dx) /
+      (viewportSize.width * dx) /
         (canvasContext.canvasSize.width - canvasContext.headerOffset.left) +
       viewport.current.left;
     const cy =
-      ((viewport.current.bottom - viewport.current.top) * dy) /
+      (viewportSize.height * dy) /
         (canvasContext.canvasSize.height - canvasContext.headerOffset.top) +
       viewport.current.top;
 
-    const newStartColumn = cx + (viewport.current.left - cx) * scale;
-    const newEndColumn = cx + (viewport.current.right - cx) * scale;
-    const newStartRow = cy + (viewport.current.top - cy) * scale;
-    const newEndRow = cy + (viewport.current.bottom - cy) * scale;
+    let left = cx + (viewport.current.left - cx) * scale;
+    let right = cx + (viewport.current.right - cx) * scale;
+    let top = cy + (viewport.current.top - cy) * scale;
+    let bottom = cy + (viewport.current.bottom - cy) * scale;
 
-    if (
-      newStartColumn < 0 ||
-      gridContext.gridSize.numColumns < newEndColumn ||
-      newStartRow < 0 ||
-      gridContext.gridSize.numRows < newEndRow ||
-      newEndColumn - newStartColumn < 1 ||
-      newEndRow - newStartRow < 1
-    ) {
-      return;
+    const horizontalUnderflow = -1 * left;
+    const verticalUnderflow = -1 * top;
+    const horizontalOverflow = right - gridContext.gridSize.numColumns;
+    const verticalOverflow = bottom - gridContext.gridSize.numRows;
+
+    if (left < 0 && gridContext.gridSize.numColumns < right) {
+      left = 0;
+      right = viewport.current.right;
+    } else if (left < 0) {
+      left = 0;
+      right += horizontalUnderflow;
+    } else if (gridContext.gridSize.numColumns < right) {
+      right = gridContext.gridSize.numColumns;
+      left -= horizontalOverflow;
     }
-    if (
-      newEndColumn - newStartColumn > gridContext.gridSize.numColumns ||
-      newEndRow - newStartRow > gridContext.gridSize.numRows
-    ) {
-      return;
+
+    if (top < 0 && gridContext.gridSize.numRows < bottom) {
+      top = 0;
+      bottom = viewport.current.bottom;
+    } else if (top < 0) {
+      top = 0;
+      bottom += verticalUnderflow;
+    } else if (gridContext.gridSize.numRows < bottom) {
+      bottom = gridContext.gridSize.numRows;
+      top -= verticalOverflow;
     }
 
-    viewport.current = {
-      left: newStartColumn,
-      right: newEndColumn,
-      top: newStartRow,
-      bottom: newEndRow,
-    };
+    regulateViewport(
+      {
+        width: right - left,
+        height: bottom - top,
+      },
+      {
+        width:
+          (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
+            right -
+          left,
+        height:
+          (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
+            bottom -
+          top,
+      },
+      {
+        left,
+        right,
+        top,
+        bottom,
+      }
+    );
 
-    tick();
+    startInertia();
   };
 
   const round = (value: number, scale: number) => {
     return Math.round(value * scale) / scale;
   };
 
+  const startInertia = () => {
+    if (tickerRef.current) {
+      return;
+    }
+    tickerRef.current = setInterval(() => {
+      if (!pointerState.current) {
+        const decreaseOverscroll = () => {
+          if (
+            Math.abs(overscroll.current.x) > 0.1 ||
+            Math.abs(overscroll.current.y) > 0.1
+          ) {
+            const x = overscroll.current.x * edgeFriction;
+            const y = overscroll.current.y * edgeFriction;
+            overscroll.current = { x, y };
+            return true;
+          } else {
+            overscroll.current = { x: 0, y: 0 };
+          }
+          return false;
+        };
+
+        const decreaseVelocity = () => {
+          if (
+            Math.abs(velocity.current.x) > 0.01 ||
+            Math.abs(velocity.current.y) > 0.01
+          ) {
+            velocity.current.x *= translateFriction;
+            velocity.current.y *= translateFriction;
+            return true;
+          } else {
+            velocity.current.x = 0;
+            velocity.current.y = 0;
+          }
+          return false;
+        };
+
+        const isOverscrollActive = decreaseOverscroll();
+        const isVelocityActive = decreaseVelocity();
+        if (!isOverscrollActive && !isVelocityActive) {
+          clearInterval(tickerRef.current);
+          tickerRef.current = undefined;
+        }
+      }
+      requestAnimationFrame(tick);
+    }, 16); // 約60fpsでアニメーション
+  };
+
   useEffect(() => {
     const canvas = canvasContext.canvasRef.current;
     if (canvas && !eventHandlers.current) {
-      canvas.addEventListener('mouseup', onMouseUp, { passive: true });
       canvas.addEventListener('mousedown', onMouseDown, { passive: true });
+      canvas.addEventListener('mousemove', onMouseMove, { passive: true });
+      canvas.addEventListener('mouseup', onMouseUp, { passive: true });
+      canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+      canvas.addEventListener('touchmove', onTouchMove, { passive: true });
+      canvas.addEventListener('touchend', onTouchEnd, { passive: true });
       canvas.addEventListener('mouseenter', onMouseEnter, { passive: true });
       canvas.addEventListener('mouseout', onMouseOut, { passive: true });
-      canvas.addEventListener('mousemove', onMouseMove, { passive: true });
       canvas.addEventListener('wheel', onWheel, { passive: true });
       eventHandlers.current = true;
+
+      const initRenderBundleBuilder = () => {
+        if (webGpuContext?.renderBundleBuilder) {
+          webGpuContext.renderBundleBuilder.setDataBufferStorage(
+            gridContext.data
+          );
+          webGpuContext.renderBundleBuilder.setSelectedIndicesStorage(
+            selectedIndices.current
+          );
+          webGpuContext.renderBundleBuilder.setFocusedIndicesStorage(
+            focusedIndices.current
+          );
+        } else {
+          throw new Error();
+        }
+      };
+
       initRenderBundleBuilder();
       tick();
     }
 
     return () => {
       if (canvas) {
-        canvas.removeEventListener('mouseup', onMouseUp);
         canvas.removeEventListener('mousedown', onMouseDown);
+        canvas.removeEventListener('mousemove', onMouseMove);
+        canvas.removeEventListener('mouseup', onMouseUp);
+        canvas.removeEventListener('touchstart', onTouchStart);
+        canvas.removeEventListener('touchmove', onTouchMove);
+        canvas.removeEventListener('touchend', onTouchEnd);
         canvas.removeEventListener('mouseenter', onMouseEnter);
         canvas.removeEventListener('mouseout', onMouseOut);
-        canvas.removeEventListener('mousemove', onMouseMove);
         canvas.removeEventListener('wheel', onWheel);
         eventHandlers.current = false;
       }
@@ -480,23 +663,7 @@ export const GridUI = () => {
     onWheel,
   ]);
 
-  return (
-    <ul>
-      <li>
-        viewport left={viewport.current.left}, top={viewport.current.top},
-        right=
-        {viewport.current.right}, bottom={viewport.current.bottom}
-      </li>
-      <li>
-        overscroll x={overscroll.current.x}, y=
-        {overscroll.current.y}
-      </li>
-      <li>
-        numColumnsToShow={numCellsToShow.current.numColumnsToShow},
-        numRowsToShow={numCellsToShow.current.numRowsToShow}
-      </li>
-    </ul>
-  );
+  return null;
 };
 
 export default GridUI;

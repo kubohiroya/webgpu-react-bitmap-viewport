@@ -20,13 +20,13 @@ export type GridProps = {
     numRows: number;
   };
   data: Float32Array;
-  initialViewport: {
+  initialViewport?: {
     top: number;
     bottom: number;
     left: number;
     right: number;
   };
-  initialOverscroll: {
+  initialOverscroll?: {
     x: number;
     y: number;
   };

@@ -2,13 +2,13 @@ import React, { ReactNode } from 'react';
 import { useGridContext } from './GridContext';
 
 export type ViewportContextProps = {
-  initialViewport: {
+  initialViewport?: {
     top: number;
     bottom: number;
     left: number;
     right: number;
   };
-  initialOverscroll: {
+  initialOverscroll?: {
     x: number;
     y: number;
   };
@@ -20,19 +20,7 @@ export const ViewportContextProvider = (
     children: ReactNode;
   }
 ) => {
-  const gridContext = useGridContext();
-  const value = props || {
-    initialViewport: {
-      top: 0,
-      bottom: gridContext.gridSize.numRows,
-      left: 0,
-      right: gridContext.gridSize.numColumns,
-    },
-    initialViewportContext: {
-      x: 0,
-      y: 0,
-    },
-  };
+  const value = props;
 
   return (
     <ViewportContext.Provider value={value}>

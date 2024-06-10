@@ -51,7 +51,8 @@ fn viewportToFrame(viewport: vec2f) -> vec2f {
 }
 
 fn frameToCanvas(frame: vec2f) -> vec2f {
-  return frame - ( f32uniforms.overscroll + f32uniforms.header) / f32uniforms.canvasSize;
+  //return frame - ( f32uniforms.overscroll + f32uniforms.header) / f32uniforms.canvasSize;
+  return frame + ( f32uniforms.overscroll - f32uniforms.header) / f32uniforms.canvasSize;
 }
 
 fn canvasToDimension(canvas: vec2f) -> vec2f {
@@ -82,26 +83,27 @@ fn vertexBody(
     output.position = vec4f(transform(cellX, cellY, input.position), 0.0, 1.0);
     output.vertexIndex = input.vertexIndex;
     let gridIndex = gridX + gridY * u32uniforms.gridSize.x;
-    if(gridIndex % 10 != 0){
+    if(gridIndex % 8 != 0){
       output.cellValue = gridData[gridIndex];
     }else{
       output.cellValue = 0.999;
     }
     output.isInfinity = select(FALSE, TRUE, checkInfinity(output.cellValue));
-    output.isFocused = select(FALSE, TRUE, checkColumnFocused(cellX) || checkRowFocused(cellY));
-    output.isSelected = select(FALSE, TRUE, checkSelected(cellX) || checkSelected(cellY));
+    output.isFocused = select(FALSE, TRUE, checkColumnFocused(gridX) || checkRowFocused(gridY));
+    output.isSelected = select(FALSE, TRUE, checkSelected(gridX) || checkSelected(gridY));
     return output;
 }
 
 @vertex
-fn vertexLeftHeader(input: VertexInput) -> VertexOutput  {
+fn vertexLeftHeader(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
   let cellY: u32 = input.instanceIndex;
   let gridY: u32 = cellY + u32(f32uniforms.viewportLeftTop.y);
   var transformed: vec2f = transform(0, cellY, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
-  output.vertexIndex = input.vertexIndex;
-
+  // output.vertexIndex = input.vertexIndex;
+  output.isFocused = select(FALSE, TRUE, checkRowFocused(u32(f32uniforms.viewportLeftTop.y) + input.instanceIndex));
+  output.isSelected = select(FALSE, TRUE, checkSelected(u32(f32uniforms.viewportLeftTop.x) + input.instanceIndex));
   if(input.instanceIndex == 0){
     if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
       output.position.x = -1.0;
@@ -118,24 +120,25 @@ fn vertexLeftHeader(input: VertexInput) -> VertexOutput  {
       output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
     }
   }
-  output.isFocused = select(FALSE, TRUE, checkColumnFocused(u32uniforms.numRowsToShow + input.instanceIndex));
   return output;
 }
 
 @vertex
-fn vertexTopHeader(input: VertexInput) -> VertexOutput  {
+fn vertexTopHeader(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
   let cellX: u32 = input.instanceIndex;
   let gridX: u32 = cellX + u32(f32uniforms.viewportLeftTop.x);
   var transformed: vec2f = transform(cellX, 0, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
-  output.vertexIndex = input.vertexIndex;
-
+  // output.vertexIndex = input.vertexIndex;
+  output.isFocused = select(FALSE, TRUE, checkColumnFocused(u32(f32uniforms.viewportLeftTop.x) + input.instanceIndex));
+  output.isSelected = select(FALSE, TRUE, checkSelected(u32(f32uniforms.viewportLeftTop.x) + input.instanceIndex));
   if(input.instanceIndex == 0){
-    if(input.vertexIndex == 2u || input.vertexIndex == 4u || input.vertexIndex == 5u){
+    if(input.vertexIndex == 2u || input.vertexIndex == 3u || input.vertexIndex == 4u){
       output.position.y = 1.0;
+      //output.position.y = 1 - 2 * f32uniforms.header.y / f32uniforms.canvasSize.y;
     }else{
-      output.position.y = 1 - 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
+      output.position.y = 1 - 2 * f32uniforms.header.y / f32uniforms.canvasSize.y;
     }
     if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
       output.position.x = -1.0;
@@ -144,11 +147,55 @@ fn vertexTopHeader(input: VertexInput) -> VertexOutput  {
     if(input.vertexIndex == 2u || input.vertexIndex == 3u || input.vertexIndex == 4u){
       output.position.y = 1.0;
     }else{
-      output.position.y = 1 + -2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
+      output.position.y = 1 + -2 * f32uniforms.header.y / f32uniforms.canvasSize.y;
     }
   }
+  return output;
+}
 
-  output.isFocused = select(FALSE, TRUE, checkColumnFocused(u32uniforms.numColumnsToShow + input.instanceIndex));
+@vertex
+fn vertexColumnFocus(input: VertexInput) -> VertexOutput{
+  var output: VertexOutput;
+  let cellX: u32 = input.instanceIndex;
+  let gridX: u32 = cellX + u32(f32uniforms.viewportLeftTop.x);
+  var transformed: vec2f = transform(cellX, 0, input.position);
+  output.position = vec4f(transformed, 0.0, 1.0);
+  output.isFocused = select(FALSE, TRUE, checkColumnFocused(u32(f32uniforms.viewportLeftTop.x) + input.instanceIndex));
+  output.isSelected = select(FALSE, TRUE, checkSelected(u32(f32uniforms.viewportLeftTop.x) + input.instanceIndex));
+  if(isTrue(output.isFocused)){
+    if(input.instanceIndex == 0){
+    }
+    if(input.vertexIndex == 2u || input.vertexIndex == 4u || input.vertexIndex == 5u){
+      output.position.y = 1.0;
+    }
+    if(input.vertexIndex == 0u ||
+      input.vertexIndex == 1u || input.vertexIndex == 3u){
+      output.position.y = -1.0;
+    }
+  }
+  return output;
+}
+@vertex
+fn vertexRowFocus(input: VertexInput) -> VertexOutput{
+  var output: VertexOutput;
+  let cellY: u32 = input.instanceIndex;
+  let gridY: u32 = cellY + u32(f32uniforms.viewportLeftTop.y);
+  var transformed: vec2f = transform(0, cellY, input.position);
+  output.position = vec4f(transformed, 0.0, 1.0);
+  output.isFocused = select(FALSE, TRUE, checkRowFocused(u32(f32uniforms.viewportLeftTop.y) + input.instanceIndex));
+  output.isSelected = select(FALSE, TRUE, checkSelected(u32(f32uniforms.viewportLeftTop.y) + input.instanceIndex));
+  if(isTrue(output.isFocused)){
+    if(input.instanceIndex == 0u){
+    }
+    if(input.vertexIndex == 0u || input.vertexIndex == 3u|| input.vertexIndex == 5u){
+      output.position.x = -1.0;
+      //output.position.x = -1 + 2 * f32uniforms.header.x / f32uniforms.canvasSize.x;
+    }
+    if(input.vertexIndex == 1u ||
+        input.vertexIndex == 2u || input.vertexIndex == 4u){
+        output.position.x = 1.0;
+    }
+  }
   return output;
 }
 
@@ -242,11 +289,76 @@ fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
 
 @fragment
 fn fragmentLeftHeader(input: VertexOutput) -> @location(0) vec4f {
-  return vec4f(0.8, 0.6, 0.8, 1.0);
-
+  let focused = isTrue(input.isFocused);
+  let selected = isTrue(input.isSelected);
+  if(focused) {
+    if(selected){
+      return vec4f(0.9, 0.9, 0.0, 1.0);
+    }else{
+      return vec4f(0.7, 0.7, 0.7, 1.0);
+    }
+  }else{
+    if(selected){
+      return vec4f(0.8, 0.8, 0.6, 1.0);
+    }else{
+      return vec4f(0.5, 0.5, 0.5, 1.0);
+    }
+  }
 }
 
 @fragment
 fn fragmentTopHeader(input: VertexOutput) -> @location(0) vec4f {
-  return vec4f(0.8, 0.6, 0.8, 1.0);
+  let focused = isTrue(input.isFocused);
+  let selected = isTrue(input.isSelected);
+  if(focused) {
+    if(selected){
+      return vec4f(0.9, 0.9, 0.0, 1.0);
+    }else{
+      return vec4f(0.7, 0.7, 0.7, 1.0);
+    }
+  }else{
+    if(selected){
+      return vec4f(0.8, 0.8, 0.6, 1.0);
+    }else{
+      return vec4f(0.5, 0.5, 0.5, 1.0);
+    }
+  }
+}
+
+@fragment
+fn fragmentColumnFocus(input: VertexOutput) -> @location(0) vec4f{
+  let focused = isTrue(input.isFocused);
+  let selected = isTrue(input.isSelected);
+  if(focused) {
+    if(selected) {
+      return vec4f(0.9, 0.9, 0.7, 1.0);
+    }else{
+      return vec4f(0.7, 0.7, 0.7, 1.0);
+    }
+  }else{
+    if(selected) {
+      return vec4f(0.8, 0.9, 0.8, 1.0);
+    }else{
+      return vec4f(0, 0, 0, 0);
+    }
+  }
+}
+
+@fragment
+fn fragmentRowFocus(input: VertexOutput) -> @location(0) vec4f{
+  let focused = isTrue(input.isFocused);
+  let selected = isTrue(input.isSelected);
+  if(focused) {
+    if(selected) {
+      return vec4f(0.9, 0.9, 0.7, 1.0);
+    }else{
+      return vec4f(0.7, 0.7, 0.7, 1.0);
+    }
+  }else{
+    if(selected) {
+      return vec4f(0.8, 0.9, 0.8, 1.0);
+    }else{
+      return vec4f(0, 0, 0, 0);
+    }
+  }
 }
