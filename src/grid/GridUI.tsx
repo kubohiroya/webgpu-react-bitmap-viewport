@@ -362,7 +362,6 @@ export const GridUI = () => {
       webGpuContext?.renderBundleBuilder?.setSelectedIndicesStorage(
         selectedIndices.current
       );
-      console.log(selectedIndices.current);
       startInertia();
     }
   };

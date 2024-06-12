@@ -6,7 +6,7 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-const gridSize = { numColumns: 64, numRows: 64 };
+const gridSize = { numColumns: 1024, numRows: 1024 };
 
 const TRUE = true;
 const dataById = new Map<string, Float32Array>();
