@@ -419,8 +419,12 @@ export const GridUI = () => {
     const y = clientY - pointerState.current.start.y;
     pointerState.current.delta = { x, y };
     velocity.current = {
-      x: -movementX / canvasContext.canvasSize.width,
-      y: -movementY / canvasContext.canvasSize.height,
+      x:
+        (-movementX * pointerState.current.startViewportSize.width) /
+        canvasContext.canvasSize.width,
+      y:
+        (-movementY * pointerState.current.startViewportSize.height) /
+        canvasContext.canvasSize.height,
     };
   };
 
