@@ -10,6 +10,11 @@ export type CanvasElementContextCommons = {
     top: number;
     left: number;
   };
+  scrollBar: {
+    radius: number;
+    margin: number;
+  };
+  multisample?: number | undefined;
 };
 
 export type CanvasElementContextProps = CanvasElementContextCommons;

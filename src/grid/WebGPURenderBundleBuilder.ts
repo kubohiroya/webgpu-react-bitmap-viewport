@@ -49,8 +49,8 @@ export class WebGPURenderBundleBuilder {
     device: GPUDevice,
     view: GPUTextureView,
     canvasFormat: GPUTextureFormat,
-    canvasElementContext: CanvasElementContextValue,
     canvasContext: GPUCanvasContext,
+    canvasElementContext: CanvasElementContextValue,
     gridContext: GridContextProps
   ) {
     this.canvasFormat = canvasFormat;
@@ -127,14 +127,26 @@ export class WebGPURenderBundleBuilder {
       gridShaderModule: GPUShaderModule,
       canvasFormat: GPUTextureFormat,
       vertexEntryPoint: string,
-      fragmentEntryPoint: string
+      fragmentEntryPoint: string,
+      options?: { constants?: Record<string, number> }
     ) => {
+      // https://zenn.dev/emadurandal/books/cb6818fd3a1b2e/viewer/msaa
+      const multisample = canvasElementContext.multisample
+        ? {
+            multisample: {
+              count: canvasElementContext.multisample,
+            },
+          }
+        : {};
+
       return this.device.createRenderPipeline({
         label,
         layout: pipelineLayout,
+        ...multisample,
         vertex: {
           module: gridShaderModule,
           entryPoint: vertexEntryPoint,
+          ...options,
           buffers: [
             {
               arrayStride: 8,
@@ -154,6 +166,20 @@ export class WebGPURenderBundleBuilder {
           targets: [
             {
               format: canvasFormat,
+              /*
+              blend: {
+                color: {
+                  srcFactor: 'src-alpha',
+                  dstFactor: 'one',
+                  operation: 'add',
+                },
+                alpha: {
+                  srcFactor: 'zero',
+                  dstFactor: 'one',
+                  operation: 'add',
+                },
+              },
+               */
             },
           ],
         },
@@ -206,7 +232,13 @@ export class WebGPURenderBundleBuilder {
       shaderModule,
       canvasFormat,
       'vertexScrollBarBody',
-      'fragmentScrollBarBody'
+      'fragmentScrollBarBody',
+      {
+        constants: {
+          scrollBarRadius: canvasElementContext.scrollBar.radius,
+          scrollBarMargin: canvasElementContext.scrollBar.margin,
+        },
+      }
     );
 
     this.verticesBuffer = createVertexBuffer(
@@ -309,12 +341,13 @@ export class WebGPURenderBundleBuilder {
 
   updateU32UniformBuffer(
     gridContext: GridContextProps,
-    numCellsToShow: { numColumnsToShow: number; numRowsToShow: number }
+    numCellsToShow: { numColumnsToShow: number; numRowsToShow: number },
+    scrollBarState: number
   ) {
     updateBuffer(
       this.device,
       this.u32UniformBuffer,
-      createUint32BufferSource(gridContext, numCellsToShow)
+      createUint32BufferSource(gridContext, numCellsToShow, scrollBarState)
     );
   }
 
@@ -434,13 +467,29 @@ export class WebGPURenderBundleBuilder {
 
   executeRenderBundles(renderBundles: GPURenderBundle[]) {
     const commandEncoder = this.device.createCommandEncoder();
+    const multisample = this.canvasElementContext.multisample;
+    const texture =
+      multisample !== undefined
+        ? this.device.createTexture({
+            size: [
+              this.canvasElementContext.canvasSize.width,
+              this.canvasElementContext.canvasSize.height,
+            ],
+            sampleCount: multisample,
+            format: this.canvasFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+          })
+        : this.canvasContext.getCurrentTexture();
+    const resolveTarget =
+      multisample !== undefined ? { resolveTarget: texture.createView() } : {};
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: this.canvasContext.getCurrentTexture().createView(),
+          view: texture.createView(),
+          ...resolveTarget,
           clearValue: { r: 1, g: 1, b: 1, a: 1 },
           loadOp: 'clear',
-          storeOp: 'store',
+          storeOp: multisample !== undefined ? 'discard' : 'store',
         },
       ],
     });

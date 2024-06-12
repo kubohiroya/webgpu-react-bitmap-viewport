@@ -50,6 +50,19 @@ const render = () => {
           right: 4,
         }}
       />
+      <Grid
+        canvasId={'adjacencyMatrix2'}
+        headerOffset={{ left: 28, top: 28 }}
+        canvasSize={{ width: 512, height: 512 }}
+        gridSize={gridSize}
+        data={dataById.get('adjacencyMatrix')!}
+        initialViewport={{
+          top: 100,
+          bottom: 104,
+          left: 100,
+          right: 104,
+        }}
+      />
     </>
   );
 };

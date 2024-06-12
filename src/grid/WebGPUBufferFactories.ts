@@ -26,16 +26,19 @@ export const createF32UniformBufferSource = (
   ]);
 };
 
-export const U32UniformByteLength = 4 * 4;
+export const U32UniformByteLength = 6 * 4;
 export const createUint32BufferSource = (
   gridContext: GridContextProps,
-  numCellsToShow: { numColumnsToShow: number; numRowsToShow: number }
+  numCellsToShow: { numColumnsToShow: number; numRowsToShow: number },
+  scrollBarState: number
 ) => {
   return new Uint32Array([
     gridContext.gridSize.numColumns,
     gridContext.gridSize.numRows,
     numCellsToShow.numColumnsToShow,
     numCellsToShow.numRowsToShow,
+    scrollBarState,
+    0, //padding
   ]);
 };
 
