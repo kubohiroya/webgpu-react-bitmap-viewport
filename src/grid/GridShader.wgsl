@@ -83,13 +83,11 @@ fn vertexBody(
     output.position = vec4f(transform(cellX, cellY, input.position), 0.0, 1.0);
     output.vertexIndex = input.vertexIndex;
     let gridIndex = gridX + gridY * u32uni.gridSize.x;
-    if(gridIndex % 8 != 0){
-      output.cellValue = gridData[gridIndex];
-    }else{
-      output.cellValue = 0.999;
-    }
+    output.cellValue = gridData[gridIndex];
     output.isInfinity = select(FALSE, TRUE, checkInfinity(output.cellValue));
-    output.isFocused = select(FALSE, TRUE, checkColumnFocused(gridX) || checkRowFocused(gridY));
+    let columnFocused = checkColumnFocused(gridX);
+    let rowFocused = checkRowFocused(gridY);
+    output.isFocused = select(FALSE, TRUE, (!(columnFocused && rowFocused)) && (columnFocused || rowFocused));
     output.isSelected = select(FALSE, TRUE, checkSelected(gridX) || checkSelected(gridY));
     return output;
 }
@@ -177,6 +175,7 @@ fn vertexColumnFocusSelect(input: VertexInput) -> VertexOutput{
   return output;
 
 }
+
 @vertex
 fn vertexRowFocusSelect(input: VertexInput) -> VertexOutput{
   var output: VertexOutput;
@@ -187,7 +186,6 @@ fn vertexRowFocusSelect(input: VertexInput) -> VertexOutput{
   output.position = vec4f(transformed, 0.0, 1.0);
   output.isFocused = select(FALSE, TRUE, checkRowFocused(rowIndex));
   output.isSelected = select(FALSE, TRUE, checkSelected(rowIndex));
-
   if(input.vertexIndex == 1u || input.vertexIndex == 2u || input.vertexIndex == 4u){
     output.position.x = 1.0;
   }
