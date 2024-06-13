@@ -6,7 +6,7 @@ export const createF32UniformBufferSource = (
   canvasContext: CanvasElementContextProps,
   gridContext: GridContextProps,
   viewport: { left: number; top: number; right: number; bottom: number },
-  viewportOffset: { x: number; y: number }
+  overscroll: { x: number; y: number }
 ) => {
   return new Float32Array([
     gridContext.gridSize.numColumns,
@@ -21,8 +21,8 @@ export const createF32UniformBufferSource = (
     viewport.bottom,
     viewport.right - viewport.left,
     viewport.bottom - viewport.top,
-    viewportOffset.x,
-    viewportOffset.y,
+    overscroll.x,
+    overscroll.y,
   ]);
 };
 

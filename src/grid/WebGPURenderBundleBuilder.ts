@@ -139,6 +139,21 @@ export class WebGPURenderBundleBuilder {
           }
         : {};
 
+      const blend = {
+        blend: {
+          color: {
+            srcFactor: 'src-alpha',
+            dstFactor: 'one',
+            operation: 'add',
+          },
+          alpha: {
+            srcFactor: 'zero',
+            dstFactor: 'one',
+            operation: 'add',
+          },
+        },
+      };
+
       return this.device.createRenderPipeline({
         label,
         layout: pipelineLayout,
@@ -166,20 +181,7 @@ export class WebGPURenderBundleBuilder {
           targets: [
             {
               format: canvasFormat,
-              /*
-              blend: {
-                color: {
-                  srcFactor: 'src-alpha',
-                  dstFactor: 'one',
-                  operation: 'add',
-                },
-                alpha: {
-                  srcFactor: 'zero',
-                  dstFactor: 'one',
-                  operation: 'add',
-                },
-              },
-               */
+              // ...blend,
             },
           ],
         },
@@ -325,7 +327,7 @@ export class WebGPURenderBundleBuilder {
       right: number;
       bottom: number;
     },
-    viewportOffset: { x: number; y: number }
+    overscroll: { x: number; y: number }
   ) {
     updateBuffer(
       this.device,
@@ -334,7 +336,7 @@ export class WebGPURenderBundleBuilder {
         this.canvasElementContext,
         gridContext,
         viewport,
-        viewportOffset
+        overscroll
       )
     );
   }

@@ -369,18 +369,18 @@ export const GridUI = () => {
 
           if (header <= y && y < topEdge) {
             return {
-              columnIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
-              rowIndex: POINTER_CONTEXT_BODY,
+              columnIndex: POINTER_CONTEXT_BODY,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
             };
           } else if (y < bottomEdge) {
             return {
-              columnIndex: POINTER_CONTEXT_SCROLLBAR,
-              rowIndex: POINTER_CONTEXT_BODY,
+              columnIndex: POINTER_CONTEXT_BODY,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR,
             };
           } else {
             return {
-              columnIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
-              rowIndex: POINTER_CONTEXT_BODY,
+              columnIndex: POINTER_CONTEXT_BODY,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
             };
           }
         }
@@ -411,18 +411,18 @@ export const GridUI = () => {
 
           if (header <= x && x < leftEdge) {
             return {
-              columnIndex: POINTER_CONTEXT_BODY,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
+              columnIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
+              rowIndex: POINTER_CONTEXT_BODY,
             };
           } else if (x < rightEdge) {
             return {
-              columnIndex: POINTER_CONTEXT_BODY,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR,
+              columnIndex: POINTER_CONTEXT_SCROLLBAR,
+              rowIndex: POINTER_CONTEXT_BODY,
             };
           } else {
             return {
-              columnIndex: POINTER_CONTEXT_BODY,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
+              columnIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
+              rowIndex: POINTER_CONTEXT_BODY,
             };
           }
         }
@@ -455,10 +455,26 @@ export const GridUI = () => {
     if (canvasContext.canvasRef.current === null) {
       return;
     }
-    canvasContext.canvasRef.current.style.cursor = 'grab';
 
     const cellPosition = calculateCellPosition(x, y);
-    if (cellPosition.columnIndex >= 0 && cellPosition.rowIndex >= 0) {
+
+    if (
+      cellPosition.columnIndex === POINTER_CONTEXT_HEADER ||
+      cellPosition.rowIndex === POINTER_CONTEXT_HEADER
+    ) {
+      canvasContext.canvasRef.current.style.cursor = 'grab';
+      updateSelectedIndices(cellPosition.columnIndex, cellPosition.rowIndex);
+      webGpuContext?.renderBundleBuilder?.setSelectedIndicesStorage(
+        selectedIndices.current
+      );
+    }
+
+    if (
+      (cellPosition.columnIndex >= 0 && cellPosition.rowIndex >= 0) ||
+      cellPosition.columnIndex === POINTER_CONTEXT_HEADER ||
+      cellPosition.rowIndex === POINTER_CONTEXT_HEADER
+    ) {
+      canvasContext.canvasRef.current.style.cursor = 'grab';
       pointerState.current = {
         start: {
           x,
@@ -486,15 +502,77 @@ export const GridUI = () => {
           y: 0,
         },
       };
-    } else if (
-      cellPosition.columnIndex === POINTER_CONTEXT_HEADER ||
-      cellPosition.rowIndex === POINTER_CONTEXT_HEADER
-    ) {
-      updateSelectedIndices(cellPosition.columnIndex, cellPosition.rowIndex);
-      webGpuContext?.renderBundleBuilder?.setSelectedIndicesStorage(
-        selectedIndices.current
-      );
-      startInertia();
+      return;
+    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR) {
+      canvasContext.canvasRef.current.style.cursor = 'grab';
+    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR) {
+      canvasContext.canvasRef.current.style.cursor = 'grab';
+    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
+      if (viewport.current.left * 2 - viewport.current.right < 0) {
+        viewport.current = {
+          ...viewport.current,
+          left: 0,
+          right: viewport.current.right - viewport.current.left,
+        };
+      } else {
+        viewport.current = {
+          ...viewport.current,
+          left: viewport.current.left * 2 - viewport.current.right,
+          right: viewport.current.left,
+        };
+      }
+    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
+      if (viewport.current.top * 2 - viewport.current.bottom < 0) {
+        viewport.current = {
+          ...viewport.current,
+          top: 0,
+          bottom: viewport.current.bottom - viewport.current.top,
+        };
+      } else {
+        viewport.current = {
+          ...viewport.current,
+          top: viewport.current.top * 2 - viewport.current.bottom,
+          bottom: viewport.current.top,
+        };
+      }
+    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
+      if (
+        viewport.current.right * 2 - viewport.current.left <
+        gridContext.gridSize.numColumns
+      ) {
+        viewport.current = {
+          ...viewport.current,
+          left: viewport.current.right,
+          right: viewport.current.right * 2 - viewport.current.left,
+        };
+      } else {
+        viewport.current = {
+          ...viewport.current,
+          left:
+            gridContext.gridSize.numColumns -
+            (viewport.current.right - viewport.current.left),
+          right: gridContext.gridSize.numColumns,
+        };
+      }
+    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
+      if (
+        viewport.current.bottom * 2 - viewport.current.top <
+        gridContext.gridSize.numRows
+      ) {
+        viewport.current = {
+          ...viewport.current,
+          top: viewport.current.bottom,
+          bottom: viewport.current.bottom * 2 - viewport.current.top,
+        };
+      } else {
+        viewport.current = {
+          ...viewport.current,
+          top:
+            gridContext.gridSize.numRows -
+            (viewport.current.bottom - viewport.current.top),
+          bottom: gridContext.gridSize.numRows,
+        };
+      }
     }
   };
 
@@ -568,10 +646,10 @@ export const GridUI = () => {
         scrollBarState.current =
           SCROLLBAR_STATE_HORIZONTAL_FOCUSED + SCROLLBAR_STATE_VERTICAL_FOCUSED;
       } else {
-        scrollBarState.current = SCROLLBAR_STATE_VERTICAL_FOCUSED;
+        scrollBarState.current = SCROLLBAR_STATE_HORIZONTAL_FOCUSED;
       }
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR) {
-      scrollBarState.current = SCROLLBAR_STATE_HORIZONTAL_FOCUSED;
+      scrollBarState.current = SCROLLBAR_STATE_VERTICAL_FOCUSED;
     } else {
       scrollBarState.current = SCROLLBAR_STATE_DEFAULT;
     }
@@ -586,8 +664,6 @@ export const GridUI = () => {
     webGpuContext?.renderBundleBuilder?.setFocusedIndicesStorage(
       focusedIndices.current
     );
-
-    startInertia();
   };
 
   const onMouseMove = (event: MouseEvent) => {
