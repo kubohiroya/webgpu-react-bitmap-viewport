@@ -6,7 +6,7 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-const gridSize = { numColumns: 1024, numRows: 1024 };
+const gridSize = { numColumns: 64, numRows: 64 };
 
 const TRUE = true;
 const dataById = new Map<string, Float32Array>();
@@ -57,10 +57,10 @@ const render = () => {
         gridSize={gridSize}
         data={dataById.get('adjacencyMatrix')!}
         initialViewport={{
-          top: 100,
-          bottom: 104,
-          left: 100,
-          right: 104,
+          top: 0,
+          bottom: 64,
+          left: 0,
+          right: 64,
         }}
       />
     </>
