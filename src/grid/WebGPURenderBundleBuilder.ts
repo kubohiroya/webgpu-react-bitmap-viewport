@@ -11,7 +11,7 @@ import {
 import { GridContextProps } from './GridContext';
 import gridShaderCode from './GridShader.wgsl?raw';
 import { CanvasElementContextValue } from './CanvasElementContext';
-import { vertices } from './Vertices';
+import { SCROLLBAR_END_ARC_DIVISION, vertices } from './Vertices';
 
 export class WebGPURenderBundleBuilder {
   device: GPUDevice;
@@ -111,7 +111,7 @@ export class WebGPURenderBundleBuilder {
       colorAttachments: [
         {
           view,
-          clearValue: { r: 1, g: 1, b: 1, a: 1 },
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
           loadOp: 'clear',
           storeOp: 'store',
         },
@@ -138,21 +138,6 @@ export class WebGPURenderBundleBuilder {
             },
           }
         : {};
-
-      const blend = {
-        blend: {
-          color: {
-            srcFactor: 'src-alpha',
-            dstFactor: 'one',
-            operation: 'add',
-          },
-          alpha: {
-            srcFactor: 'zero',
-            dstFactor: 'one',
-            operation: 'add',
-          },
-        },
-      };
 
       return this.device.createRenderPipeline({
         label,
@@ -181,7 +166,18 @@ export class WebGPURenderBundleBuilder {
           targets: [
             {
               format: canvasFormat,
-              // ...blend,
+              blend: {
+                color: {
+                  srcFactor: 'src-alpha',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+                alpha: {
+                  srcFactor: 'one',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+              },
             },
           ],
         },
@@ -284,7 +280,7 @@ export class WebGPURenderBundleBuilder {
 
     this.drawIndirectBuffer = device.createBuffer({
       label: 'DrawIndirect',
-      size: 16 * 4, // 4つのuint32で足りるサイズ * 4バンドル
+      size: 16 * 4, // 4つの4バイト(uint32のサイズ) * 4バンドル
       usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
     });
 
@@ -299,12 +295,12 @@ export class WebGPURenderBundleBuilder {
       0, // firstVertex
       0, // firstInstance
 
-      6, // vertexCount
+      2 * 3, // vertexCount
       0, // instanceCount
       0, // firstVertex
       0, // firstInstance
 
-      (2 + 24) * 3, // vertexCount
+      (2 + SCROLLBAR_END_ARC_DIVISION) * 3, // vertexCount
       2, // instanceCount
       0, // firstVertex
       0, // firstInstance
@@ -463,7 +459,7 @@ export class WebGPURenderBundleBuilder {
     return this.createRenderBundle(
       'scrollBarBody',
       this.scrollBarBodyPipeline,
-      48
+      SCROLLBAR_END_ARC_DIVISION * 2
     );
   }
 
@@ -489,7 +485,7 @@ export class WebGPURenderBundleBuilder {
         {
           view: texture.createView(),
           ...resolveTarget,
-          clearValue: { r: 1, g: 1, b: 1, a: 1 },
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
           loadOp: 'clear',
           storeOp: multisample !== undefined ? 'discard' : 'store',
         },

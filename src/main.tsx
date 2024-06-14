@@ -49,6 +49,10 @@ const render = () => {
           left: 0,
           right: 4,
         }}
+        scrollBar={{
+          radius: 8.0,
+          margin: 4.0,
+        }}
       />
       <Grid
         canvasId={'adjacencyMatrix2'}
@@ -61,6 +65,10 @@ const render = () => {
           bottom: 64,
           left: 0,
           right: 64,
+        }}
+        scrollBar={{
+          radius: 8.0,
+          margin: 4.0,
         }}
       />
     </>

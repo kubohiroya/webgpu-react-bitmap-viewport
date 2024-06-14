@@ -104,7 +104,8 @@ export const WebGPUContextProvider = ({
           canvasContext.configure({
             device,
             format,
-            alphaMode: 'opaque',
+            //alphaMode: 'opaque',
+            alphaMode: 'premultiplied',
           });
 
           const texture = canvasContext.getCurrentTexture();

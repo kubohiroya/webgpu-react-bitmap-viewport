@@ -472,8 +472,8 @@ fn fragmentRowFocusSelect(input: VertexOutput) -> @location(0) vec4f{
 @fragment
 fn fragmentScrollBarBody(input: VertexOutput) -> @location(0) vec4f{
   if(0 < input.isFocused){
-    return vec4f(0.3, 0.3, 0.3, 0.2);
+    return vec4f(0.01, 0.01, 0.01, 0.6);
   }else{
-    return vec4f(0.5, 0.5, 0.5, 0.2);
+    return vec4f(0.3, 0.3, 0.3, 0.6);
   }
 }

@@ -30,6 +30,10 @@ export type GridProps = {
     x: number;
     y: number;
   };
+  scrollBar: {
+    radius: number;
+    margin: number;
+  };
 };
 export const Grid = (props: GridProps) => {
   return (
@@ -37,11 +41,8 @@ export const Grid = (props: GridProps) => {
       canvasId={props.canvasId}
       headerOffset={props.headerOffset}
       canvasSize={props.canvasSize}
-      scrollBar={{
-        radius: 8.0,
-        margin: 4.0,
-      }}
-      // multisample={4}
+      scrollBar={props.scrollBar}
+      //multisample={4}
     >
       <GridContextProvider gridSize={props.gridSize} data={props.data}>
         <WebGPUContextProvider>

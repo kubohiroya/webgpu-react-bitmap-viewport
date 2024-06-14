@@ -237,12 +237,15 @@ export const GridUI = () => {
             (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
             startViewportSize.height,
         },
-        {
-          left: viewport.current.left + velocity.current.x,
-          right: viewport.current.right + velocity.current.x,
-          top: viewport.current.top + velocity.current.y,
-          bottom: viewport.current.bottom + velocity.current.y,
-        }
+        scrollBarState.current === SCROLLBAR_STATE_HORIZONTAL_FOCUSED ||
+          scrollBarState.current === SCROLLBAR_STATE_VERTICAL_FOCUSED
+          ? viewport.current
+          : {
+              left: viewport.current.left + velocity.current.x,
+              right: viewport.current.right + velocity.current.x,
+              top: viewport.current.top + velocity.current.y,
+              bottom: viewport.current.bottom + velocity.current.y,
+            }
       );
     }
   };
