@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useLayoutEffect } from 'react';
 
 export type CanvasElementContextCommons = {
   canvasId: string;
@@ -18,13 +18,13 @@ export type CanvasElementContextCommons = {
 };
 
 export type CanvasElementContextProps = CanvasElementContextCommons;
-export type CanvasElementEventHandlers = {
+export type CanvasElementEventHandlers = Partial<{
   onMouseUp: (event: MouseEvent) => void;
   onMouseDown: (event: MouseEvent) => void;
   onMouseOut: (event: MouseEvent) => void;
   onMouseMove: (event: MouseEvent) => void;
   onWheel: (event: WheelEvent) => void;
-};
+}>;
 
 export type CanvasElementContextValue = CanvasElementContextCommons &
   CanvasElementEventHandlers & {
@@ -41,22 +41,14 @@ export const CanvasElementContextProvider = (
   const value: CanvasElementContextValue = {
     ...props,
     canvasRef,
-    onMouseDown: (event: MouseEvent) => {
-      console.log('onMouseDown');
-    },
-    onMouseUp: (event: MouseEvent) => {
-      console.log('onMouseUp');
-    },
-    onMouseOut: (event: MouseEvent) => {
-      console.log('onMouseOut');
-    },
-    onMouseMove: (event: MouseEvent) => {
-      console.log('onMouseMove');
-    },
-    onWheel: (event: MouseEvent) => {
-      console.log('onWheel');
-    },
   };
+
+  useLayoutEffect(() => {
+    if (canvasRef.current) {
+      canvasRef.current.style.cursor = 'wait';
+    }
+  }, [canvasRef.current]);
+
   return (
     <CanvasElementContext.Provider value={value}>
       <canvas

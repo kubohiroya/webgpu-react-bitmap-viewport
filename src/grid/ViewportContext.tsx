@@ -1,5 +1,4 @@
 import React, { ReactNode } from 'react';
-import { useGridContext } from './GridContext';
 
 export type ViewportContextProps = {
   initialViewport?: {

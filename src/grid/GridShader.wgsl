@@ -1,6 +1,6 @@
 const TRUE = 1u;
 const FALSE = 0u;
-override scrollBarRadius: f32 = 3.0;
+override scrollBarRadius: f32 = 5.0;
 override scrollBarMargin: f32 = 2.0;
 
 struct VertexInput {
@@ -42,7 +42,7 @@ struct U32uni {
 
 fn cellToWorld(cellX: u32, cellY: u32, position: vec2f) -> vec2f {
   let cell = vec2f(f32(cellX), f32(cellY));
-  return (floor(f32uni.viewportLeftTop) + (cell + (position * vec2f(0.5, -0.5) + 0.5) )) ;
+  return floor(f32uni.viewportLeftTop) + (cell + (position * vec2f(0.5, -0.5) + 0.5) );
 }
 
 fn worldToViewport(world: vec2f) -> vec2f {
@@ -54,7 +54,7 @@ fn viewportToFrame(viewport: vec2f) -> vec2f {
 }
 
 fn frameToCanvas(frame: vec2f) -> vec2f {
-  //return frame - ( f32uni.overscroll + f32uni.header) / f32uni.canvasSize;
+  // return frame - ( f32uni.overscroll + f32uni.header) / f32uni.canvasSize;
   return frame + ( f32uni.overscroll - f32uni.header) / f32uni.canvasSize;
 }
 
@@ -174,7 +174,6 @@ fn vertexColumnFocusSelect(input: VertexInput) -> VertexOutput{
     input.vertexIndex == 1u || input.vertexIndex == 3u){
     output.position.y = -1.0;
   }
-
   return output;
 }
 
@@ -189,119 +188,120 @@ fn vertexRowFocusSelect(input: VertexInput) -> VertexOutput{
   output.isFocused = select(FALSE, TRUE, checkRowFocused(rowIndex));
   output.isSelected = select(FALSE, TRUE, checkSelected(rowIndex));
   if(input.vertexIndex == 1u || input.vertexIndex == 2u || input.vertexIndex == 4u){
-    output.position.x = 1.0;
-  }
-  if(input.vertexIndex == 0u ||
+      output.position.x = 1.0;
+    }
+    if(input.vertexIndex == 0u ||
     input.vertexIndex == 3u || input.vertexIndex == 5u){
     output.position.x = -1.0;
   }
   return output;
 }
 
+fn rectangleVertexPosition(vertexIndex: u32, left: f32, top: f32, right: f32, bottom: f32) -> vec4f {
+  switch(vertexIndex % 6){
+    case 0, 3: {
+      return vec4f(left, bottom , 0, 1);
+    }
+    case 1: {
+      return vec4f(right, bottom, 0, 1);
+    }
+    case 2, 4: {
+      return vec4f(right, top, 0, 1);
+    }
+    case 5: {
+      return vec4f(left, top, 0, 1);
+    }
+    default: {
+      return vec4f(0, 0, 0, 1);
+    }
+  }
+}
+
+@vertex
+fn vertexScrollBarBackground(input: VertexInput) -> VertexOutput{
+  var output: VertexOutput;
+  if(input.instanceIndex == 0){ // horizontal(bottom)
+    let left = -1.0 + 2 * f32uni.header.x / f32uni.canvasSize.x;
+    let right = 1.0;
+    let top = -1.0 + 2 * (scrollBarRadius * 2 + scrollBarMargin) / f32uni.canvasSize.y;
+    let bottom = -1.0 + 2 * scrollBarMargin / f32uni.canvasSize.y;
+    output.position = rectangleVertexPosition(input.vertexIndex, left, top, right, bottom);
+    output.isFocused = select(FALSE, TRUE, u32uni.scrollBarState == 1u || u32uni.scrollBarState == 3u);
+  }else{ //vertical
+    let left = 1.0 - 2 * (scrollBarRadius * 2 + scrollBarMargin) / f32uni.canvasSize.y;
+    let top = 1.0 - 2 * f32uni.header.y / f32uni.canvasSize.y;
+    let right = 1.0 - 2 * scrollBarMargin / f32uni.canvasSize.x;
+    let bottom = -1.0;
+    output.position = rectangleVertexPosition(input.vertexIndex, left, top, right, bottom);
+    output.isFocused = select(FALSE, TRUE, u32uni.scrollBarState == 2u || u32uni.scrollBarState == 3u);
+  }
+  return output;
+}
+
 @vertex
 fn vertexScrollBarBody(input: VertexInput) -> VertexOutput{
-
   var output: VertexOutput;
   output.position = vec4f(input.position, 0.0, 1.0);
-
+  const baseIndex = 12;
+  const NUM_VERTICES_PER_POLYGON = 3;
   if(input.instanceIndex == 0){ // horizontal scrollbar
-    output.isFocused = u32uni.scrollBarState & 1u;
-    let leftEdge: f32 = -1 +
-     2 * ((f32uni.header.x - f32uni.overscroll.x + scrollBarRadius) / f32uni.canvasSize.x +
+    output.isFocused = select(FALSE, TRUE, u32uni.scrollBarState == 1u || u32uni.scrollBarState == 3u);
+    let left: f32 = -1 +
+      2 * ((f32uni.header.x - f32uni.overscroll.x + scrollBarRadius) / f32uni.canvasSize.x +
                             f32uni.viewportLeftTop.x *
                             (f32uni.canvasSize.x - f32uni.header.x - scrollBarRadius * 2) /
                              f32uni.canvasSize.x / f32uni.gridSize.x);
-    let rightEdge: f32 = -1 +
-     2 * ((f32uni.header.x - f32uni.overscroll.x + scrollBarRadius) / f32uni.canvasSize.x +
+    let right: f32 = -1 +
+      2 * ((f32uni.header.x - f32uni.overscroll.x + scrollBarRadius) / f32uni.canvasSize.x +
                             f32uni.viewportRightBottom.x *
                             (f32uni.canvasSize.x - f32uni.header.x - scrollBarRadius * 2) /
                              f32uni.canvasSize.x / f32uni.gridSize.x);
-    if(input.vertexIndex < 6){
-      let horizontalLineTop: f32 = -1 + 2 * (f32uni.overscroll.y + scrollBarMargin) / f32uni.canvasSize.y;
-      let horizontalLineBottom: f32 = -1 + 2 * (f32uni.overscroll.y + scrollBarMargin + scrollBarRadius * 2) / f32uni.canvasSize.y;
-      switch (input.vertexIndex){
-          case 0, 3:{
-            output.position = vec4f(leftEdge, horizontalLineBottom, 0, 1);
-            return output;
-          }
-          case 1: {
-            output.position = vec4f(rightEdge, horizontalLineBottom, 0, 1);
-            return output;
-          }
-          case 2, 4: {
-            output.position = vec4f(rightEdge, horizontalLineTop, 0, 1);
-            return output;
-          }
-          case 5: {
-            output.position = vec4f(leftEdge, horizontalLineTop, 0, 1);
-            return output;
-          }
-          default:{
-             return output;
-          }
-      }
-    } else {
+    if(6 <= input.vertexIndex && input.vertexIndex < baseIndex){
+      let top: f32 = -1 + 2 * (f32uni.overscroll.y + scrollBarMargin) / f32uni.canvasSize.y;
+      let bottom: f32 = -1 + 2 * (f32uni.overscroll.y + scrollBarMargin + scrollBarRadius * 2) / f32uni.canvasSize.y;
+      output.position = rectangleVertexPosition(input.vertexIndex - 6, left, top, right, bottom);
+      return output;
+    } else if(input.vertexIndex - baseIndex < 24 * 3){
       let horizontalLineCenter: f32 = -1 + 2 * (f32uni.overscroll.y + scrollBarMargin + scrollBarRadius) / f32uni.canvasSize.y;
       let radius = 2 * scrollBarRadius / f32uni.canvasSize.y;
-      if(( 6 <= input.vertexIndex && input.vertexIndex < 6 + 3 * 6) || (6 + 3 * 18 <= input.vertexIndex && input.vertexIndex < 6 + 3 * 24)){
-          let center = vec2f(rightEdge, horizontalLineCenter);
-          output.position = vec4f(input.position * radius + center, 0, 1);
-      }else if(6 + 3 * 6 <= input.vertexIndex && input.vertexIndex < 6 + 3 * 18){
-          let center = vec2f(leftEdge, horizontalLineCenter);
-          output.position = vec4f(input.position * radius + center, 0, 1);
+      if(( input.vertexIndex < baseIndex + NUM_VERTICES_PER_POLYGON * 6) || (baseIndex + NUM_VERTICES_PER_POLYGON * 18 <= input.vertexIndex && input.vertexIndex < baseIndex + NUM_VERTICES_PER_POLYGON * 24)){
+        let center = vec2f(right, horizontalLineCenter);
+        output.position = vec4f(input.position * radius + center, 0, 1);
+      }else if(baseIndex + NUM_VERTICES_PER_POLYGON * 6 <= input.vertexIndex && input.vertexIndex < baseIndex + NUM_VERTICES_PER_POLYGON * 18){
+        let center = vec2f(left, horizontalLineCenter);
+        output.position = vec4f(input.position * radius + center, 0, 1);
       }
       return output;
     }
 
   } else if(input.instanceIndex == 1){ // vertical scrollbar
-    output.isFocused = u32uni.scrollBarState & 2u;
-    let topEdge: f32 = 1 - 2 * ((f32uni.header.y - f32uni.overscroll.y + scrollBarRadius) / f32uni.canvasSize.y +
+    output.isFocused = select(FALSE, TRUE, u32uni.scrollBarState == 2u || u32uni.scrollBarState == 3u);
+    let top: f32 = 1 - 2 * ((f32uni.header.y - f32uni.overscroll.y + scrollBarRadius) / f32uni.canvasSize.y +
                             f32uni.viewportLeftTop.y *
                             (f32uni.canvasSize.y - f32uni.header.y - scrollBarRadius * 2) /
                             f32uni.canvasSize.y / f32uni.gridSize.y);
-    let bottomEdge: f32 = 1 - 2 * ((f32uni.header.y - f32uni.overscroll.y + scrollBarRadius) / f32uni.canvasSize.y +
+    let bottom: f32 = 1 - 2 * ((f32uni.header.y - f32uni.overscroll.y + scrollBarRadius) / f32uni.canvasSize.y +
                             f32uni.viewportRightBottom.y *
                             (f32uni.canvasSize.y - f32uni.header.y- scrollBarRadius * 2) / f32uni.canvasSize.y / f32uni.gridSize.y);
 
-      if(input.vertexIndex < 6){
-        let verticalLineLeft:f32 = 1 - 2 * (scrollBarMargin + f32uni.overscroll.x) / f32uni.canvasSize.x;
-        let verticalLineRight:f32 = 1 - 2 * (scrollBarMargin + f32uni.overscroll.x + scrollBarRadius * 2) / f32uni.canvasSize.x;
-        switch (input.vertexIndex){
-          case 0, 3:{
-            output.position = vec4f(verticalLineLeft, bottomEdge, 0, 1);
-            return output;
-          }
-          case 1: {
-            output.position = vec4f(verticalLineRight, bottomEdge, 0, 1);
-            return output;
-          }
-          case 2, 4: {
-            output.position = vec4f(verticalLineRight, topEdge, 0, 1);
-            return output;
-          }
-          case 5: {
-            output.position = vec4f(verticalLineLeft, topEdge, 0, 1);
-            return output;
-          }
-          default:{
-             return output;
-          }
-      }
+    if(input.vertexIndex < baseIndex){
+      let left:f32 = 1 - 2 * (scrollBarMargin + f32uni.overscroll.x) / f32uni.canvasSize.x;
+      let right:f32 = 1 - 2 * (scrollBarMargin + f32uni.overscroll.x + scrollBarRadius * 2) / f32uni.canvasSize.x;
+      output.position = rectangleVertexPosition(input.vertexIndex - 6, left, top, right, bottom);
+      return output;
     } else {
       let verticalLineCenter:f32 = 1 - 2 * (scrollBarMargin + f32uni.overscroll.x + scrollBarRadius) / f32uni.canvasSize.x;
       let radius = 2 * scrollBarRadius / f32uni.canvasSize.x;
-
-      if(6 <= input.vertexIndex && input.vertexIndex < 6 + 3 * 12){
-          let center = vec2f(verticalLineCenter, topEdge);
-          output.position = vec4f(input.position * radius + center, 0, 1);
-      }else if(6 + 3 * 12 <= input.vertexIndex && input.vertexIndex < 6 + 3 * 24){
-          let center = vec2f(verticalLineCenter, bottomEdge);
-          output.position = vec4f(input.position * radius + center, 0, 1);
+      if(baseIndex <= input.vertexIndex && input.vertexIndex < baseIndex + NUM_VERTICES_PER_POLYGON * 12){
+        let center = vec2f(verticalLineCenter, top);
+        output.position = vec4f(input.position * radius + center, 0, 1);
+      }else if(baseIndex + NUM_VERTICES_PER_POLYGON * 12 <= input.vertexIndex && input.vertexIndex < baseIndex + NUM_VERTICES_PER_POLYGON * 24){
+        let center = vec2f(verticalLineCenter, bottom);
+        output.position = vec4f(input.position * radius + center, 0, 1);
       }
       return output;
     }
   }
-
   return output;
 }
 
@@ -399,15 +399,15 @@ fn fragmentLeftHeader(input: VertexOutput) -> @location(0) vec4f {
   let selected = isTrue(input.isSelected);
   if(focused) {
     if(selected){
-      return vec4f(0.9, 0.9, 0.0, 1.0);
+      return vec4f(0.9, 0.9, 0.0, 1);
     }else{
-      return vec4f(0.7, 0.7, 0.7, 1.0);
+      return vec4f(0.7, 0.7, 0.7, 1);
     }
   }else{
     if(selected){
-      return vec4f(0.8, 0.8, 0.6, 1.0);
+      return vec4f(0.8, 0.8, 0.6, 1);
     }else{
-      return vec4f(0.5, 0.5, 0.5, 1.0);
+      return vec4f(0.5, 0.5, 0.5, 1);
     }
   }
 }
@@ -418,15 +418,15 @@ fn fragmentTopHeader(input: VertexOutput) -> @location(0) vec4f {
   let selected = isTrue(input.isSelected);
   if(focused) {
     if(selected){
-      return vec4f(0.9, 0.9, 0.0, 1.0);
+      return vec4f(0.9, 0.9, 0.0, 1);
     }else{
-      return vec4f(0.7, 0.7, 0.7, 1.0);
+      return vec4f(0.7, 0.7, 0.7, 1);
     }
   }else{
     if(selected){
-      return vec4f(0.8, 0.8, 0.6, 1.0);
+      return vec4f(0.8, 0.8, 0.6, 1);
     }else{
-      return vec4f(0.5, 0.5, 0.5, 1.0);
+      return vec4f(0.5, 0.5, 0.5, 1);
     }
   }
 }
@@ -470,9 +470,18 @@ fn fragmentRowFocusSelect(input: VertexOutput) -> @location(0) vec4f{
 }
 
 @fragment
+fn fragmentScrollBarBackground(input: VertexOutput) -> @location(0) vec4f{
+  if(isTrue(input.isFocused)){
+    return vec4f(0.5, 0.5, 0.5, 0.6);
+  }else{
+    return vec4f(0.8, 0.8, 0.8, 0.1);
+  }
+}
+
+@fragment
 fn fragmentScrollBarBody(input: VertexOutput) -> @location(0) vec4f{
-  if(0 < input.isFocused){
-    return vec4f(0.01, 0.01, 0.01, 0.6);
+  if(isTrue(input.isFocused)){
+    return vec4f(0.1, 0.1, 0.1, 0.7);
   }else{
     return vec4f(0.3, 0.3, 0.3, 0.6);
   }

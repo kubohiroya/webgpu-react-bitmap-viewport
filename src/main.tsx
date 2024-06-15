@@ -6,7 +6,8 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-const gridSize = { numColumns: 64, numRows: 64 };
+//const gridSize = { numColumns: 64, numRows: 64 };
+const gridSize = { numColumns: 1024, numRows: 1024 };
 
 const TRUE = true;
 const dataById = new Map<string, Float32Array>();
@@ -45,63 +46,18 @@ const render = () => {
         data={dataById.get('adjacencyMatrix')!}
         initialViewport={{
           top: 0,
-          bottom: 4,
+          bottom: 16,
           left: 0,
-          right: 4,
+          right: 16,
         }}
         scrollBar={{
-          radius: 8.0,
-          margin: 4.0,
-        }}
-      />
-      <Grid
-        canvasId={'adjacencyMatrix2'}
-        headerOffset={{ left: 28, top: 28 }}
-        canvasSize={{ width: 512, height: 512 }}
-        gridSize={gridSize}
-        data={dataById.get('adjacencyMatrix')!}
-        initialViewport={{
-          top: 0,
-          bottom: 64,
-          left: 0,
-          right: 64,
-        }}
-        scrollBar={{
-          radius: 8.0,
-          margin: 4.0,
+          radius: 5.0,
+          margin: 2.0,
         }}
       />
     </>
   );
 };
-/*
-initialOverscroll={{ x: -256, y: -256 }}
- <Grid
- canvasId={'distanceMatrix'}
- headerOffset={{ top: 0, left: 0 }}
- canvasSize={{ width: 128, height: 128 }}
- gridSize={gridSize}
- data={dataById.get('adjacencyMatrix')!}
- initialViewport={{ left: 2.8, right: 5.3, top: 2.8, bottom: 5.3 }}
- />
- <Grid
- canvasId={'distanceMatrix'}
- headerOffset={{ top: 64, left: 64 }}
- canvasSize={{ width: 128, height: 128 }}
- gridSize={gridSize}
- data={dataById.get('adjacencyMatrix')!}
- initialViewport={{ left: 2.5, right: 5, top: 2.5, bottom: 5 }}
- />
- <Grid
- canvasId={'distanceMatrix'}
- headerOffset={{ top: 64, left: 64 }}
- canvasSize={{ width: 128, height: 128 }}
- gridSize={gridSize}
- data={dataById.get('adjacencyMatrix')!}
- initialViewport={{ left: 2.8, right: 5.3, top: 2.8, bottom: 5.3 }}
- />
- */
-// headerOffset.left、topが効いていない
 
 render();
 //strictRender();

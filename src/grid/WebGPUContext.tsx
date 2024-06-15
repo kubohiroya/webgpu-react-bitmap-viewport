@@ -1,9 +1,9 @@
-import React, { ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import React, { ReactNode, useLayoutEffect, useState } from 'react';
 import {
   CanvasElementContextValue,
   useCanvasElementContext,
 } from './CanvasElementContext';
-import { WebGPURenderBundleBuilder } from './WebGPURenderBundleBuilder';
+import { RenderBundleBuilder } from './RenderBundleBuilder';
 import {
   GridContextProps,
   GridContextValue,
@@ -17,7 +17,7 @@ export type WebGPUContextValue = {
   texture: GPUTexture | null;
   gridContext: GridContextValue | null;
   canvasElementContext: CanvasElementContextValue | null;
-  renderBundleBuilder: WebGPURenderBundleBuilder | null;
+  renderBundleBuilder: RenderBundleBuilder | null;
 };
 
 export const WebGPUContext = React.createContext<WebGPUContextValue>({
@@ -109,10 +109,8 @@ export const WebGPUContextProvider = ({
           });
 
           const texture = canvasContext.getCurrentTexture();
-          const textureView = texture.createView();
-          const renderBundleBuilder = new WebGPURenderBundleBuilder(
+          const renderBundleBuilder = new RenderBundleBuilder(
             device,
-            textureView,
             format,
             canvasContext,
             canvasElementContext,

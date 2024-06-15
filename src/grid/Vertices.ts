@@ -1,5 +1,8 @@
 // 6 vertices for a square
-const squareVertices = [
+
+import { F32LEN, NUM_VERTICES_PER_POLYGON, XY_SET_LEN } from './Constants';
+
+const rectVertices = [
   //   X,    Y,
   // bottom right triangle (anti-clockwise)
   // 0 left-bottom 1 right-bottom 2 right-top
@@ -9,21 +12,37 @@ const squareVertices = [
   -1, -1, 1, 1, -1, 1,
 ];
 
-const gridCellVertices = squareVertices.map((value) => value * 0.8);
+const marginedRectVertices = rectVertices.map((value) => value * 0.8);
 
-export const SCROLLBAR_END_ARC_DIVISION = 24;
-const pieVertices = new Array(SCROLLBAR_END_ARC_DIVISION * 3 * 2);
-[...Array(SCROLLBAR_END_ARC_DIVISION).keys()].forEach((i) => {
-  const pi0 = ((Math.PI * 2) / SCROLLBAR_END_ARC_DIVISION) * i;
-  const pi1 = ((Math.PI * 2) / SCROLLBAR_END_ARC_DIVISION) * (i + 1);
+export const NUM_SCROLLBAR_END_ARCS = 24;
+const setOfPiesVertices = new Array(
+  NUM_SCROLLBAR_END_ARCS * NUM_VERTICES_PER_POLYGON * XY_SET_LEN
+);
+
+[...Array(NUM_SCROLLBAR_END_ARCS).keys()].forEach((i) => {
+  const pi0 = ((Math.PI * 2) / NUM_SCROLLBAR_END_ARCS) * i;
+  const pi1 = ((Math.PI * 2) / NUM_SCROLLBAR_END_ARCS) * (i + 1);
   const radius = 0.95;
-  let p = i * 3 * 2;
-  pieVertices[p++] = 0;
-  pieVertices[p++] = 0;
-  pieVertices[p++] = Math.cos(pi1) * radius;
-  pieVertices[p++] = Math.sin(pi1) * radius;
-  pieVertices[p++] = Math.cos(pi0) * radius;
-  pieVertices[p++] = Math.sin(pi0) * radius;
+  let p = i * NUM_VERTICES_PER_POLYGON * XY_SET_LEN;
+  setOfPiesVertices[p++] = 0;
+  setOfPiesVertices[p++] = 0;
+  setOfPiesVertices[p++] = Math.cos(pi1) * radius;
+  setOfPiesVertices[p++] = Math.sin(pi1) * radius;
+  setOfPiesVertices[p++] = Math.cos(pi0) * radius;
+  setOfPiesVertices[p++] = Math.sin(pi0) * radius;
 });
 
-export const vertices = [...gridCellVertices, ...pieVertices];
+export const vertices = [
+  // 0 - 5
+  ...marginedRectVertices,
+  // 6 - 11
+  ...rectVertices,
+  // 12 -
+  ...setOfPiesVertices,
+];
+
+export const VERTICES_BYTE_LENGTH = vertices.length * F32LEN;
+
+export const FIRST_VERTEX_OF_MARGINED_RECT_INDEX = 0;
+export const FIRST_VERTEX_OF_RECT_INDEX = 6;
+export const FIRST_VERTEX_OF_RECT_AND_PIES_INDEX = 6;

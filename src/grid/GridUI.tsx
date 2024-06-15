@@ -15,20 +15,21 @@ const translateFriction = 0.975;
 
 const POINTER_CONTEXT_BODY = 0;
 const POINTER_CONTEXT_HEADER = -1;
-const POINTER_CONTEXT_SCROLLBAR = -2;
+const POINTER_CONTEXT_SCROLLBAR_HANDLE = -2;
 const POINTER_CONTEXT_SCROLLBAR_LOWER = -3;
 const POINTER_CONTEXT_SCROLLBAR_HIGHER = -4;
+const POINTER_CONTEXT_SCROLLBAR_OTHER = -5;
 
-const FOCUS_STATE_DEFAULT = 0;
-const FOCUS_STATE_HORIZONTAL_FOCUSED = 1;
-const FOCUS_STATE_VERTICAL_FOCUSED = 2;
+const FOCUS_STATE_BODY_DEFAULT = 0;
+const FOCUS_STATE_BODY_HORIZONTAL_FOCUSED = 1;
+const FOCUS_STATE_BODY_VERTICAL_FOCUSED = 2;
 
 const SELECT_STATE_DEFAULT = 0;
 const SELECT_STATE_SELECTED = 1;
 
-const SCROLLBAR_STATE_DEFAULT = 0;
-const SCROLLBAR_STATE_HORIZONTAL_FOCUSED = 1;
-const SCROLLBAR_STATE_VERTICAL_FOCUSED = 2;
+const FOCUS_STATE_SCROLLBAR_DEFAULT = 0;
+const FOCUS_STATE_SCROLLBAR_HORIZONTAL = 1;
+const FOCUS_STATE_SCROLLBAR_VERTICAL = 2;
 
 export const GridUI = () => {
   const webGpuContext = useWebGPUContext();
@@ -81,7 +82,7 @@ export const GridUI = () => {
   const velocity = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const eventHandlers = useRef<boolean>(false);
 
-  const scrollBarState = useRef<number>(SCROLLBAR_STATE_DEFAULT);
+  const scrollBarState = useRef<number>(FOCUS_STATE_SCROLLBAR_DEFAULT);
 
   const regulateViewport = (
     startViewportSize: {
@@ -104,10 +105,11 @@ export const GridUI = () => {
       newViewport.right > gridContext.gridSize.numColumns;
     const verticalUnderflow = newViewport.top < 0;
     const verticalOverflow = newViewport.bottom > gridContext.gridSize.numRows;
-    const enableOverscroll = scrollBarState.current === SCROLLBAR_STATE_DEFAULT;
+    const enableOverscroll =
+      scrollBarState.current === FOCUS_STATE_SCROLLBAR_DEFAULT;
 
     if (horizontalUnderflow) {
-      velocity.current.x = 0;
+      velocity.current.y = 0;
       if (horizontalOverflow) {
         viewport.current.left = 0;
         viewport.current.right = gridContext.gridSize.numColumns;
@@ -122,7 +124,7 @@ export const GridUI = () => {
         }
       }
     } else if (horizontalOverflow) {
-      velocity.current.x = 0;
+      velocity.current.y = 0;
       viewport.current.left =
         gridContext.gridSize.numColumns - startViewportSize.width;
       viewport.current.right = gridContext.gridSize.numColumns;
@@ -183,7 +185,7 @@ export const GridUI = () => {
         pointerState.current.startViewport.top;
 
       const [dx, dy] =
-        scrollBarState.current === SCROLLBAR_STATE_HORIZONTAL_FOCUSED
+        scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL
           ? [
               (-1 *
                 (gridContext.gridSize.numColumns *
@@ -192,7 +194,7 @@ export const GridUI = () => {
                   canvasContext.headerOffset.left),
               0,
             ]
-          : scrollBarState.current === SCROLLBAR_STATE_VERTICAL_FOCUSED
+          : scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
           ? [
               0,
               (-1 *
@@ -237,8 +239,8 @@ export const GridUI = () => {
             (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
             startViewportSize.height,
         },
-        scrollBarState.current === SCROLLBAR_STATE_HORIZONTAL_FOCUSED ||
-          scrollBarState.current === SCROLLBAR_STATE_VERTICAL_FOCUSED
+        scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL ||
+          scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
           ? viewport.current
           : {
               left: viewport.current.left + velocity.current.x,
@@ -253,13 +255,13 @@ export const GridUI = () => {
   const updateFocusedIndices = (indices: number[]) => {
     const newFocusedIndices = createFilledArray(
       Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows),
-      FOCUS_STATE_DEFAULT
+      FOCUS_STATE_BODY_DEFAULT
     );
     if (indices.length >= 1 && indices[0] >= 0) {
-      newFocusedIndices[indices[0]] += FOCUS_STATE_HORIZONTAL_FOCUSED;
+      newFocusedIndices[indices[0]] += FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
     }
     if (indices.length >= 2 && indices[1] >= 0) {
-      newFocusedIndices[indices[1]] += FOCUS_STATE_VERTICAL_FOCUSED;
+      newFocusedIndices[indices[1]] += FOCUS_STATE_BODY_VERTICAL_FOCUSED;
     }
     focusedIndices.current = newFocusedIndices;
   };
@@ -411,17 +413,17 @@ export const GridUI = () => {
 
           if (header <= y && y < topEdge) {
             return {
-              columnIndex: POINTER_CONTEXT_BODY,
+              columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
               rowIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
             };
           } else if (y < bottomEdge) {
             return {
-              columnIndex: POINTER_CONTEXT_BODY,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR,
+              columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE,
             };
           } else {
             return {
-              columnIndex: POINTER_CONTEXT_BODY,
+              columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
               rowIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
             };
           }
@@ -451,20 +453,20 @@ export const GridUI = () => {
               viewport.current.right) /
               gridContext.gridSize.numColumns;
 
-          if (header <= x && x < leftEdge) {
+          if (header <= x && x <= leftEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
-              rowIndex: POINTER_CONTEXT_BODY,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
             };
-          } else if (x < rightEdge) {
+          } else if (x <= rightEdge) {
             return {
-              columnIndex: POINTER_CONTEXT_SCROLLBAR,
-              rowIndex: POINTER_CONTEXT_BODY,
+              columnIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
             };
           } else {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
-              rowIndex: POINTER_CONTEXT_BODY,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
             };
           }
         }
@@ -515,8 +517,8 @@ export const GridUI = () => {
       (cellPosition.columnIndex >= 0 && cellPosition.rowIndex >= 0) ||
       cellPosition.columnIndex === POINTER_CONTEXT_HEADER ||
       cellPosition.rowIndex === POINTER_CONTEXT_HEADER ||
-      cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR ||
-      cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR
+      cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE ||
+      cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE
     ) {
       canvasContext.canvasRef.current.style.cursor = 'grab';
       pointerState.current = {
@@ -682,17 +684,34 @@ export const GridUI = () => {
 
   const onHover = (clientX: number, clientY: number) => {
     const cellPosition = calculateCellPosition(clientX, clientY);
-    if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR) {
-      if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR) {
-        scrollBarState.current =
-          SCROLLBAR_STATE_HORIZONTAL_FOCUSED + SCROLLBAR_STATE_VERTICAL_FOCUSED;
-      } else {
-        scrollBarState.current = SCROLLBAR_STATE_HORIZONTAL_FOCUSED;
-      }
-    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR) {
-      scrollBarState.current = SCROLLBAR_STATE_VERTICAL_FOCUSED;
+    if (
+      cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE &&
+      cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE
+    ) {
+      canvasContext.canvasRef.current!.style.cursor = 'pointer';
+      scrollBarState.current =
+        FOCUS_STATE_SCROLLBAR_HORIZONTAL | FOCUS_STATE_SCROLLBAR_VERTICAL;
+    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
+      canvasContext.canvasRef.current!.style.cursor = 'pointer';
+      scrollBarState.current = FOCUS_STATE_SCROLLBAR_HORIZONTAL;
+    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
+      canvasContext.canvasRef.current!.style.cursor = 'pointer';
+      scrollBarState.current = FOCUS_STATE_SCROLLBAR_VERTICAL;
+    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
+      canvasContext.canvasRef.current!.style.cursor = 'w-resize';
+      scrollBarState.current = FOCUS_STATE_SCROLLBAR_HORIZONTAL;
+    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
+      canvasContext.canvasRef.current!.style.cursor = 'e-resize';
+      scrollBarState.current = FOCUS_STATE_SCROLLBAR_HORIZONTAL;
+    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
+      canvasContext.canvasRef.current!.style.cursor = 'n-resize';
+      scrollBarState.current = FOCUS_STATE_SCROLLBAR_VERTICAL;
+    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
+      canvasContext.canvasRef.current!.style.cursor = 's-resize';
+      scrollBarState.current = FOCUS_STATE_SCROLLBAR_VERTICAL;
     } else {
-      scrollBarState.current = SCROLLBAR_STATE_DEFAULT;
+      canvasContext.canvasRef.current!.style.cursor = 'cell';
+      scrollBarState.current = FOCUS_STATE_SCROLLBAR_DEFAULT;
     }
 
     webGpuContext?.renderBundleBuilder?.updateU32UniformBuffer(
@@ -892,23 +911,19 @@ export const GridUI = () => {
       canvas.addEventListener('wheel', onWheel, { passive: true });
       eventHandlers.current = true;
 
-      const initRenderBundleBuilder = () => {
-        if (webGpuContext?.renderBundleBuilder) {
-          webGpuContext.renderBundleBuilder.setDataBufferStorage(
-            gridContext.data
-          );
-          webGpuContext.renderBundleBuilder.setSelectedIndicesStorage(
-            selectedIndices.current
-          );
-          webGpuContext.renderBundleBuilder.setFocusedIndicesStorage(
-            focusedIndices.current
-          );
-        } else {
-          throw new Error();
-        }
-      };
-
-      initRenderBundleBuilder();
+      if (webGpuContext?.renderBundleBuilder) {
+        webGpuContext.renderBundleBuilder.setDataBufferStorage(
+          gridContext.data
+        );
+        webGpuContext.renderBundleBuilder.setSelectedIndicesStorage(
+          selectedIndices.current
+        );
+        webGpuContext.renderBundleBuilder.setFocusedIndicesStorage(
+          focusedIndices.current
+        );
+      } else {
+        throw new Error();
+      }
       tick();
     }
 

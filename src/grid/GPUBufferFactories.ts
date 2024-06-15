@@ -1,7 +1,9 @@
 import { GridContextProps } from './GridContext';
 import { CanvasElementContextProps } from './CanvasElementContext';
+import { F32LEN, U32LEN } from './Constants';
 
-export const F32UniformByteLength = 14 * 4;
+const F32UniformItemLength = 14;
+export const F32UNIFORMS_BYTE_LENGTH = F32UniformItemLength * F32LEN;
 export const createF32UniformBufferSource = (
   canvasContext: CanvasElementContextProps,
   gridContext: GridContextProps,
@@ -26,7 +28,8 @@ export const createF32UniformBufferSource = (
   ]);
 };
 
-export const U32UniformByteLength = 6 * 4;
+const U32UniformItemLength = 6;
+export const U32UNIFORMS_BYTE_LENGTH = U32UniformItemLength * U32LEN;
 export const createUint32BufferSource = (
   gridContext: GridContextProps,
   numCellsToShow: { numColumnsToShow: number; numRowsToShow: number },

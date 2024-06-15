@@ -5,21 +5,27 @@ import {
   createUint32BufferSource,
   createStorageBuffer,
   createVertexBuffer,
-  F32UniformByteLength,
-  U32UniformByteLength,
-} from './WebGPUBufferFactories';
+  F32UNIFORMS_BYTE_LENGTH,
+  U32UNIFORMS_BYTE_LENGTH,
+} from './GPUBufferFactories';
 import { GridContextProps } from './GridContext';
-import gridShaderCode from './GridShader.wgsl?raw';
+import GRID_SHADER_CODE from './GridShader.wgsl?raw';
 import { CanvasElementContextValue } from './CanvasElementContext';
-import { SCROLLBAR_END_ARC_DIVISION, vertices } from './Vertices';
+import { vertices, VERTICES_BYTE_LENGTH } from './Vertices';
+import { F32LEN, U32LEN } from './Constants';
+import {
+  DRAW_INDIRECT_BUFFER_SOURCE,
+  DRAW_INDIRECT_BUFFER_BYTE_INDEX,
+  updateDrawIndirectBufferSource,
+} from './DrawIndirectBufferFactory';
+import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
 
-export class WebGPURenderBundleBuilder {
+export class RenderBundleBuilder {
   device: GPUDevice;
   canvasElementContext: CanvasElementContextValue;
   canvasContext: GPUCanvasContext;
   canvasFormat: GPUTextureFormat;
   bindGroup: GPUBindGroup;
-  renderPassDescriptor: GPURenderPassDescriptor;
 
   f32UniformBuffer: GPUBuffer;
   u32UniformBuffer: GPUBuffer;
@@ -29,108 +35,58 @@ export class WebGPURenderBundleBuilder {
   drawIndirectBufferSource: Uint32Array;
   drawIndirectBuffer: GPUBuffer;
 
+  columnFocusSelectPipeline: GPURenderPipeline;
+  rowFocusSelectPipeline: GPURenderPipeline;
   bodyPipeline: GPURenderPipeline;
   leftHeaderPipeline: GPURenderPipeline;
   topHeaderPipeline: GPURenderPipeline;
-  columnFocusSelectPipeline: GPURenderPipeline;
-  rowFocusSelectPipeline: GPURenderPipeline;
+  scrollBarBackgroundPipeline: GPURenderPipeline;
   scrollBarBodyPipeline: GPURenderPipeline;
 
-  verticesBuffer: GPUBuffer;
+  vertexBuffer: GPUBuffer;
 
+  columnFocusRenderBundle: GPURenderBundle;
+  rowFocusRenderBundle: GPURenderBundle;
   bodyRenderBundle: GPURenderBundle;
   topHeaderRenderBundle: GPURenderBundle;
   leftHeaderRenderBundle: GPURenderBundle;
-  columnFocusRenderBundle: GPURenderBundle;
-  rowFocusRenderBundle: GPURenderBundle;
+  scrollBarBackgroundRenderBundle: GPURenderBundle;
   scrollBarBodyRenderBundle: GPURenderBundle;
 
   constructor(
     device: GPUDevice,
-    view: GPUTextureView,
     canvasFormat: GPUTextureFormat,
     canvasContext: GPUCanvasContext,
     canvasElementContext: CanvasElementContextValue,
     gridContext: GridContextProps
   ) {
+    this.device = device;
     this.canvasFormat = canvasFormat;
     this.canvasElementContext = canvasElementContext;
 
     const shaderModule = device.createShaderModule({
       label: 'Grid shader',
-      code: gridShaderCode,
+      code: GRID_SHADER_CODE,
     });
 
-    const bindGroupLayout = device.createBindGroupLayout({
-      label: 'bindGroupLayout',
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: 'uniform',
-          },
-        },
-        {
-          binding: 1,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: 'uniform',
-          },
-        },
-        {
-          binding: 2,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: 'read-only-storage',
-          },
-        },
-        {
-          binding: 3,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: 'read-only-storage',
-          },
-        },
-        {
-          binding: 4,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: 'read-only-storage',
-          },
-        },
-      ],
-    });
+    const bindGroupLayout = device.createBindGroupLayout(
+      BIND_GROUP_LAYOUT_DESCRIPTOR
+    );
 
     const pipelineLayout = device.createPipelineLayout({
-      label: 'Cell renderer pipeline layout',
+      label: 'Grid renderer pipeline layout',
       bindGroupLayouts: [bindGroupLayout],
     });
 
-    this.renderPassDescriptor = {
-      colorAttachments: [
-        {
-          view,
-          clearValue: { r: 0, g: 0, b: 0, a: 0 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
-    };
-
-    this.device = device;
     this.canvasContext = canvasContext;
 
     const createPipeline = (
       label: string,
-      pipelineLayout: GPUPipelineLayout,
-      gridShaderModule: GPUShaderModule,
-      canvasFormat: GPUTextureFormat,
+      device: GPUDevice,
       vertexEntryPoint: string,
       fragmentEntryPoint: string,
       options?: { constants?: Record<string, number> }
     ) => {
-      // https://zenn.dev/emadurandal/books/cb6818fd3a1b2e/viewer/msaa
       const multisample = canvasElementContext.multisample
         ? {
             multisample: {
@@ -139,12 +95,12 @@ export class WebGPURenderBundleBuilder {
           }
         : {};
 
-      return this.device.createRenderPipeline({
+      return device.createRenderPipeline({
         label,
         layout: pipelineLayout,
         ...multisample,
         vertex: {
-          module: gridShaderModule,
+          module: shaderModule,
           entryPoint: vertexEntryPoint,
           ...options,
           buffers: [
@@ -161,7 +117,7 @@ export class WebGPURenderBundleBuilder {
           ],
         },
         fragment: {
-          module: gridShaderModule,
+          module: shaderModule,
           entryPoint: fragmentEntryPoint,
           targets: [
             {
@@ -184,51 +140,45 @@ export class WebGPURenderBundleBuilder {
       });
     };
 
-    this.bodyPipeline = createPipeline(
-      'body',
-      pipelineLayout,
-      shaderModule,
-      canvasFormat,
-      'vertexBody',
-      'fragmentBody'
-    );
-    this.leftHeaderPipeline = createPipeline(
-      'leftHeader',
-      pipelineLayout,
-      shaderModule,
-      canvasFormat,
-      'vertexLeftHeader',
-      'fragmentLeftHeader'
-    );
-    this.topHeaderPipeline = createPipeline(
-      'topHeader',
-      pipelineLayout,
-      shaderModule,
-      canvasFormat,
-      'vertexTopHeader',
-      'fragmentTopHeader'
-    );
     this.columnFocusSelectPipeline = createPipeline(
       'columnFocusSelect',
-      pipelineLayout,
-      shaderModule,
-      canvasFormat,
+      device,
       'vertexColumnFocusSelect',
       'fragmentColumnFocusSelect'
     );
     this.rowFocusSelectPipeline = createPipeline(
       'rowFocusSelect',
-      pipelineLayout,
-      shaderModule,
-      canvasFormat,
+      device,
       'vertexRowFocusSelect',
       'fragmentRowFocusSelect'
     );
+    this.bodyPipeline = createPipeline(
+      'body',
+      device,
+      'vertexBody',
+      'fragmentBody'
+    );
+    this.leftHeaderPipeline = createPipeline(
+      'leftHeader',
+      device,
+      'vertexLeftHeader',
+      'fragmentLeftHeader'
+    );
+    this.topHeaderPipeline = createPipeline(
+      'topHeader',
+      device,
+      'vertexTopHeader',
+      'fragmentTopHeader'
+    );
+    this.scrollBarBackgroundPipeline = createPipeline(
+      'scrollBarBackground',
+      device,
+      'vertexScrollBarBackground',
+      'fragmentScrollBarBackground'
+    );
     this.scrollBarBodyPipeline = createPipeline(
       'scrollBarBody',
-      pipelineLayout,
-      shaderModule,
-      canvasFormat,
+      device,
       'vertexScrollBarBody',
       'fragmentScrollBarBody',
       {
@@ -239,27 +189,40 @@ export class WebGPURenderBundleBuilder {
       }
     );
 
-    this.verticesBuffer = createVertexBuffer(
+    this.vertexBuffer = createVertexBuffer(
       'Vertices',
       device,
-      vertices.length * 4
+      VERTICES_BYTE_LENGTH
     );
 
-    updateBuffer(this.device, this.verticesBuffer, new Float32Array(vertices));
+    updateBuffer(this.device, this.vertexBuffer, new Float32Array(vertices));
+
+    this.drawIndirectBufferSource = new Uint32Array(
+      DRAW_INDIRECT_BUFFER_SOURCE
+    );
+
+    this.drawIndirectBuffer = device.createBuffer({
+      label: 'DrawIndirect',
+      size: DRAW_INDIRECT_BUFFER_SOURCE.length * U32LEN,
+      usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
+    });
+
+    this.updateDrawIndirectBuffer({ numColumnsToShow: 1, numRowsToShow: 1 });
+
     this.f32UniformBuffer = createUniformBuffer(
       'F32Uniforms',
       device,
-      F32UniformByteLength
+      F32UNIFORMS_BYTE_LENGTH
     );
     this.u32UniformBuffer = createUniformBuffer(
       'U32Uniforms',
       device,
-      U32UniformByteLength
+      U32UNIFORMS_BYTE_LENGTH
     );
 
     const numCells =
       Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows) *
-      4;
+      F32LEN;
     this.focusedIndicesStorage = createStorageBuffer(
       'FocusedIndexBuffer',
       device,
@@ -276,43 +239,24 @@ export class WebGPURenderBundleBuilder {
       gridContext.gridSize.numColumns * gridContext.gridSize.numRows * 4
     );
 
-    this.bindGroup = this.createBindGroup(bindGroupLayout);
+    this.bindGroup = this.createBindGroup(
+      'Grid BindGroup',
+      bindGroupLayout,
+      this.f32UniformBuffer,
+      this.u32UniformBuffer,
+      this.focusedIndicesStorage,
+      this.selectedIndicesStorage,
+      this.gridDataBufferStorage
+    );
 
-    this.drawIndirectBuffer = device.createBuffer({
-      label: 'DrawIndirect',
-      size: 16 * 4, // 4つの4バイト(uint32のサイズ) * 4バンドル
-      usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
-    });
-
-    this.drawIndirectBufferSource = new Uint32Array([
-      2 * 3, // vertexCount
-      0, // instanceCount
-      0, // firstVertex
-      0, // firstInstance
-
-      2 * 3, // vertexCount
-      0, // instanceCount
-      0, // firstVertex
-      0, // firstInstance
-
-      2 * 3, // vertexCount
-      0, // instanceCount
-      0, // firstVertex
-      0, // firstInstance
-
-      (2 + SCROLLBAR_END_ARC_DIVISION) * 3, // vertexCount
-      2, // instanceCount
-      0, // firstVertex
-      0, // firstInstance
-    ]);
-    this.updateDrawIndirectBuffer({ numColumnsToShow: 1, numRowsToShow: 1 });
-
+    this.columnFocusRenderBundle = this.createColumnFocusRenderBundle();
+    this.rowFocusRenderBundle = this.createRowFocusRenderBundle();
     this.bodyRenderBundle = this.createBodyRenderBundle();
     this.topHeaderRenderBundle = this.createTopHeaderRenderBundle();
     this.leftHeaderRenderBundle = this.createLeftHeaderRenderBundle();
-    this.columnFocusRenderBundle = this.createColumnFocusRenderBundle();
-    this.rowFocusRenderBundle = this.createRowFocusRenderBundle();
     this.scrollBarBodyRenderBundle = this.createScrollBarBodyRenderBundle();
+    this.scrollBarBackgroundRenderBundle =
+      this.createScrollBarBackgroundRenderBundle();
   }
 
   updateF32UniformBuffer(
@@ -369,30 +313,38 @@ export class WebGPURenderBundleBuilder {
     );
   }
 
-  createBindGroup(bindGroupLayout: GPUBindGroupLayout) {
+  createBindGroup(
+    label: string,
+    bindGroupLayout: GPUBindGroupLayout,
+    f32UniformBuffer: GPUBuffer,
+    u32UniformBuffer: GPUBuffer,
+    focusedIndicesStorage: GPUBuffer,
+    selectedIndicesStorage: GPUBuffer,
+    gridDataBufferStorage: GPUBuffer
+  ) {
     return this.device.createBindGroup({
-      label: 'Cell renderer bind group',
+      label,
       layout: bindGroupLayout,
       entries: [
         {
           binding: 0,
-          resource: { buffer: this.f32UniformBuffer },
+          resource: { buffer: f32UniformBuffer },
         },
         {
           binding: 1,
-          resource: { buffer: this.u32UniformBuffer },
+          resource: { buffer: u32UniformBuffer },
         },
         {
           binding: 2,
-          resource: { buffer: this.focusedIndicesStorage },
+          resource: { buffer: focusedIndicesStorage },
         },
         {
           binding: 3,
-          resource: { buffer: this.selectedIndicesStorage },
+          resource: { buffer: selectedIndicesStorage },
         },
         {
           binding: 4,
-          resource: { buffer: this.gridDataBufferStorage },
+          resource: { buffer: gridDataBufferStorage },
         },
       ],
     });
@@ -408,7 +360,7 @@ export class WebGPURenderBundleBuilder {
       colorFormats: [this.canvasFormat],
     });
     encoder.setPipeline(pipeline);
-    encoder.setVertexBuffer(0, this.verticesBuffer);
+    encoder.setVertexBuffer(0, this.vertexBuffer);
     encoder.setBindGroup(0, this.bindGroup);
     encoder.drawIndirect(this.drawIndirectBuffer, indirectOffset);
     return encoder.finish();
@@ -421,9 +373,11 @@ export class WebGPURenderBundleBuilder {
     numColumnsToShow: number;
     numRowsToShow: number;
   }) {
-    this.drawIndirectBufferSource[1] = numColumnsToShow * numRowsToShow;
-    this.drawIndirectBufferSource[5] = numColumnsToShow;
-    this.drawIndirectBufferSource[9] = numRowsToShow;
+    updateDrawIndirectBufferSource(
+      this.drawIndirectBufferSource,
+      numColumnsToShow,
+      numRowsToShow
+    );
     this.device.queue.writeBuffer(
       this.drawIndirectBuffer,
       0,
@@ -432,34 +386,58 @@ export class WebGPURenderBundleBuilder {
   }
 
   createBodyRenderBundle() {
-    return this.createRenderBundle('body', this.bodyPipeline, 0);
-  }
-
-  createTopHeaderRenderBundle() {
-    return this.createRenderBundle('topHeader', this.topHeaderPipeline, 16);
+    return this.createRenderBundle(
+      'body',
+      this.bodyPipeline,
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('BODY')!
+    );
   }
 
   createColumnFocusRenderBundle() {
     return this.createRenderBundle(
       'columnFocus',
       this.columnFocusSelectPipeline,
-      16
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('TOP_HEADER')!
+    );
+  }
+
+  createRowFocusRenderBundle() {
+    return this.createRenderBundle(
+      'rowFocus',
+      this.rowFocusSelectPipeline,
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('LEFT_HEADER')!
+    );
+  }
+
+  createTopHeaderRenderBundle() {
+    return this.createRenderBundle(
+      'topHeader',
+      this.topHeaderPipeline,
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('TOP_HEADER')!
     );
   }
 
   createLeftHeaderRenderBundle() {
-    return this.createRenderBundle('leftHeader', this.leftHeaderPipeline, 32);
+    return this.createRenderBundle(
+      'leftHeader',
+      this.leftHeaderPipeline,
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('LEFT_HEADER')!
+    );
   }
 
-  createRowFocusRenderBundle() {
-    return this.createRenderBundle('rowFocus', this.rowFocusSelectPipeline, 32);
+  createScrollBarBackgroundRenderBundle() {
+    return this.createRenderBundle(
+      'scrollBarBackground',
+      this.scrollBarBackgroundPipeline,
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('SCROLLBAR_BACKGROUND')!
+    );
   }
 
   createScrollBarBodyRenderBundle() {
     return this.createRenderBundle(
       'scrollBarBody',
       this.scrollBarBodyPipeline,
-      SCROLLBAR_END_ARC_DIVISION * 2
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('SCROLLBAR_BODY')!
     );
   }
 
@@ -485,7 +463,7 @@ export class WebGPURenderBundleBuilder {
         {
           view: texture.createView(),
           ...resolveTarget,
-          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          clearValue: { r: 0, g: 0, b: 0, a: 0 }, // 0.5->0.0
           loadOp: 'clear',
           storeOp: multisample !== undefined ? 'discard' : 'store',
         },
@@ -503,6 +481,7 @@ export class WebGPURenderBundleBuilder {
       this.bodyRenderBundle,
       this.topHeaderRenderBundle,
       this.leftHeaderRenderBundle,
+      this.scrollBarBackgroundRenderBundle,
       this.scrollBarBodyRenderBundle,
     ]);
   }
