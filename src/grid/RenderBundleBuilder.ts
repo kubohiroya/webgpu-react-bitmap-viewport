@@ -1,12 +1,12 @@
 import {
   createF32UniformBufferSource,
-  createUniformBuffer,
-  updateBuffer,
-  createUint32BufferSource,
   createStorageBuffer,
+  createUint32BufferSource,
+  createUniformBuffer,
   createVertexBuffer,
   F32UNIFORMS_BYTE_LENGTH,
   U32UNIFORMS_BYTE_LENGTH,
+  updateBuffer
 } from './GPUBufferFactories';
 import { GridContextProps } from './GridContext';
 import GRID_SHADER_CODE from './GridShader.wgsl?raw';
@@ -14,9 +14,9 @@ import { CanvasElementContextValue } from './CanvasElementContext';
 import { vertices, VERTICES_BYTE_LENGTH } from './Vertices';
 import { F32LEN, U32LEN } from './Constants';
 import {
-  DRAW_INDIRECT_BUFFER_SOURCE,
   DRAW_INDIRECT_BUFFER_BYTE_INDEX,
-  updateDrawIndirectBufferSource,
+  DRAW_INDIRECT_BUFFER_SOURCE,
+  updateDrawIndirectBufferSource
 } from './DrawIndirectBufferFactory';
 import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
 
@@ -66,7 +66,7 @@ export class RenderBundleBuilder {
 
     const shaderModule = device.createShaderModule({
       label: 'Grid shader',
-      code: GRID_SHADER_CODE,
+      code: GRID_SHADER_CODE
     });
 
     const bindGroupLayout = device.createBindGroupLayout(
@@ -75,7 +75,7 @@ export class RenderBundleBuilder {
 
     const pipelineLayout = device.createPipelineLayout({
       label: 'Grid renderer pipeline layout',
-      bindGroupLayouts: [bindGroupLayout],
+      bindGroupLayouts: [bindGroupLayout]
     });
 
     this.canvasContext = canvasContext;
@@ -89,10 +89,10 @@ export class RenderBundleBuilder {
     ) => {
       const multisample = canvasElementContext.multisample
         ? {
-            multisample: {
-              count: canvasElementContext.multisample,
-            },
+          multisample: {
+            count: canvasElementContext.multisample
           }
+        }
         : {};
 
       return device.createRenderPipeline({
@@ -110,11 +110,11 @@ export class RenderBundleBuilder {
                 {
                   format: 'float32x2',
                   offset: 0,
-                  shaderLocation: 0,
-                },
-              ],
-            },
-          ],
+                  shaderLocation: 0
+                }
+              ]
+            }
+          ]
         },
         fragment: {
           module: shaderModule,
@@ -126,17 +126,17 @@ export class RenderBundleBuilder {
                 color: {
                   srcFactor: 'src-alpha',
                   dstFactor: 'one-minus-src-alpha',
-                  operation: 'add',
+                  operation: 'add'
                 },
                 alpha: {
                   srcFactor: 'one',
                   dstFactor: 'one-minus-src-alpha',
-                  operation: 'add',
-                },
-              },
-            },
-          ],
-        },
+                  operation: 'add'
+                }
+              }
+            }
+          ]
+        }
       });
     };
 
@@ -184,8 +184,8 @@ export class RenderBundleBuilder {
       {
         constants: {
           scrollBarRadius: canvasElementContext.scrollBar.radius,
-          scrollBarMargin: canvasElementContext.scrollBar.margin,
-        },
+          scrollBarMargin: canvasElementContext.scrollBar.margin
+        }
       }
     );
 
@@ -204,7 +204,7 @@ export class RenderBundleBuilder {
     this.drawIndirectBuffer = device.createBuffer({
       label: 'DrawIndirect',
       size: DRAW_INDIRECT_BUFFER_SOURCE.length * U32LEN,
-      usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
+      usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST
     });
 
     this.updateDrawIndirectBuffer({ numColumnsToShow: 1, numRowsToShow: 1 });
@@ -328,25 +328,25 @@ export class RenderBundleBuilder {
       entries: [
         {
           binding: 0,
-          resource: { buffer: f32UniformBuffer },
+          resource: { buffer: f32UniformBuffer }
         },
         {
           binding: 1,
-          resource: { buffer: u32UniformBuffer },
+          resource: { buffer: u32UniformBuffer }
         },
         {
           binding: 2,
-          resource: { buffer: focusedIndicesStorage },
+          resource: { buffer: focusedIndicesStorage }
         },
         {
           binding: 3,
-          resource: { buffer: selectedIndicesStorage },
+          resource: { buffer: selectedIndicesStorage }
         },
         {
           binding: 4,
-          resource: { buffer: gridDataBufferStorage },
-        },
-      ],
+          resource: { buffer: gridDataBufferStorage }
+        }
+      ]
     });
   }
 
@@ -357,7 +357,7 @@ export class RenderBundleBuilder {
   ) {
     const encoder = this.device.createRenderBundleEncoder({
       label,
-      colorFormats: [this.canvasFormat],
+      colorFormats: [this.canvasFormat]
     });
     encoder.setPipeline(pipeline);
     encoder.setVertexBuffer(0, this.vertexBuffer);
@@ -367,9 +367,9 @@ export class RenderBundleBuilder {
   }
 
   updateDrawIndirectBuffer({
-    numColumnsToShow,
-    numRowsToShow,
-  }: {
+                             numColumnsToShow,
+                             numRowsToShow
+                           }: {
     numColumnsToShow: number;
     numRowsToShow: number;
   }) {
@@ -447,14 +447,14 @@ export class RenderBundleBuilder {
     const texture =
       multisample !== undefined
         ? this.device.createTexture({
-            size: [
-              this.canvasElementContext.canvasSize.width,
-              this.canvasElementContext.canvasSize.height,
-            ],
-            sampleCount: multisample,
-            format: this.canvasFormat,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-          })
+          size: [
+            this.canvasElementContext.canvasSize.width,
+            this.canvasElementContext.canvasSize.height
+          ],
+          sampleCount: multisample,
+          format: this.canvasFormat,
+          usage: GPUTextureUsage.RENDER_ATTACHMENT
+        })
         : this.canvasContext.getCurrentTexture();
     const resolveTarget =
       multisample !== undefined ? { resolveTarget: texture.createView() } : {};
@@ -465,9 +465,9 @@ export class RenderBundleBuilder {
           ...resolveTarget,
           clearValue: { r: 0, g: 0, b: 0, a: 0 }, // 0.5->0.0
           loadOp: 'clear',
-          storeOp: multisample !== undefined ? 'discard' : 'store',
-        },
-      ],
+          storeOp: multisample !== undefined ? 'discard' : 'store'
+        }
+      ]
     });
     passEncoder.executeBundles(renderBundles);
     passEncoder.end();
@@ -482,7 +482,7 @@ export class RenderBundleBuilder {
       this.topHeaderRenderBundle,
       this.leftHeaderRenderBundle,
       this.scrollBarBackgroundRenderBundle,
-      this.scrollBarBodyRenderBundle,
+      this.scrollBarBodyRenderBundle
     ]);
   }
 }

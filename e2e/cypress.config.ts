@@ -8,10 +8,10 @@ export default defineConfig({
       cypressDir: 'src',
       bundler: 'vite',
       webServerCommands: {
-        default: 'nx run gpu:serve',
-        production: 'nx run gpu:preview',
+        default: 'nx run webgpu-grid:serve',
+        production: 'nx run webgpu-grid:preview',
       },
-      ciWebServerCommand: 'nx run gpu:serve-static',
+      ciWebServerCommand: 'nx run webgpu-grid:serve-static',
     }),
     baseUrl: 'http://localhost:4200',
   },

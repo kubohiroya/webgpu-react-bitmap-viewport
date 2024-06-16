@@ -25,7 +25,7 @@ export default defineConfig({
   // },
 
   build: {
-    outDir: './dist/gpu',
+    outDir: './dist/webgpu-react-grid',
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
@@ -42,7 +42,7 @@ export default defineConfig({
 
     reporters: ['default'],
     coverage: {
-      reportsDirectory: './coverage/gpu',
+      reportsDirectory: './coverage/webgpu-react-grid',
       provider: 'v8',
     },
   },

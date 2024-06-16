@@ -1,9 +1,77 @@
 {
-  "name": "gpu",
+  "name": "webgpu-react-grid",
   "$schema": "node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "./src",
   "projectType": "application",
   "tags": [],
   "// targets": "to see all targets run: nx show project gpu --web",
-  "targets": {}
+  "targets": {},
+  "projects": {
+    "webgpu-react-grid": {
+      "root": "apps/webgpu-react-grid",
+      "sourceRoot": "apps/webgpu-react-grid/src",
+      "projectType": "application",
+      "targets": {
+        "build": {
+          "executor": "@nx-extensions/webgpu-react-grid:build",
+          "options": {
+            "command": "vite build",
+            "outputPath": "dist/apps/webgpu-react-grid",
+            "main": "apps/webgpu-react-grid/src/main.ts",
+            "tsConfig": "apps/webgpu-react-grid/tsconfig.app.json",
+            "assets": [
+              "apps/webgpu-react-grid/src/favicon.ico",
+              "apps/webgpu-react-grid/src/assets"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "apps/webgpu-react-grid/src/environments/environment.ts",
+                  "with": "apps/webgpu-react-grid/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "executor": "@nx-extensions/webgpu:dev-server",
+          "options": {
+            "buildTarget": "webgpu-grid:build"
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "webgpu-grid:build:production"
+            }
+          }
+        },
+        "lint": {
+          "executor": "@nrwl/linter:eslint",
+          "options": {
+            "lintFilePatterns": [
+              "apps/webgpu-grid/src/**/*.ts",
+              "apps/webgpu-grid/src/**/*.html"
+            ]
+          }
+        }
+      },
+      "tags": []
+    }
+  }
 }

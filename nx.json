@@ -41,7 +41,7 @@
       }
     }
   ],
-  "defaultProject": "gpu",
+  "defaultProject": "webgpu-react-grid",
   "generators": {
     "@nx/react": {
       "application": {

@@ -14,7 +14,7 @@ export const GridContextProvider = (
 ) => {
   const value: GridContextProps = {
     data: props.data,
-    gridSize: props.gridSize,
+    gridSize: props.gridSize
   };
   return (
     <GridContext.Provider value={value}>{props.children}</GridContext.Provider>

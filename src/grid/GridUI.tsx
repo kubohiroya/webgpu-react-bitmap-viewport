@@ -48,14 +48,14 @@ export const GridUI = () => {
       top: 0,
       bottom: gridContext.gridSize.numRows,
       left: 0,
-      right: gridContext.gridSize.numColumns,
+      right: gridContext.gridSize.numColumns
     }
   );
 
   const overscroll = useRef<{ x: number; y: number }>(
     viewportContext.initialOverscroll || {
       x: 0,
-      y: 0,
+      y: 0
     }
   );
 
@@ -64,7 +64,7 @@ export const GridUI = () => {
     numRowsToShow: number;
   }>({
     numColumnsToShow: 0,
-    numRowsToShow: 0,
+    numRowsToShow: 0
   });
 
   const focusedIndices = useRef<number[]>([]);
@@ -187,35 +187,35 @@ export const GridUI = () => {
       const [dx, dy] =
         scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL
           ? [
-              (-1 *
-                (gridContext.gridSize.numColumns *
-                  pointerState.current.delta.x)) /
-                (canvasContext.canvasSize.width -
-                  canvasContext.headerOffset.left),
-              0,
-            ]
+            (-1 *
+              (gridContext.gridSize.numColumns *
+                pointerState.current.delta.x)) /
+            (canvasContext.canvasSize.width -
+              canvasContext.headerOffset.left),
+            0
+          ]
           : scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
-          ? [
+            ? [
               0,
               (-1 *
                 (gridContext.gridSize.numRows * pointerState.current.delta.y)) /
-                (canvasContext.canvasSize.height -
-                  canvasContext.headerOffset.top),
+              (canvasContext.canvasSize.height -
+                canvasContext.headerOffset.top)
             ]
-          : [
+            : [
               (viewportWidth * pointerState.current.delta.x) /
-                (canvasContext.canvasSize.width -
-                  canvasContext.headerOffset.left),
+              (canvasContext.canvasSize.width -
+                canvasContext.headerOffset.left),
               (viewportHeight * pointerState.current.delta.y) /
-                (canvasContext.canvasSize.height -
-                  canvasContext.headerOffset.top),
+              (canvasContext.canvasSize.height -
+                canvasContext.headerOffset.top)
             ];
 
       const newViewport = {
         left: pointerState.current.startViewport.left - dx,
         right: pointerState.current.startViewport.right - dx,
         top: pointerState.current.startViewport.top - dy,
-        bottom: pointerState.current.startViewport.bottom - dy,
+        bottom: pointerState.current.startViewport.bottom - dy
       };
 
       regulateViewport(
@@ -226,7 +226,7 @@ export const GridUI = () => {
     } else {
       const startViewportSize = {
         width: viewport.current.right - viewport.current.left,
-        height: viewport.current.bottom - viewport.current.top,
+        height: viewport.current.bottom - viewport.current.top
       };
 
       regulateViewport(
@@ -237,17 +237,17 @@ export const GridUI = () => {
             startViewportSize.width,
           height:
             (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
-            startViewportSize.height,
+            startViewportSize.height
         },
         scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL ||
-          scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
+        scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
           ? viewport.current
           : {
-              left: viewport.current.left + velocity.current.x,
-              right: viewport.current.right + velocity.current.x,
-              top: viewport.current.top + velocity.current.y,
-              bottom: viewport.current.bottom + velocity.current.y,
-            }
+            left: viewport.current.left + velocity.current.x,
+            right: viewport.current.right + velocity.current.x,
+            top: viewport.current.top + velocity.current.y,
+            bottom: viewport.current.bottom + velocity.current.y
+          }
       );
     }
   };
@@ -388,9 +388,9 @@ export const GridUI = () => {
       if (isInsideVerticalBody) {
         if (
           canvasContext.canvasSize.width -
-            canvasContext.scrollBar.margin -
-            canvasContext.scrollBar.radius * 2 <=
-            x &&
+          canvasContext.scrollBar.margin -
+          canvasContext.scrollBar.radius * 2 <=
+          x &&
           x <= canvasContext.canvasSize.width - canvasContext.scrollBar.margin
         ) {
           const header = overscroll.current.y + canvasContext.headerOffset.top;
@@ -398,41 +398,41 @@ export const GridUI = () => {
             header -
             canvasContext.scrollBar.radius +
             ((canvasContext.canvasSize.height -
-              header -
-              canvasContext.scrollBar.radius * 2) *
+                header -
+                canvasContext.scrollBar.radius * 2) *
               viewport.current.top) /
-              gridContext.gridSize.numRows;
+            gridContext.gridSize.numRows;
           const bottomEdge =
             header +
             canvasContext.scrollBar.radius * 2 +
             ((canvasContext.canvasSize.height -
-              header -
-              canvasContext.scrollBar.radius * 2) *
+                header -
+                canvasContext.scrollBar.radius * 2) *
               viewport.current.bottom) /
-              gridContext.gridSize.numRows;
+            gridContext.gridSize.numRows;
 
           if (header <= y && y < topEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_LOWER
             };
           } else if (y < bottomEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE
             };
           } else {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER
             };
           }
         }
         if (
           canvasContext.canvasSize.height -
-            canvasContext.scrollBar.margin -
-            canvasContext.scrollBar.radius * 2 <=
-            y &&
+          canvasContext.scrollBar.margin -
+          canvasContext.scrollBar.radius * 2 <=
+          y &&
           y <= canvasContext.canvasSize.height - canvasContext.scrollBar.margin
         ) {
           const header = overscroll.current.x + canvasContext.headerOffset.left;
@@ -440,56 +440,56 @@ export const GridUI = () => {
             header -
             canvasContext.scrollBar.radius +
             ((canvasContext.canvasSize.width -
-              header -
-              canvasContext.scrollBar.radius * 2) *
+                header -
+                canvasContext.scrollBar.radius * 2) *
               viewport.current.left) /
-              gridContext.gridSize.numColumns;
+            gridContext.gridSize.numColumns;
           const rightEdge =
             header +
             canvasContext.scrollBar.radius * 2 +
             ((canvasContext.canvasSize.width -
-              header -
-              canvasContext.scrollBar.radius * 2) *
+                header -
+                canvasContext.scrollBar.radius * 2) *
               viewport.current.right) /
-              gridContext.gridSize.numColumns;
+            gridContext.gridSize.numColumns;
 
           if (header <= x && x <= leftEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER
             };
           } else if (x <= rightEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER
             };
           } else {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER
             };
           }
         }
         return {
           columnIndex: Math.floor(columnIndex + viewport.current.left),
-          rowIndex: Math.floor(rowIndex + viewport.current.top),
+          rowIndex: Math.floor(rowIndex + viewport.current.top)
         };
       } else {
         return {
           columnIndex: Math.floor(columnIndex + viewport.current.left),
-          rowIndex: POINTER_CONTEXT_HEADER,
+          rowIndex: POINTER_CONTEXT_HEADER
         };
       }
     } else {
       if (isInsideVerticalBody) {
         return {
           columnIndex: POINTER_CONTEXT_HEADER,
-          rowIndex: Math.floor(rowIndex + viewport.current.top),
+          rowIndex: Math.floor(rowIndex + viewport.current.top)
         };
       } else {
         return {
           columnIndex: POINTER_CONTEXT_HEADER,
-          rowIndex: POINTER_CONTEXT_HEADER,
+          rowIndex: POINTER_CONTEXT_HEADER
         };
       }
     }
@@ -524,15 +524,15 @@ export const GridUI = () => {
       pointerState.current = {
         start: {
           x,
-          y,
+          y
         },
         previous: {
           x,
-          y,
+          y
         },
         startViewportSize: {
           width: viewport.current.right - viewport.current.left,
-          height: viewport.current.bottom - viewport.current.top,
+          height: viewport.current.bottom - viewport.current.top
         },
         startCellSize: {
           width:
@@ -540,13 +540,13 @@ export const GridUI = () => {
             (viewport.current.right - viewport.current.left),
           height:
             (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
-            (viewport.current.bottom - viewport.current.top),
+            (viewport.current.bottom - viewport.current.top)
         },
         startViewport: { ...viewport.current },
         delta: {
           x: 0,
-          y: 0,
-        },
+          y: 0
+        }
       };
       return;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
@@ -554,13 +554,13 @@ export const GridUI = () => {
         viewport.current = {
           ...viewport.current,
           left: 0,
-          right: viewport.current.right - viewport.current.left,
+          right: viewport.current.right - viewport.current.left
         };
       } else {
         viewport.current = {
           ...viewport.current,
           left: viewport.current.left * 2 - viewport.current.right,
-          right: viewport.current.left,
+          right: viewport.current.left
         };
       }
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
@@ -568,13 +568,13 @@ export const GridUI = () => {
         viewport.current = {
           ...viewport.current,
           top: 0,
-          bottom: viewport.current.bottom - viewport.current.top,
+          bottom: viewport.current.bottom - viewport.current.top
         };
       } else {
         viewport.current = {
           ...viewport.current,
           top: viewport.current.top * 2 - viewport.current.bottom,
-          bottom: viewport.current.top,
+          bottom: viewport.current.top
         };
       }
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
@@ -585,7 +585,7 @@ export const GridUI = () => {
         viewport.current = {
           ...viewport.current,
           left: viewport.current.right,
-          right: viewport.current.right * 2 - viewport.current.left,
+          right: viewport.current.right * 2 - viewport.current.left
         };
       } else {
         viewport.current = {
@@ -593,7 +593,7 @@ export const GridUI = () => {
           left:
             gridContext.gridSize.numColumns -
             (viewport.current.right - viewport.current.left),
-          right: gridContext.gridSize.numColumns,
+          right: gridContext.gridSize.numColumns
         };
       }
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
@@ -604,7 +604,7 @@ export const GridUI = () => {
         viewport.current = {
           ...viewport.current,
           top: viewport.current.bottom,
-          bottom: viewport.current.bottom * 2 - viewport.current.top,
+          bottom: viewport.current.bottom * 2 - viewport.current.top
         };
       } else {
         viewport.current = {
@@ -612,7 +612,7 @@ export const GridUI = () => {
           top:
             gridContext.gridSize.numRows -
             (viewport.current.bottom - viewport.current.top),
-          bottom: gridContext.gridSize.numRows,
+          bottom: gridContext.gridSize.numRows
         };
       }
     }
@@ -678,7 +678,7 @@ export const GridUI = () => {
         canvasContext.canvasSize.width,
       y:
         (-movementY * pointerState.current.startViewportSize.height) /
-        canvasContext.canvasSize.height,
+        canvasContext.canvasSize.height
     };
   };
 
@@ -754,7 +754,7 @@ export const GridUI = () => {
       );
       pointerState.current.previous = {
         x: event.touches[0].clientX,
-        y: event.touches[0].clientY,
+        y: event.touches[0].clientY
       };
     } else {
       canvasContext.canvasRef.current.style.cursor = 'default';
@@ -775,16 +775,16 @@ export const GridUI = () => {
 
     const viewportSize = {
       width: viewport.current.right - viewport.current.left,
-      height: viewport.current.bottom - viewport.current.top,
+      height: viewport.current.bottom - viewport.current.top
     };
 
     const cx =
       (viewportSize.width * dx) /
-        (canvasContext.canvasSize.width - canvasContext.headerOffset.left) +
+      (canvasContext.canvasSize.width - canvasContext.headerOffset.left) +
       viewport.current.left;
     const cy =
       (viewportSize.height * dy) /
-        (canvasContext.canvasSize.height - canvasContext.headerOffset.top) +
+      (canvasContext.canvasSize.height - canvasContext.headerOffset.top) +
       viewport.current.top;
 
     let left = cx + (viewport.current.left - cx) * scale;
@@ -822,23 +822,23 @@ export const GridUI = () => {
     regulateViewport(
       {
         width: right - left,
-        height: bottom - top,
+        height: bottom - top
       },
       {
         width:
           (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
-            right -
+          right -
           left,
         height:
           (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
-            bottom -
-          top,
+          bottom -
+          top
       },
       {
         left,
         right,
         top,
-        bottom,
+        bottom
       }
     );
 
@@ -862,7 +862,7 @@ export const GridUI = () => {
           ) {
             overscroll.current = {
               x: overscroll.current.x * edgeFriction,
-              y: overscroll.current.y * edgeFriction,
+              y: overscroll.current.y * edgeFriction
             };
             return true;
           } else {
@@ -946,7 +946,7 @@ export const GridUI = () => {
     eventHandlers.current,
     onMouseDown,
     onMouseMove,
-    onWheel,
+    onWheel
   ]);
 
   return null;

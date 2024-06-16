@@ -1,6 +1,6 @@
 import React, { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
-import { Grid } from './grid/Grid';
+import { Grid } from '../src/grid/Grid';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -42,17 +42,17 @@ const render = () => {
         canvasId={'adjacencyMatrix'}
         headerOffset={{ left: 28, top: 28 }}
         canvasSize={{ width: 512, height: 512 }}
-        gridSize={gridSize}
-        data={dataById.get('adjacencyMatrix')!}
-        initialViewport={{
-          top: 0,
-          bottom: 16,
-          left: 0,
-          right: 16,
-        }}
         scrollBar={{
           radius: 5.0,
           margin: 2.0,
+        }}
+        gridSize={gridSize}
+        data={dataById.get('adjacencyMatrix')!}
+        initialViewport={{
+          top: 0.0,
+          bottom: 16.0,
+          left: 0.0,
+          right: 16.0,
         }}
       />
     </>

@@ -24,7 +24,7 @@ export const createF32UniformBufferSource = (
     viewport.right - viewport.left,
     viewport.bottom - viewport.top,
     overscroll.x,
-    overscroll.y,
+    overscroll.y
   ]);
 };
 
@@ -41,7 +41,7 @@ export const createUint32BufferSource = (
     numCellsToShow.numColumnsToShow,
     numCellsToShow.numRowsToShow,
     scrollBarState,
-    0, //padding
+    0 //padding
   ]);
 };
 
@@ -53,7 +53,7 @@ export const createUniformBuffer = (
   return device.createBuffer({
     label,
     size: byteLength,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
   });
 };
 
@@ -65,7 +65,7 @@ export const createVertexBuffer = (
   return device.createBuffer({
     label,
     size: byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
   });
 };
 
@@ -77,7 +77,7 @@ export const createStorageBuffer = (
   return device.createBuffer({
     label,
     size: byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
   });
 };
 

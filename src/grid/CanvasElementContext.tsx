@@ -28,8 +28,8 @@ export type CanvasElementEventHandlers = Partial<{
 
 export type CanvasElementContextValue = CanvasElementContextCommons &
   CanvasElementEventHandlers & {
-    canvasRef: React.RefObject<HTMLCanvasElement>;
-  };
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+};
 
 export const CanvasElementContext =
   React.createContext<CanvasElementContextValue | null>(null);
@@ -40,7 +40,7 @@ export const CanvasElementContextProvider = (
   const canvasRef = React.createRef<HTMLCanvasElement>();
   const value: CanvasElementContextValue = {
     ...props,
-    canvasRef,
+    canvasRef
   };
 
   useLayoutEffect(() => {

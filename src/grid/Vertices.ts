@@ -9,7 +9,7 @@ const rectVertices = [
   -1, -1, 1, -1, 1, 1,
   // top left triangle (anti-clockwise)
   // 3 left-bottom 4 right-top 5 left-top
-  -1, -1, 1, 1, -1, 1,
+  -1, -1, 1, 1, -1, 1
 ];
 
 const marginedRectVertices = rectVertices.map((value) => value * 0.8);
@@ -38,7 +38,7 @@ export const vertices = [
   // 6 - 11
   ...rectVertices,
   // 12 -
-  ...setOfPiesVertices,
+  ...setOfPiesVertices
 ];
 
 export const VERTICES_BYTE_LENGTH = vertices.length * F32LEN;

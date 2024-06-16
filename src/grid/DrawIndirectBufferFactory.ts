@@ -1,9 +1,9 @@
 import { NUM_VERTICES_PER_POLYGON, U32LEN } from './Constants';
 import {
   FIRST_VERTEX_OF_MARGINED_RECT_INDEX,
-  FIRST_VERTEX_OF_RECT_INDEX,
   FIRST_VERTEX_OF_RECT_AND_PIES_INDEX,
-  NUM_SCROLLBAR_END_ARCS,
+  FIRST_VERTEX_OF_RECT_INDEX,
+  NUM_SCROLLBAR_END_ARCS
 } from './Vertices';
 
 export const DRAW_INDIRECT_BUFFER_SOURCE_INDEX: Record<string, number> = {
@@ -11,7 +11,7 @@ export const DRAW_INDIRECT_BUFFER_SOURCE_INDEX: Record<string, number> = {
   TOP_HEADER: 1,
   LEFT_HEADER: 2,
   SCROLLBAR_BACKGROUND: 3,
-  SCROLLBAR_BODY: 4,
+  SCROLLBAR_BODY: 4
 };
 
 const TO_BE_REPLACED = 0;
@@ -46,7 +46,7 @@ export const DRAW_INDIRECT_BUFFER_SOURCE = [
   (2 + NUM_SCROLLBAR_END_ARCS) * NUM_VERTICES_PER_POLYGON, // vertexCount
   2, // instanceCount(2 is stands for horizontal and vertical axis)
   FIRST_VERTEX_OF_RECT_AND_PIES_INDEX, // firstVertex
-  0, // firstInstance
+  0 // firstInstance
 ];
 
 export const DRAW_INDIRECT_BUFFER_BYTE_INDEX = new Map<string, number>(
@@ -54,7 +54,7 @@ export const DRAW_INDIRECT_BUFFER_BYTE_INDEX = new Map<string, number>(
     Object.entries(DRAW_INDIRECT_BUFFER_SOURCE_INDEX) as [string, number][],
     ([key, value]: [string, number]) => [
       key,
-      value * DRAW_INDIRECT_ITEM_LEN * U32LEN,
+      value * DRAW_INDIRECT_ITEM_LEN * U32LEN
     ]
   )
 );
@@ -67,15 +67,15 @@ export const updateDrawIndirectBufferSource = (
   numRowsToShow: number
 ) => {
   drawIndirectBufferSource[
-    DRAW_INDIRECT_BUFFER_SOURCE_INDEX.BODY * DRAW_INDIRECT_ITEM_LEN +
-      INSTANCE_COUNT_BYTE_INDEX
-  ] = numColumnsToShow * numRowsToShow;
+  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.BODY * DRAW_INDIRECT_ITEM_LEN +
+  INSTANCE_COUNT_BYTE_INDEX
+    ] = numColumnsToShow * numRowsToShow;
   drawIndirectBufferSource[
-    DRAW_INDIRECT_BUFFER_SOURCE_INDEX.TOP_HEADER * DRAW_INDIRECT_ITEM_LEN +
-      INSTANCE_COUNT_BYTE_INDEX
-  ] = numColumnsToShow;
+  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.TOP_HEADER * DRAW_INDIRECT_ITEM_LEN +
+  INSTANCE_COUNT_BYTE_INDEX
+    ] = numColumnsToShow;
   drawIndirectBufferSource[
-    DRAW_INDIRECT_BUFFER_SOURCE_INDEX.LEFT_HEADER * DRAW_INDIRECT_ITEM_LEN +
-      INSTANCE_COUNT_BYTE_INDEX
-  ] = numRowsToShow;
+  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.LEFT_HEADER * DRAW_INDIRECT_ITEM_LEN +
+  INSTANCE_COUNT_BYTE_INDEX
+    ] = numRowsToShow;
 };

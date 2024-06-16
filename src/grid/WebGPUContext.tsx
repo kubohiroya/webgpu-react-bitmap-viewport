@@ -1,14 +1,7 @@
 import React, { ReactNode, useLayoutEffect, useState } from 'react';
-import {
-  CanvasElementContextValue,
-  useCanvasElementContext,
-} from './CanvasElementContext';
+import { CanvasElementContextValue, useCanvasElementContext } from './CanvasElementContext';
 import { RenderBundleBuilder } from './RenderBundleBuilder';
-import {
-  GridContextProps,
-  GridContextValue,
-  useGridContext,
-} from './GridContext';
+import { GridContextProps, GridContextValue, useGridContext } from './GridContext';
 
 export type WebGPUContextValue = {
   device: GPUDevice | null;
@@ -27,12 +20,12 @@ export const WebGPUContext = React.createContext<WebGPUContextValue>({
   texture: null,
   gridContext: null,
   canvasElementContext: null,
-  renderBundleBuilder: null,
+  renderBundleBuilder: null
 });
 
 export const WebGPUContextProvider = ({
-  children,
-}: {
+                                        children
+                                      }: {
   children?: ReactNode;
 }) => {
   const canvasElementContext = useCanvasElementContext();
@@ -45,7 +38,7 @@ export const WebGPUContextProvider = ({
     texture: null,
     gridContext: null,
     canvasElementContext: null,
-    renderBundleBuilder: null,
+    renderBundleBuilder: null
   });
 
   useLayoutEffect(() => {
@@ -53,7 +46,7 @@ export const WebGPUContextProvider = ({
       return;
     }
     (async () => {
-      const initWebGPU = async function (
+      const initWebGPU = async function(
         callback: (device: GPUDevice, gridContext: GridContextValue) => void
       ) {
         if (!canvasElementContext.canvasRef.current) return;
@@ -105,7 +98,7 @@ export const WebGPUContextProvider = ({
             device,
             format,
             //alphaMode: 'opaque',
-            alphaMode: 'premultiplied',
+            alphaMode: 'premultiplied'
           });
 
           const texture = canvasContext.getCurrentTexture();
@@ -124,7 +117,7 @@ export const WebGPUContextProvider = ({
             format,
             gridContext,
             canvasElementContext,
-            renderBundleBuilder,
+            renderBundleBuilder
           });
         }
       );
