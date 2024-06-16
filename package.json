@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "license": "MIT",
   "projectType": "library",
+  "main": "dist/webgpu-react-grid/webgpu-react-grid.umd.js",
+  "module": "dist/webgpu-react-grid/webgpu-react-grid.es.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "nx serve",
     "build": "nx build",

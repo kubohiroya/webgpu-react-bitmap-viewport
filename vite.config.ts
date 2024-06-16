@@ -30,6 +30,20 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    lib: {
+      entry: 'src/index.ts',
+      name: 'WebGPU-React-Grid',
+      fileName: (format) => `webgpu-react-grid.${format}.js`
+    },
+    rollupOptions: {
+      external: ['react', 'react-dom'],
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM'
+        }
+      }
+    }
   },
 
   test: {
