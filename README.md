@@ -9,6 +9,9 @@ WebGPU-React-Grid is an open-source React component for visualizing a grid of fl
 - Customizable properties for canvas size, grid size, viewport display size, header area size, and scrollbar size through React component props.
 - High-performance hsv-rgb conversion and rendering using WebGPU
 
+# Live demo
+
+
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/silevis/reactgrid/blob/develop/LICENSE)
 
 Prerequisites:
