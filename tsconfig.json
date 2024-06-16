@@ -23,7 +23,6 @@
     "types": ["vite/client", "vitest"]
   },
   "files": [],
-  "include": [],
   "references": [
     {
       "path": "./tsconfig.app.json"
@@ -33,5 +32,6 @@
     }
   ],
   "compileOnSave": false,
+  "include": ["src/**/*", "example/src/**/*"],
   "exclude": ["node_modules", "tmp"]
 }
