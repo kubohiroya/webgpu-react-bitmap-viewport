@@ -142,11 +142,8 @@ export const WebGPUContextProvider = ({
     !context.canvasContext ||
     !context.renderBundleBuilder
   ) {
-    console.log('[WebGPUContext] cancel');
     return;
   }
-
-  console.log('[WebGPUContext] initialize');
 
   return (
     <WebGPUContext.Provider value={context}>{children}</WebGPUContext.Provider>
