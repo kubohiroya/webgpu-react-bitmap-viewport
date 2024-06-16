@@ -1,8 +1,15 @@
 {
   "name": "webgpu-react-grid",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "projectType": "library",
+  "homepage": "https://github.com/kubohiroya/webgpu-react-grid",
+  "keywords": [
+    "webgpu",
+    "react",
+    "grid",
+    "viewport"
+  ],
   "main": "dist/webgpu-react-grid/webgpu-react-grid.umd.js",
   "module": "dist/webgpu-react-grid/webgpu-react-grid.es.js",
   "files": [
