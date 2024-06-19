@@ -1,4 +1,7 @@
 # WebGPU-React-Grid - A React component for visualizing a grid of floating-point values using WebGPU
+[![npm version](https://badge.fury.io/js/webgpu-react-grid.svg)](https://badge.fury.io/js/webgpu-react-grid)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/silevis/reactgrid/blob/develop/LICENSE)
+
 
 WebGPU-React-Grid is an open-source React component for visualizing a grid of floating-point values using WebGPU.
 
@@ -13,11 +16,7 @@ WebGPU-React-Grid is an open-source React component for visualizing a grid of fl
 
 [Live demo](https://kubohiroya.github.io/webgpu-react-grid/examples/index.html)
 
-<iframe src="https://kubohiroya.github.io/webgpu-react-grid/examples/index.html" width="100%" height="400" frameborder="0" scrolling="no"></iframe>
-
 # Download and Installation
-
-To install the latest version of WebGPU-React-Grid, run the following command:
 
 Download the latest version of WebGPU-React-Grid from the npm repository:
 
@@ -25,15 +24,46 @@ Download the latest version of WebGPU-React-Grid from the npm repository:
 npm install webgpu-react-grid
 ```
 
-```TypeScript
+# Usage
 
+```TypeScript
+import { Grid } from "webgpu-react-grid";
+
+const gridSize = { numColumns: 1024, numRows: 1024 };
+
+const data =  new Float32Array(gridSize.numRows * gridSize.numColumns);
+for (let i = 0; i < data.length; i++) {
+  if (Math.random() < 0.99) {
+    data[i] = i / data.length;
+  } else {
+    data[i] = Infinity;
+  }
+}
+
+export const Grid1024 = () => {
+  return (
+    <Grid
+      canvasId={'adjacencyMatrix'}
+      headerOffset={{ left: 12, top: 12 }}
+      canvasSize={{ width: 512, height: 512 }}
+      scrollBar={{
+        radius: 5.0,
+        margin: 2.0,
+      }}
+      gridSize={gridSize}
+      data={data}
+      initialViewport={{
+        top: 0.0,
+        bottom: 16.0,
+        left: 0.0,
+        right: 16.0,
+      }}
+    />
+  );
+}
 ```
 
-```bash
-
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/silevis/reactgrid/blob/develop/LICENSE)
-
-Prerequisites:
+# Prerequisites:
  - WebGPU compatible browser (e.g. Chrome with WebGPU enabled)
  - react: `^18.2.0`
  - react-dom: `^18.2.0`

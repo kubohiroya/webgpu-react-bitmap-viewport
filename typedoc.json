@@ -1,0 +1,11 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "dist/webgpu-react-grid/docs",
+  "plugin": ["typedoc-plugin-markdown"],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "includeVersion": true,
+  "hideGenerator": true,
+  "exclude": ["**/node_modules/**/*", "**/dist/**/*", "**/lib/**/*"]
+}

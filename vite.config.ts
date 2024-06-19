@@ -1,7 +1,6 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import dts from 'vite-plugin-dts';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { resolve } from 'path';
 
@@ -76,7 +75,7 @@ const libConfig = defineConfig({
 const examplesConfig = defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'examples/dist/webgpu-react-grid',
+    outDir: 'dist/webgpu-react-grid',
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'examples/index.html'),

@@ -6,6 +6,12 @@ import { ViewportContextProvider } from './ViewportContext';
 import GridUI from './GridUI';
 import { GridProps } from './GridProps';
 
+/**
+ * A React component that renders a grid with the specified properties.
+ *
+ * @param props - The properties for the Grid component.
+ * @returns A React component that renders a grid.
+ */
 export const Grid = (props: GridProps) => {
   return (
     <CanvasElementContextProvider

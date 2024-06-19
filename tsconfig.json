@@ -4,7 +4,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationDir": "./dist/webgpu-react-grid",
-    "emitDecorationOnly": true,
+    "emitDeclarationOnly": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
