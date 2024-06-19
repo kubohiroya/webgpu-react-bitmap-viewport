@@ -2,12 +2,12 @@
 
 WebGPU-React-Grid is an open-source React component for visualizing a grid of floating-point values using WebGPU.
 
-- Supports viewport navigation via mouse drag and scrollbar.
+- Supports viewport navigation via mouse drag and scrollbar handling.
 - Enables zooming in and out with mouse wheel.
 - Highlights the column and row under the current mouse pointer.
 - Allows toggling selection state of columns and rows via mouse interaction.
 - Customizable properties for canvas size, grid size, viewport display size, header area size, and scrollbar size through React component props.
-- High-performance hsv-rgb conversion and rendering using WebGPU
+- High-performance rendering using WebGPU
 
 # Live demo
 
@@ -32,6 +32,6 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# Authors
+# Author
 
 Hiroya Kubo

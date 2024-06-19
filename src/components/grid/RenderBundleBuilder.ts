@@ -21,37 +21,37 @@ import {
 import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
 
 export class RenderBundleBuilder {
-  device: GPUDevice;
-  canvasElementContext: CanvasElementContextValue;
-  canvasContext: GPUCanvasContext;
-  canvasFormat: GPUTextureFormat;
-  bindGroup: GPUBindGroup;
+  private device: GPUDevice;
+  private canvasElementContext: CanvasElementContextValue;
+  private canvasContext: GPUCanvasContext;
+  private canvasFormat: GPUTextureFormat;
+  private bindGroup: GPUBindGroup;
 
-  f32UniformBuffer: GPUBuffer;
-  u32UniformBuffer: GPUBuffer;
-  gridDataBufferStorage: GPUBuffer;
-  focusedIndicesStorage: GPUBuffer;
-  selectedIndicesStorage: GPUBuffer;
-  drawIndirectBufferSource: Uint32Array;
-  drawIndirectBuffer: GPUBuffer;
+  private f32UniformBuffer: GPUBuffer;
+  private u32UniformBuffer: GPUBuffer;
+  private gridDataBufferStorage: GPUBuffer;
+  private focusedIndicesStorage: GPUBuffer;
+  private selectedIndicesStorage: GPUBuffer;
+  private drawIndirectBufferSource: Uint32Array;
+  private drawIndirectBuffer: GPUBuffer;
 
-  columnFocusSelectPipeline: GPURenderPipeline;
-  rowFocusSelectPipeline: GPURenderPipeline;
-  bodyPipeline: GPURenderPipeline;
-  leftHeaderPipeline: GPURenderPipeline;
-  topHeaderPipeline: GPURenderPipeline;
-  scrollBarBackgroundPipeline: GPURenderPipeline;
-  scrollBarBodyPipeline: GPURenderPipeline;
+  private columnFocusSelectPipeline: GPURenderPipeline;
+  private rowFocusSelectPipeline: GPURenderPipeline;
+  private bodyPipeline: GPURenderPipeline;
+  private leftHeaderPipeline: GPURenderPipeline;
+  private topHeaderPipeline: GPURenderPipeline;
+  private scrollBarBackgroundPipeline: GPURenderPipeline;
+  private scrollBarBodyPipeline: GPURenderPipeline;
 
-  vertexBuffer: GPUBuffer;
+  private vertexBuffer: GPUBuffer;
 
-  columnFocusRenderBundle: GPURenderBundle;
-  rowFocusRenderBundle: GPURenderBundle;
-  bodyRenderBundle: GPURenderBundle;
-  topHeaderRenderBundle: GPURenderBundle;
-  leftHeaderRenderBundle: GPURenderBundle;
-  scrollBarBackgroundRenderBundle: GPURenderBundle;
-  scrollBarBodyRenderBundle: GPURenderBundle;
+  private columnFocusRenderBundle: GPURenderBundle;
+  private rowFocusRenderBundle: GPURenderBundle;
+  private bodyRenderBundle: GPURenderBundle;
+  private topHeaderRenderBundle: GPURenderBundle;
+  private leftHeaderRenderBundle: GPURenderBundle;
+  private scrollBarBackgroundRenderBundle: GPURenderBundle;
+  private scrollBarBodyRenderBundle: GPURenderBundle;
 
   constructor(
     device: GPUDevice,

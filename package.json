@@ -3,6 +3,7 @@
   "version": "0.1.1",
   "license": "MIT",
   "projectType": "library",
+  "repository": "https://github.com/kubohiroya/webgpu-react-grid",
   "homepage": "https://github.com/kubohiroya/webgpu-react-grid",
   "keywords": [
     "webgpu",
@@ -12,21 +13,24 @@
   ],
   "main": "dist/webgpu-react-grid/webgpu-react-grid.umd.js",
   "module": "dist/webgpu-react-grid/webgpu-react-grid.es.js",
+  "types": "types/webgpu-react-grid.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
     "start": "nx serve",
     "build": "nx build",
-    "test": "nx test"
+    "test": "nx test",
+    "deploy": "gh-pages -d examples/dist/webgpu-react-grid",
+    "publish-demo": "pnpm run build && npm run deploy"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.4",
-    "@webgpu/types": "^0.1.42",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "@emotion/react": "^11.11.4",
+    "@webgpu/types": "^0.1.42",
     "@emotion/babel-plugin": "11.11.0",
     "@nx/cypress": "18.3.4",
     "@nx/eslint": "18.3.4",
@@ -57,6 +61,7 @@
     "eslint-plugin-jsx-a11y": "6.7.1",
     "eslint-plugin-react": "7.32.2",
     "eslint-plugin-react-hooks": "4.6.0",
+    "gh-pages": "^6.1.1",
     "jsdom": "~22.1.0",
     "nx": "18.3.4",
     "prettier": "^2.8.8",

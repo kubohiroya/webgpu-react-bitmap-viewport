@@ -1,9 +1,11 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import dts from 'vite-plugin-dts';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { resolve } from 'path';
 
-export default defineConfig({
+const libConfig = defineConfig({
   root: __dirname,
   cacheDir: './node_modules/.vite/.',
 
@@ -17,12 +19,18 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [react(), nxViteTsPaths()],
+  plugins: [react(), nxViteTsPaths(),
+    /*
+    dts({
+      // insertTypesEntry: true,
+      // tsconfigPath: './tsconfig.json',
+      // outDir: 'dist/types',
+      // exclude: ['src/main.tsx'],
+      // rollupTypes: true
+    }),
+     */
+  ],
 
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ nxViteTsPaths() ],
-  // },
 
   build: {
     outDir: './dist/webgpu-react-grid',
@@ -31,19 +39,20 @@ export default defineConfig({
       transformMixedEsModules: true,
     },
     lib: {
-      entry: 'src/index.ts',
+      entry: resolve(__dirname, './src/index.ts'),
       name: 'WebGPU-React-Grid',
       fileName: (format) => `webgpu-react-grid.${format}.js`
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', '@webgpu/types'],
       output: {
         globals: {
           react: 'React',
-          'react-dom': 'ReactDOM'
+          'react-dom': 'ReactDOM',
         }
-      }
-    }
+      },
+    },
+    sourcemap: true,
   },
 
   test: {
@@ -60,4 +69,31 @@ export default defineConfig({
       provider: 'v8',
     },
   },
+  publicDir: 'public',
+
 });
+
+const examplesConfig = defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'examples/dist',
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'examples/src/index.html'),
+      },
+      output:{
+
+      }
+    },
+  },
+  publicDir: 'examples/public',
+});
+
+export default defineConfig(({ command, mode }) => {
+  if (mode === 'lib') {
+    return libConfig;
+  } else {
+    return examplesConfig;
+  }
+});
+

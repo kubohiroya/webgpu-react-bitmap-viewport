@@ -3,7 +3,7 @@ import { CanvasElementContextValue, useCanvasElementContext } from './CanvasElem
 import { RenderBundleBuilder } from './RenderBundleBuilder';
 import { GridContextProps, GridContextValue, useGridContext } from './GridContext';
 
-export type WebGPUContextValue = {
+type WebGPUContextValue = {
   device: GPUDevice | null;
   canvasContext: GPUCanvasContext | null;
   format: GPUTextureFormat | null;
