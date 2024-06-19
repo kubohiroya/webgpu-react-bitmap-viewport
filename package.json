@@ -1,6 +1,6 @@
 {
   "name": "webgpu-react-grid",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "projectType": "library",
   "repository": "https://github.com/kubohiroya/webgpu-react-grid",
@@ -19,9 +19,10 @@
   ],
   "scripts": {
     "start": "nx serve",
-    "build": "nx build",
+    "build": "vite build --mode lib",
+    "build-example": "vite build --base=/webgpu-react-grid/ --outDir=examples/dist/webgpu-react-grid",
     "test": "nx test",
-    "deploy": "gh-pages -d examples/dist/webgpu-react-grid",
+    "deploy": "gh-pages -d examples/dist/webgpu-react-grid -r git@github.com:kubohiroya/webgpu-react-grid.git",
     "publish-demo": "pnpm run build && npm run deploy"
   },
   "dependencies": {

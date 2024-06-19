@@ -11,6 +11,25 @@ WebGPU-React-Grid is an open-source React component for visualizing a grid of fl
 
 # Live demo
 
+[Live demo](https://kubohiroya.github.io/webgpu-react-grid/examples/index.html)
+
+<iframe src="https://kubohiroya.github.io/webgpu-react-grid/examples/index.html" width="100%" height="400" frameborder="0" scrolling="no"></iframe>
+
+# Download and Installation
+
+To install the latest version of WebGPU-React-Grid, run the following command:
+
+Download the latest version of WebGPU-React-Grid from the npm repository:
+
+```bash
+npm install webgpu-react-grid
+```
+
+```TypeScript
+
+```
+
+```bash
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/silevis/reactgrid/blob/develop/LICENSE)
 

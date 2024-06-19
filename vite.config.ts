@@ -76,10 +76,10 @@ const libConfig = defineConfig({
 const examplesConfig = defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'examples/dist',
+    outDir: 'examples/dist/webgpu-react-grid',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'examples/src/index.html'),
+        main: resolve(__dirname, 'examples/index.html'),
       },
       output:{
 
