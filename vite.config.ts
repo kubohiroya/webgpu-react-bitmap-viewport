@@ -32,7 +32,7 @@ const libConfig = defineConfig({
 
 
   build: {
-    outDir: './dist/webgpu-react-grid',
+    outDir: './dist/lib',
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
@@ -85,7 +85,6 @@ const examplesConfig = defineConfig({
       }
     },
   },
-  publicDir: 'examples/public',
 });
 
 export default defineConfig(({ command, mode }) => {

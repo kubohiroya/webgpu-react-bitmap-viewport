@@ -1,7 +1,7 @@
 {
   "name": "webgpu-react-grid",
   "description": "A React component for visualizing a grid of floating-point values using WebGPU",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "license": "MIT",
   "projectType": "library",
   "repository": {
@@ -19,8 +19,8 @@
     "name": "Hiroya Kubo",
     "email": "hiroya@cuc.ac.jp"
   },
-  "main": "dist/webgpu-react-grid/webgpu-react-grid.umd.js",
-  "module": "dist/webgpu-react-grid/webgpu-react-grid.es.js",
+  "main": "dist/lib/webgpu-react-grid.umd.js",
+  "module": "dist/lib/webgpu-react-grid.es.js",
   "types": "types/webgpu-react-grid.d.ts",
   "files": [
     "dist",
@@ -32,8 +32,10 @@
     "build-example": "vite build --base=/webgpu-react-grid/ --outDir=dist/webgpu-react-grid",
     "doc": "typedoc",
     "test": "nx test",
+    "predeploy": "pnpm run build-example",
     "deploy": "gh-pages -d examples/dist/webgpu-react-grid -r git@github.com:kubohiroya/webgpu-react-grid.git",
-    "publish-demo": "pnpm run build && npm run deploy"
+    "prepublish": "pnpm run build",
+    "publish": "npm publish"
   },
   "dependencies": {
     "react": "18.2.0",
