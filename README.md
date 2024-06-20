@@ -43,7 +43,7 @@ for (let i = 0; i < data.length; i++) {
 export const Grid1024 = () => {
   return (
     <Grid
-      canvasId={'adjacencyMatrix'}
+      canvasId={'example'}
       headerOffset={{ left: 12, top: 12 }}
       canvasSize={{ width: 512, height: 512 }}
       scrollBar={{
