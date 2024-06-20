@@ -1,14 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { useCanvasElementContext } from './CanvasElementContext';
 import { useViewportContext } from './ViewportContext';
 import { useGridContext } from './GridContext';
 import { useWebGPUContext } from './WebGPUContext';
-
-const createFilledArray = (size: number, value: number) => {
-  const newArray = new Array<number>(size);
-  newArray.fill(value);
-  return newArray;
-};
+import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridProps';
 
 const edgeFriction = 0.8;
 const translateFriction = 0.975;
@@ -31,12 +26,29 @@ const FOCUS_STATE_SCROLLBAR_DEFAULT = 0;
 const FOCUS_STATE_SCROLLBAR_HORIZONTAL = 1;
 const FOCUS_STATE_SCROLLBAR_VERTICAL = 2;
 
-export const GridUI = () => {
+type GridUIProps = {
+  canvasId: string;
+  focusedStates: Uint8Array;
+  selectedStates: Uint8Array;
+  onFocusedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
+  onSelectedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
+};
+
+export type GridUIHandles = {
+  updateFocusedIndices: (columnIndex: number, rowIndex: number)=>void,
+  updateSelectedIndices: (columnIndex: number, rowIndex: number)=>void,
+};
+
+export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
+  const {focusedStates, selectedStates} = props;
   const webGpuContext = useWebGPUContext();
   const viewportContext = useViewportContext();
   const gridContext = useGridContext();
   const canvasContext = useCanvasElementContext();
   const tickerRef = useRef<NodeJS.Timeout>();
+
+  const prevFocusedColumnIndex = useRef<number>(-1);
+  const prevFocusedRowIndex = useRef<number>(-1);
 
   const viewport = useRef<{
     top: number;
@@ -52,6 +64,11 @@ export const GridUI = () => {
     }
   );
 
+  useImperativeHandle(ref, () => ({
+    updateFocusedIndices,
+    updateSelectedIndices
+  }));
+
   const overscroll = useRef<{ x: number; y: number }>(
     viewportContext.initialOverscroll || {
       x: 0,
@@ -66,9 +83,6 @@ export const GridUI = () => {
     numColumnsToShow: 0,
     numRowsToShow: 0
   });
-
-  const focusedIndices = useRef<number[]>([]);
-  const selectedIndices = useRef<number[]>([]);
 
   const pointerState = useRef<{
     start: { x: number; y: number };
@@ -252,64 +266,67 @@ export const GridUI = () => {
     }
   };
 
-  const updateFocusedIndices = (indices: number[]) => {
-    const newFocusedIndices = createFilledArray(
-      Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows),
-      FOCUS_STATE_BODY_DEFAULT
-    );
-    if (indices.length >= 1 && indices[0] >= 0) {
-      newFocusedIndices[indices[0]] += FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
+  const updateFocusedIndices = (columnIndex: number, rowIndex: number) => {
+
+    if(columnIndex === prevFocusedColumnIndex.current && rowIndex === prevFocusedRowIndex.current){
+      return;
     }
-    if (indices.length >= 2 && indices[1] >= 0) {
-      newFocusedIndices[indices[1]] += FOCUS_STATE_BODY_VERTICAL_FOCUSED;
+
+    focusedStates.fill(0);
+
+    if(columnIndex !== -1 && rowIndex === -1) {
+      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
+    }else if(columnIndex === -1 && rowIndex !== -1) {
+      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
+    }else if(columnIndex !== -1 && rowIndex !== -1) {
+      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
+      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
     }
-    focusedIndices.current = newFocusedIndices;
+    props.onFocusedStatesChange?.(props.canvasId, columnIndex, rowIndex);
+    prevFocusedColumnIndex.current = columnIndex;
+    prevFocusedRowIndex.current = rowIndex;
   };
 
-  const updateSelectedIndices = (columnIndex: number, rowIndex: number) => {
-    const newSelectedIndices = createFilledArray(
-      Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows),
-      0
-    );
+    const updateSelectedIndices = (columnIndex: number, rowIndex: number) => {
     if (columnIndex === POINTER_CONTEXT_HEADER) {
       if (rowIndex === POINTER_CONTEXT_HEADER) {
-        const filled = newSelectedIndices.some((value) => value > 0);
-        newSelectedIndices.fill(filled ? 0 : 1);
+        const filled = selectedStates.some((value) => value > 0);
+        selectedStates.fill(filled ? 0 : 1);
       } else {
-        for (let i = 0; i < newSelectedIndices.length; i++) {
-          if (i < selectedIndices.current.length) {
-            const value = selectedIndices.current[i];
-            newSelectedIndices[i] =
+        for (let i = 0; i < selectedStates.length; i++) {
+          if (i < selectedStates.length) {
+            const value = selectedStates[i];
+            selectedStates[i] =
               rowIndex === i
                 ? value === SELECT_STATE_DEFAULT
                   ? SELECT_STATE_SELECTED
                   : SELECT_STATE_DEFAULT
                 : value;
           } else {
-            newSelectedIndices[i] = SELECT_STATE_DEFAULT;
+            selectedStates[i] = SELECT_STATE_DEFAULT;
           }
         }
       }
     } else {
       if (rowIndex === POINTER_CONTEXT_HEADER) {
-        for (let i = 0; i < newSelectedIndices.length; i++) {
-          if (i < selectedIndices.current.length) {
-            const value = selectedIndices.current[i];
-            newSelectedIndices[i] =
+        for (let i = 0; i < selectedStates.length; i++) {
+          if (i < selectedStates.length) {
+            const value = selectedStates[i];
+            selectedStates[i] =
               columnIndex === i
                 ? value === SELECT_STATE_SELECTED
                   ? SELECT_STATE_DEFAULT
                   : SELECT_STATE_SELECTED
                 : value;
           } else {
-            newSelectedIndices[i] = SELECT_STATE_DEFAULT;
+            selectedStates[i] = SELECT_STATE_DEFAULT;
           }
         }
       } else {
-        for (let i = 0; i < newSelectedIndices.length; i++) {
-          if (i < selectedIndices.current.length) {
-            const value = selectedIndices.current[i];
-            newSelectedIndices[i] =
+        for (let i = 0; i < selectedStates.length; i++) {
+          if (i < selectedStates.length) {
+            const value = selectedStates[i];
+            selectedStates[i] =
               rowIndex === i || columnIndex === i
                 ? value === SELECT_STATE_DEFAULT
                   ? SELECT_STATE_SELECTED
@@ -319,7 +336,7 @@ export const GridUI = () => {
         }
       }
     }
-    selectedIndices.current = newSelectedIndices;
+    props.onSelectedStatesChange?.(props.canvasId, columnIndex, rowIndex);
   };
 
   const tick = () => {
@@ -386,28 +403,30 @@ export const GridUI = () => {
       rowIndex + viewport.current.top < gridContext.gridSize.numRows;
     if (isInsideHorizontalBody) {
       if (isInsideVerticalBody) {
+        const margin = canvasContext.scrollBar? canvasContext.scrollBar.margin: SCROLLBAR_MARGIN;
+        const radius = canvasContext.scrollBar? canvasContext.scrollBar.radius: SCROLLBAR_RADIUS;
         if (
           canvasContext.canvasSize.width -
-          canvasContext.scrollBar.margin -
-          canvasContext.scrollBar.radius * 2 <=
+          margin -
+          radius * 2 <=
           x &&
-          x <= canvasContext.canvasSize.width - canvasContext.scrollBar.margin
+          x <= canvasContext.canvasSize.width - margin
         ) {
           const header = overscroll.current.y + canvasContext.headerOffset.top;
           const topEdge =
             header -
-            canvasContext.scrollBar.radius +
+            radius +
             ((canvasContext.canvasSize.height -
                 header -
-                canvasContext.scrollBar.radius * 2) *
+                radius * 2) *
               viewport.current.top) /
             gridContext.gridSize.numRows;
           const bottomEdge =
             header +
-            canvasContext.scrollBar.radius * 2 +
+            radius * 2 +
             ((canvasContext.canvasSize.height -
                 header -
-                canvasContext.scrollBar.radius * 2) *
+                radius * 2) *
               viewport.current.bottom) /
             gridContext.gridSize.numRows;
 
@@ -428,28 +447,30 @@ export const GridUI = () => {
             };
           }
         }
+        const scrollbarMargin = (canvasContext.scrollBar?.margin || SCROLLBAR_MARGIN);
+        const scrollbarRadius = (canvasContext.scrollBar?.radius || SCROLLBAR_RADIUS);
         if (
           canvasContext.canvasSize.height -
-          canvasContext.scrollBar.margin -
-          canvasContext.scrollBar.radius * 2 <=
+          scrollbarMargin -
+          scrollbarRadius * 2 <=
           y &&
-          y <= canvasContext.canvasSize.height - canvasContext.scrollBar.margin
+          y <= canvasContext.canvasSize.height - scrollbarMargin
         ) {
           const header = overscroll.current.x + canvasContext.headerOffset.left;
           const leftEdge =
             header -
-            canvasContext.scrollBar.radius +
+            scrollbarRadius +
             ((canvasContext.canvasSize.width -
                 header -
-                canvasContext.scrollBar.radius * 2) *
+                scrollbarRadius * 2) *
               viewport.current.left) /
             gridContext.gridSize.numColumns;
           const rightEdge =
             header +
-            canvasContext.scrollBar.radius * 2 +
+            scrollbarRadius * 2 +
             ((canvasContext.canvasSize.width -
                 header -
-                canvasContext.scrollBar.radius * 2) *
+                scrollbarRadius * 2) *
               viewport.current.right) /
             gridContext.gridSize.numColumns;
 
@@ -508,9 +529,7 @@ export const GridUI = () => {
     ) {
       canvasContext.canvasRef.current.style.cursor = 'grab';
       updateSelectedIndices(cellPosition.columnIndex, cellPosition.rowIndex);
-      webGpuContext?.renderBundleBuilder?.setSelectedIndicesStorage(
-        selectedIndices.current
-      );
+      webGpuContext?.renderBundleBuilder?.updateSelectedIndicesStorage(selectedStates);
     }
 
     if (
@@ -629,9 +648,9 @@ export const GridUI = () => {
   const onUp = () => {
     canvasContext.canvasRef.current!.style.cursor = 'default';
     pointerState.current = null;
-    updateFocusedIndices([]);
-    webGpuContext?.renderBundleBuilder?.setFocusedIndicesStorage(
-      focusedIndices.current
+    updateFocusedIndices(-1, -1);
+    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
+      focusedStates
     );
     startInertia();
   };
@@ -647,9 +666,9 @@ export const GridUI = () => {
   const onMouseOut = () => {
     canvasContext.canvasRef.current!.style.cursor = 'default';
     // pointerState.current = null;
-    updateFocusedIndices([]);
-    webGpuContext?.renderBundleBuilder?.setFocusedIndicesStorage(
-      focusedIndices.current
+    updateFocusedIndices(-1, -1);
+    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
+      focusedStates
     );
     startInertia();
   };
@@ -720,9 +739,9 @@ export const GridUI = () => {
       scrollBarState.current
     );
 
-    updateFocusedIndices([cellPosition.columnIndex, cellPosition.rowIndex]);
-    webGpuContext?.renderBundleBuilder?.setFocusedIndicesStorage(
-      focusedIndices.current
+    updateFocusedIndices(cellPosition.columnIndex, cellPosition.rowIndex);
+    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
+      focusedStates
     );
   };
 
@@ -845,10 +864,6 @@ export const GridUI = () => {
     startInertia();
   };
 
-  const round = (value: number, scale: number) => {
-    return Math.round(value * scale) / scale;
-  };
-
   const startInertia = () => {
     if (tickerRef.current) {
       return;
@@ -912,14 +927,14 @@ export const GridUI = () => {
       eventHandlers.current = true;
 
       if (webGpuContext?.renderBundleBuilder) {
-        webGpuContext.renderBundleBuilder.setDataBufferStorage(
+        webGpuContext.renderBundleBuilder.updateDataBufferStorage(
           gridContext.data
         );
-        webGpuContext.renderBundleBuilder.setSelectedIndicesStorage(
-          selectedIndices.current
+        webGpuContext.renderBundleBuilder.updateSelectedIndicesStorage(
+          selectedStates
         );
-        webGpuContext.renderBundleBuilder.setFocusedIndicesStorage(
-          focusedIndices.current
+        webGpuContext.renderBundleBuilder.updateFocusedIndicesStorage(
+          focusedStates
         );
       } else {
         throw new Error();
@@ -950,6 +965,6 @@ export const GridUI = () => {
   ]);
 
   return null;
-};
+});
 
 export default GridUI;

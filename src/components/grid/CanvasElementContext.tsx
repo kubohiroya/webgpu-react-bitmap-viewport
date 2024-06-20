@@ -10,7 +10,7 @@ export type CanvasElementContextCommons = {
     top: number;
     left: number;
   };
-  scrollBar: {
+  scrollBar?: {
     radius: number;
     margin: number;
   };

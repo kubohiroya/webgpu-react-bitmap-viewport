@@ -27,10 +27,11 @@ npm install webgpu-react-grid
 
 # Usage
 
-```TypeScript
+```tsx
 import { Grid } from "webgpu-react-grid";
 
 const gridSize = { numColumns: 1024, numRows: 1024 };
+const gridSizeMax = Math.max(gridSize.numColumns, gridSize.numRows);
 
 const data =  new Float32Array(gridSize.numRows * gridSize.numColumns);
 for (let i = 0; i < data.length; i++) {
@@ -40,6 +41,8 @@ for (let i = 0; i < data.length; i++) {
     data[i] = Infinity;
   }
 }
+const focusedStates = new Uint8Array(gridSizeMax);
+const selectedStates = new Uint8Array(gridSizeMax);
 
 export const Grid1024 = () => {
   return (
@@ -53,6 +56,14 @@ export const Grid1024 = () => {
       }}
       gridSize={gridSize}
       data={data}
+      focusedStates={focusedStates}
+      selectedStates={selectedStates}
+      onFocusedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
+        console.log('focus', {sourceId, columnIndex, rowIndex});
+      }}
+      onSelectedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
+        console.log('select', {sourceId, columnIndex, rowIndex});
+      }}
       initialViewport={{
         top: 0.0,
         bottom: 16.0,

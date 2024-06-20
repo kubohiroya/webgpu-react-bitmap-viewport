@@ -19,6 +19,7 @@ import {
   updateDrawIndirectBufferSource
 } from './DrawIndirectBufferFactory';
 import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
+import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridProps';
 
 export class RenderBundleBuilder {
   private device: GPUDevice;
@@ -183,8 +184,8 @@ export class RenderBundleBuilder {
       'fragmentScrollBarBody',
       {
         constants: {
-          scrollBarRadius: canvasElementContext.scrollBar.radius,
-          scrollBarMargin: canvasElementContext.scrollBar.margin
+          scrollBarRadius: canvasElementContext.scrollBar?.radius || SCROLLBAR_RADIUS,
+          scrollBarMargin: canvasElementContext.scrollBar?.margin || SCROLLBAR_MARGIN
         }
       }
     );
@@ -293,11 +294,11 @@ export class RenderBundleBuilder {
     );
   }
 
-  setDataBufferStorage(data: Float32Array) {
+  updateDataBufferStorage(data: Float32Array) {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
   }
 
-  setFocusedIndicesStorage(focusedIndices: number[]) {
+  updateFocusedIndicesStorage(focusedIndices: Uint8Array) {
     updateBuffer(
       this.device,
       this.focusedIndicesStorage,
@@ -305,7 +306,7 @@ export class RenderBundleBuilder {
     );
   }
 
-  setSelectedIndicesStorage(selectedIndices: number[]) {
+  updateSelectedIndicesStorage(selectedIndices: Uint8Array) {
     updateBuffer(
       this.device,
       this.selectedIndicesStorage,

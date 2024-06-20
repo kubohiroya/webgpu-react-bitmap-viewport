@@ -27,7 +27,13 @@ export const Grid = (props: GridProps) => {
             initialViewport={props.initialViewport}
             initialOverscroll={props.initialOverscroll}
           >
-            <GridUI />
+            <GridUI
+              canvasId={props.canvasId}
+              focusedStates={props.focusedStates}
+              selectedStates={props.selectedStates}
+              onFocusedStatesChange={props.onFocusedStatesChange}
+              onSelectedStatesChange={props.onSelectedStatesChange}
+            />
           </ViewportContextProvider>
         </WebGPUContextProvider>
       </GridContextProvider>

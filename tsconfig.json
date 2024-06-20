@@ -24,7 +24,6 @@
     "jsxImportSource": "@emotion/react",
     "types": ["vite/client", "vitest"]
   },
-  "files": [],
   "references": [
     {
       "path": "./tsconfig.app.json"
@@ -34,6 +33,6 @@
     }
   ],
   "compileOnSave": false,
-  "include": ["src/**/*", "example/src/**/*"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "example/src/**/*.ts",  "example/src/**/*.tsx"],
   "exclude": ["node_modules", "tmp"]
 }

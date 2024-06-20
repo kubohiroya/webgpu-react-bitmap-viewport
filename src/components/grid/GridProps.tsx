@@ -32,6 +32,11 @@ export type GridProps = {
   /** The data to be displayed in the grid, stored in a Float32Array. */
   data: Float32Array;
 
+  /** The focused states of the grid, stored in a Uint8Array: notFocused=0, verticalFocused=1, horizontalFocused=2, verticalAndHorizontalFocused=3*/
+  focusedStates: Uint8Array;
+  /** The selected states of the grid, stored in a Uint8Array: notSelected=0, verticalSelected=1, horizontalSelected=2, verticalAndHorizontalSelected=3*/
+  selectedStates: Uint8Array;
+
   /** The initial viewport settings for the grid. */
   initialViewport?: {
     /** The top boundary of the viewport. */
@@ -59,4 +64,10 @@ export type GridProps = {
     /** The margin around the scroll bar in pixels. */
     margin: number;
   };
+
+  onFocusedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
+  onSelectedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
 };
+
+export const SCROLLBAR_RADIUS = 5.0;
+export const SCROLLBAR_MARGIN = 2.0;
