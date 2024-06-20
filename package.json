@@ -33,7 +33,7 @@
     "doc": "typedoc",
     "test": "nx test",
     "predeploy": "pnpm run build-example",
-    "deploy": "gh-pages -d examples/dist/webgpu-react-grid -r git@github.com:kubohiroya/webgpu-react-grid.git",
+    "deploy": "gh-pages -d dist/webgpu-react-grid -r git@github.com:kubohiroya/webgpu-react-grid.git",
     "prepublish": "pnpm run build",
     "publish": "npm publish"
   },
