@@ -1,12 +1,12 @@
 {
   "name": "webgpu-react-grid",
   "description": "A React component for visualizing a grid of floating-point values using WebGPU",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "projectType": "library",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kubohiroya/webgpu-react-grid"
+    "url": "git+https://github.com/kubohiroya/webgpu-react-grid.git"
   },
   "homepage": "https://github.com/kubohiroya/webgpu-react-grid",
   "keywords": [
