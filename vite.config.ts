@@ -74,6 +74,8 @@ const examplesConfig = defineConfig({
     host: 'localhost',
   },
 
+  base: '/webgpu-react-grid',
+
   resolve:{
     alias:{
       'webgpu-react-grid': resolve(__dirname, 'src/index.ts'),
@@ -84,13 +86,16 @@ const examplesConfig = defineConfig({
   build: {
     outDir: 'dist/webgpu-react-grid',
     rollupOptions: {
-      external: ['react', 'react-dom', '@webgpu/types', 'webgpu-react-grid'],
+      external: ['@webgpu/types'],
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        }
+      },
       input: {
         main: resolve(__dirname, 'examples/index.html'),
       },
-      output:{
-
-      }
     },
   },
 });

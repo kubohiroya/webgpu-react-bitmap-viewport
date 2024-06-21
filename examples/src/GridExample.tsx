@@ -1,6 +1,5 @@
 import { useRef } from "react";
-//import { Grid, GridHandles } from "webgpu-react-grid";
-import { Grid, GridHandles } from "../../src/index";
+import { Grid, GridHandles } from "webgpu-react-grid";
 
 const gridSize = { numColumns: 1024, numRows: 1024 };
 const gridSizeMax = Math.max(gridSize.numColumns, gridSize.numRows);
@@ -72,18 +71,11 @@ export const GridExample = () => {
         }}
         initialViewport={{
           top: 0.0,
-          bottom: 16.0,
+          bottom: 24.0,
           left: 0.0,
-          right: 16.0,
+          right: 24.0,
         }}
       />
     </>
   );
 }
-/*
-          top: 1000.0,
-          bottom: 1024.0,
-          left: 1000.0,
-          right: 1024.0,
-
- */
