@@ -73,19 +73,19 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     updateData: (sourceId: string, data: Float32Array) => {
       updateData(sourceId, data);
     },
-    updateFocusedIndices: (
+    updateFocusedState: (
       sourceId: string,
       columnIndex: number,
       rowIndex: number
     ) => {
-      updateFocusedIndices(sourceId, columnIndex, rowIndex);
+      updateFocusedState(sourceId, columnIndex, rowIndex);
     },
-    updateSelectedIndices: (
+    updateSelectedState: (
       sourceId: string,
       columnIndex: number,
       rowIndex: number
     ) => {
-      updateSelectedIndices(sourceId, columnIndex, rowIndex);
+      updateSelectedState(sourceId, columnIndex, rowIndex);
     },
   }));
 
@@ -294,7 +294,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
   };
 
-  const updateFocusedIndices = (
+  const updateFocusedState = (
     sourceId: string,
     columnIndex: number,
     rowIndex: number
@@ -320,7 +320,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     prevFocusedColumnIndex.current = columnIndex;
     prevFocusedRowIndex.current = rowIndex;
 
-    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
+    webGpuContext?.renderBundleBuilder?.updateFocusedStateStorage(
       focusedStates
     );
     startInertia();
@@ -330,7 +330,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
   };
 
-  const updateSelectedIndices = (
+  const updateSelectedState = (
     sourceId: string,
     columnIndex: number,
     rowIndex: number
@@ -386,7 +386,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       }
     }
 
-    webGpuContext?.renderBundleBuilder?.updateSelectedIndicesStorage(
+    webGpuContext?.renderBundleBuilder?.updateSelectedStateStorage(
       selectedStates
     );
 
@@ -579,7 +579,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       cellPosition.rowIndex === POINTER_CONTEXT_HEADER
     ) {
       canvasContext.canvasRef.current.style.cursor = 'grab';
-      updateSelectedIndices(
+      updateSelectedState(
         props.canvasId,
         cellPosition.columnIndex,
         cellPosition.rowIndex
@@ -702,7 +702,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const onUp = () => {
     canvasContext.canvasRef.current!.style.cursor = 'default';
     pointerState.current = null;
-    updateFocusedIndices(props.canvasId, -1, -1);
+    updateFocusedState(props.canvasId, -1, -1);
   };
 
   const onMouseUp = () => {
@@ -716,7 +716,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const onMouseOut = () => {
     canvasContext.canvasRef.current!.style.cursor = 'default';
     // pointerState.current = null;
-    updateFocusedIndices(props.canvasId, -1, -1);
+    updateFocusedState(props.canvasId, -1, -1);
   };
 
   const onMouseEnter = () => {
@@ -785,7 +785,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       scrollBarState.current
     );
 
-    updateFocusedIndices(props.canvasId, cellPosition.columnIndex, cellPosition.rowIndex);
+    updateFocusedState(props.canvasId, cellPosition.columnIndex, cellPosition.rowIndex);
   };
 
   const onMouseMove = (event: MouseEvent) => {
@@ -971,10 +971,10 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         webGpuContext.renderBundleBuilder.updateDataBufferStorage(
           gridContext.data
         );
-        webGpuContext.renderBundleBuilder.updateSelectedIndicesStorage(
+        webGpuContext.renderBundleBuilder.updateSelectedStateStorage(
           selectedStates
         );
-        webGpuContext.renderBundleBuilder.updateFocusedIndicesStorage(
+        webGpuContext.renderBundleBuilder.updateFocusedStateStorage(
           focusedStates
         );
       } else {

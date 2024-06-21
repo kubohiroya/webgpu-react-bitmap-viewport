@@ -20,11 +20,11 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
     updateData: (sourceId: string, data: Float32Array) => {
       gridUIRef.current?.updateData(sourceId, data);
     },
-    updateFocusedIndices: (sourceId: string, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.updateFocusedIndices(sourceId, columnIndex, rowIndex);
+    updateFocusedState: (sourceId: string, columnIndex: number, rowIndex: number) => {
+      gridUIRef.current?.updateFocusedState(sourceId, columnIndex, rowIndex);
     },
-    updateSelectedIndices: (sourceId: string, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.updateSelectedIndices(sourceId, columnIndex, rowIndex);
+    updateSelectedState: (sourceId: string, columnIndex: number, rowIndex: number) => {
+      gridUIRef.current?.updateSelectedState(sourceId, columnIndex, rowIndex);
     }
   }));
 

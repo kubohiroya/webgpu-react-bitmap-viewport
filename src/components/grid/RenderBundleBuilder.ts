@@ -31,8 +31,8 @@ export class RenderBundleBuilder {
   private f32UniformBuffer: GPUBuffer;
   private u32UniformBuffer: GPUBuffer;
   private gridDataBufferStorage: GPUBuffer;
-  private focusedIndicesStorage: GPUBuffer;
-  private selectedIndicesStorage: GPUBuffer;
+  private focusedStateStorage: GPUBuffer;
+  private selectedStateStorage: GPUBuffer;
   private drawIndirectBufferSource: Uint32Array;
   private drawIndirectBuffer: GPUBuffer;
 
@@ -224,13 +224,13 @@ export class RenderBundleBuilder {
     const numCells =
       Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows) *
       F32LEN;
-    this.focusedIndicesStorage = createStorageBuffer(
-      'FocusedIndexBuffer',
+    this.focusedStateStorage = createStorageBuffer(
+      'FocusedStateBuffer',
       device,
       numCells
     );
-    this.selectedIndicesStorage = createStorageBuffer(
-      'SelectedIndexBuffer',
+    this.selectedStateStorage = createStorageBuffer(
+      'SelectedStateBuffer',
       device,
       numCells
     );
@@ -245,8 +245,8 @@ export class RenderBundleBuilder {
       bindGroupLayout,
       this.f32UniformBuffer,
       this.u32UniformBuffer,
-      this.focusedIndicesStorage,
-      this.selectedIndicesStorage,
+      this.focusedStateStorage,
+      this.selectedStateStorage,
       this.gridDataBufferStorage
     );
 
@@ -298,19 +298,19 @@ export class RenderBundleBuilder {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
   }
 
-  updateFocusedIndicesStorage(focusedIndices: Uint8Array) {
+  updateFocusedStateStorage(focusedState: Uint8Array) {
     updateBuffer(
       this.device,
-      this.focusedIndicesStorage,
-      new Uint32Array(focusedIndices)
+      this.focusedStateStorage,
+      new Uint32Array(focusedState)
     );
   }
 
-  updateSelectedIndicesStorage(selectedIndices: Uint8Array) {
+  updateSelectedStateStorage(selectedState: Uint8Array) {
     updateBuffer(
       this.device,
-      this.selectedIndicesStorage,
-      new Uint32Array(selectedIndices)
+      this.selectedStateStorage,
+      new Uint32Array(selectedState)
     );
   }
 
@@ -319,8 +319,8 @@ export class RenderBundleBuilder {
     bindGroupLayout: GPUBindGroupLayout,
     f32UniformBuffer: GPUBuffer,
     u32UniformBuffer: GPUBuffer,
-    focusedIndicesStorage: GPUBuffer,
-    selectedIndicesStorage: GPUBuffer,
+    focusedStateStorage: GPUBuffer,
+    selectedStateStorage: GPUBuffer,
     gridDataBufferStorage: GPUBuffer
   ) {
     return this.device.createBindGroup({
@@ -337,11 +337,11 @@ export class RenderBundleBuilder {
         },
         {
           binding: 2,
-          resource: { buffer: focusedIndicesStorage }
+          resource: { buffer: focusedStateStorage }
         },
         {
           binding: 3,
-          resource: { buffer: selectedIndicesStorage }
+          resource: { buffer: selectedStateStorage }
         },
         {
           binding: 4,

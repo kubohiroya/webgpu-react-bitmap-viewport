@@ -38,10 +38,10 @@ export const GridExample = () => {
         focusedStates={focusedStates}
         selectedStates={selectedStates}
         onFocusedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef2.current?.updateFocusedIndices(sourceId, columnIndex, rowIndex);
+          gridRef2.current?.updateFocusedState(sourceId, columnIndex, rowIndex);
         }}
         onSelectedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef2.current?.updateSelectedIndices(sourceId, columnIndex, rowIndex);
+          gridRef2.current?.updateSelectedState(sourceId, columnIndex, rowIndex);
         }}
         initialViewport={{
           top: 0.0,
@@ -64,10 +64,10 @@ export const GridExample = () => {
         focusedStates={focusedStates}
         selectedStates={selectedStates}
         onFocusedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef1.current?.updateFocusedIndices(sourceId, columnIndex, rowIndex);
+          gridRef1.current?.updateFocusedState(sourceId, columnIndex, rowIndex);
         }}
         onSelectedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef1.current?.updateSelectedIndices(sourceId, columnIndex, rowIndex);
+          gridRef1.current?.updateSelectedState(sourceId, columnIndex, rowIndex);
         }}
         initialViewport={{
           top: 0.0,

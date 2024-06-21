@@ -22,7 +22,6 @@
     "strict": true,
     "jsxImportSource": "@emotion/react",
     "types": ["vite/client", "node", "@webgpu/types"],
-    "typeRoots": ["../node_modules/@types", "./types"],
     "paths": {
       "webgpu-react-grid": ["./src"]
     },
@@ -33,7 +32,7 @@
       "path": "./tsconfig.examples.json"
     }
   ],
-  "include": ["./src/**/*.ts", "./src/**/*.tsx", "types/**/*.d.ts"],
+  "include": ["./src/**/*", "types/**/*.d.ts"],
   "exclude": ["node_modules", "tmp", "dist"],
   "compileOnSave": false
 }
