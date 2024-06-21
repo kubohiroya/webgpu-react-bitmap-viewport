@@ -4,9 +4,10 @@ import { useViewportContext } from './ViewportContext';
 import { useGridContext } from './GridContext';
 import { useWebGPUContext } from './WebGPUContext';
 import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridProps';
+import { GridHandles } from './GridHandles';
 
-const edgeFriction = 0.8;
-const translateFriction = 0.975;
+const EDGE_FRICTION = 0.8;
+const TRANSLATE_FRICTION = 0.975;
 
 const POINTER_CONTEXT_BODY = 0;
 const POINTER_CONTEXT_HEADER = -1;
@@ -30,17 +31,21 @@ type GridUIProps = {
   canvasId: string;
   focusedStates: Uint8Array;
   selectedStates: Uint8Array;
-  onFocusedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
-  onSelectedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
+  onDataChanged?: (sourceId: string, data: Float32Array) => void;
+  onFocusedStatesChange?: (
+    sourceId: string,
+    columnIndex: number,
+    rowIndex: number
+  ) => void;
+  onSelectedStatesChange?: (
+    sourceId: string,
+    columnIndex: number,
+    rowIndex: number
+  ) => void;
 };
 
-export type GridUIHandles = {
-  updateFocusedIndices: (columnIndex: number, rowIndex: number)=>void,
-  updateSelectedIndices: (columnIndex: number, rowIndex: number)=>void,
-};
-
-export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
-  const {focusedStates, selectedStates} = props;
+export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
+  const { focusedStates, selectedStates } = props;
   const webGpuContext = useWebGPUContext();
   const viewportContext = useViewportContext();
   const gridContext = useGridContext();
@@ -60,19 +65,34 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       top: 0,
       bottom: gridContext.gridSize.numRows,
       left: 0,
-      right: gridContext.gridSize.numColumns
+      right: gridContext.gridSize.numColumns,
     }
   );
 
   useImperativeHandle(ref, () => ({
-    updateFocusedIndices,
-    updateSelectedIndices
+    updateData: (sourceId: string, data: Float32Array) => {
+      updateData(sourceId, data);
+    },
+    updateFocusedIndices: (
+      sourceId: string,
+      columnIndex: number,
+      rowIndex: number
+    ) => {
+      updateFocusedIndices(sourceId, columnIndex, rowIndex);
+    },
+    updateSelectedIndices: (
+      sourceId: string,
+      columnIndex: number,
+      rowIndex: number
+    ) => {
+      updateSelectedIndices(sourceId, columnIndex, rowIndex);
+    },
   }));
 
   const overscroll = useRef<{ x: number; y: number }>(
     viewportContext.initialOverscroll || {
       x: 0,
-      y: 0
+      y: 0,
     }
   );
 
@@ -81,7 +101,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
     numRowsToShow: number;
   }>({
     numColumnsToShow: 0,
-    numRowsToShow: 0
+    numRowsToShow: 0,
   });
 
   const pointerState = useRef<{
@@ -201,35 +221,35 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       const [dx, dy] =
         scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL
           ? [
-            (-1 *
-              (gridContext.gridSize.numColumns *
-                pointerState.current.delta.x)) /
-            (canvasContext.canvasSize.width -
-              canvasContext.headerOffset.left),
-            0
-          ]
+              (-1 *
+                (gridContext.gridSize.numColumns *
+                  pointerState.current.delta.x)) /
+                (canvasContext.canvasSize.width -
+                  canvasContext.headerOffset.left),
+              0,
+            ]
           : scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
-            ? [
+          ? [
               0,
               (-1 *
                 (gridContext.gridSize.numRows * pointerState.current.delta.y)) /
-              (canvasContext.canvasSize.height -
-                canvasContext.headerOffset.top)
+                (canvasContext.canvasSize.height -
+                  canvasContext.headerOffset.top),
             ]
-            : [
+          : [
               (viewportWidth * pointerState.current.delta.x) /
-              (canvasContext.canvasSize.width -
-                canvasContext.headerOffset.left),
+                (canvasContext.canvasSize.width -
+                  canvasContext.headerOffset.left),
               (viewportHeight * pointerState.current.delta.y) /
-              (canvasContext.canvasSize.height -
-                canvasContext.headerOffset.top)
+                (canvasContext.canvasSize.height -
+                  canvasContext.headerOffset.top),
             ];
 
       const newViewport = {
         left: pointerState.current.startViewport.left - dx,
         right: pointerState.current.startViewport.right - dx,
         top: pointerState.current.startViewport.top - dy,
-        bottom: pointerState.current.startViewport.bottom - dy
+        bottom: pointerState.current.startViewport.bottom - dy,
       };
 
       regulateViewport(
@@ -240,7 +260,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
     } else {
       const startViewportSize = {
         width: viewport.current.right - viewport.current.left,
-        height: viewport.current.bottom - viewport.current.top
+        height: viewport.current.bottom - viewport.current.top,
       };
 
       regulateViewport(
@@ -251,92 +271,128 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
             startViewportSize.width,
           height:
             (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
-            startViewportSize.height
+            startViewportSize.height,
         },
         scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL ||
-        scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
+          scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
           ? viewport.current
           : {
-            left: viewport.current.left + velocity.current.x,
-            right: viewport.current.right + velocity.current.x,
-            top: viewport.current.top + velocity.current.y,
-            bottom: viewport.current.bottom + velocity.current.y
-          }
+              left: viewport.current.left + velocity.current.x,
+              right: viewport.current.right + velocity.current.x,
+              top: viewport.current.top + velocity.current.y,
+              bottom: viewport.current.bottom + velocity.current.y,
+            }
       );
     }
   };
 
-  const updateFocusedIndices = (columnIndex: number, rowIndex: number) => {
-
-    if(columnIndex === prevFocusedColumnIndex.current && rowIndex === prevFocusedRowIndex.current){
-      return;
+  const updateData = (sourceId: string, data: Float32Array) => {
+    gridContext.data = data;
+    webGpuContext?.renderBundleBuilder?.updateDataBufferStorage(data);
+    if (sourceId === props.canvasId) {
+      props.onDataChanged?.(props.canvasId, data);
     }
-
-    focusedStates.fill(0);
-
-    if(columnIndex !== -1 && rowIndex === -1) {
-      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
-    }else if(columnIndex === -1 && rowIndex !== -1) {
-      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
-    }else if(columnIndex !== -1 && rowIndex !== -1) {
-      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
-      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
-    }
-    props.onFocusedStatesChange?.(props.canvasId, columnIndex, rowIndex);
-    prevFocusedColumnIndex.current = columnIndex;
-    prevFocusedRowIndex.current = rowIndex;
   };
 
-    const updateSelectedIndices = (columnIndex: number, rowIndex: number) => {
-    if (columnIndex === POINTER_CONTEXT_HEADER) {
-      if (rowIndex === POINTER_CONTEXT_HEADER) {
-        const filled = selectedStates.some((value) => value > 0);
-        selectedStates.fill(filled ? 0 : 1);
-      } else {
-        for (let i = 0; i < selectedStates.length; i++) {
-          if (i < selectedStates.length) {
-            const value = selectedStates[i];
-            selectedStates[i] =
-              rowIndex === i
-                ? value === SELECT_STATE_DEFAULT
-                  ? SELECT_STATE_SELECTED
-                  : SELECT_STATE_DEFAULT
-                : value;
-          } else {
-            selectedStates[i] = SELECT_STATE_DEFAULT;
+  const updateFocusedIndices = (
+    sourceId: string,
+    columnIndex: number,
+    rowIndex: number
+  ) => {
+    if (
+      columnIndex === prevFocusedColumnIndex.current &&
+      rowIndex === prevFocusedRowIndex.current
+    ) {
+      return;
+    }
+    // console.log({canvasId: props.canvasId, columnIndex, rowIndex});
+    focusedStates.fill(0);
+
+    if (columnIndex !== -1 && rowIndex === -1) {
+      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
+    } else if (columnIndex === -1 && rowIndex !== -1) {
+      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
+    } else if (columnIndex !== -1 && rowIndex !== -1) {
+      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
+      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
+    }
+
+    prevFocusedColumnIndex.current = columnIndex;
+    prevFocusedRowIndex.current = rowIndex;
+
+    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
+      focusedStates
+    );
+    startInertia();
+
+    if (sourceId === props.canvasId) {
+      props.onFocusedStatesChange?.(props.canvasId, columnIndex, rowIndex);
+    }
+  };
+
+  const updateSelectedIndices = (
+    sourceId: string,
+    columnIndex: number,
+    rowIndex: number
+  ) => {
+    if (sourceId === props.canvasId) {
+      if (columnIndex === POINTER_CONTEXT_HEADER) {
+        if (rowIndex === POINTER_CONTEXT_HEADER) {
+          const filled = selectedStates.some((value) => value > 0);
+          selectedStates.fill(filled ? 0 : 1);
+        } else {
+          for (let i = 0; i < selectedStates.length; i++) {
+            if (i < selectedStates.length) {
+              const value = selectedStates[i];
+              selectedStates[i] =
+                rowIndex === i
+                  ? value === SELECT_STATE_DEFAULT
+                    ? SELECT_STATE_SELECTED
+                    : SELECT_STATE_DEFAULT
+                  : value;
+            } else {
+              selectedStates[i] = SELECT_STATE_DEFAULT;
+            }
           }
         }
-      }
-    } else {
-      if (rowIndex === POINTER_CONTEXT_HEADER) {
-        for (let i = 0; i < selectedStates.length; i++) {
-          if (i < selectedStates.length) {
-            const value = selectedStates[i];
-            selectedStates[i] =
-              columnIndex === i
-                ? value === SELECT_STATE_SELECTED
-                  ? SELECT_STATE_DEFAULT
-                  : SELECT_STATE_SELECTED
-                : value;
-          } else {
-            selectedStates[i] = SELECT_STATE_DEFAULT;
-          }
-        }
       } else {
-        for (let i = 0; i < selectedStates.length; i++) {
-          if (i < selectedStates.length) {
-            const value = selectedStates[i];
-            selectedStates[i] =
-              rowIndex === i || columnIndex === i
-                ? value === SELECT_STATE_DEFAULT
-                  ? SELECT_STATE_SELECTED
-                  : SELECT_STATE_DEFAULT
-                : value;
+        if (rowIndex === POINTER_CONTEXT_HEADER) {
+          for (let i = 0; i < selectedStates.length; i++) {
+            if (i < selectedStates.length) {
+              const value = selectedStates[i];
+              selectedStates[i] =
+                columnIndex === i
+                  ? value === SELECT_STATE_SELECTED
+                    ? SELECT_STATE_DEFAULT
+                    : SELECT_STATE_SELECTED
+                  : value;
+            } else {
+              selectedStates[i] = SELECT_STATE_DEFAULT;
+            }
+          }
+        } else {
+          for (let i = 0; i < selectedStates.length; i++) {
+            if (i < selectedStates.length) {
+              const value = selectedStates[i];
+              selectedStates[i] =
+                rowIndex === i || columnIndex === i
+                  ? value === SELECT_STATE_DEFAULT
+                    ? SELECT_STATE_SELECTED
+                    : SELECT_STATE_DEFAULT
+                  : value;
+            }
           }
         }
       }
     }
-    props.onSelectedStatesChange?.(props.canvasId, columnIndex, rowIndex);
+
+    webGpuContext?.renderBundleBuilder?.updateSelectedIndicesStorage(
+      selectedStates
+    );
+
+    if (sourceId === props.canvasId) {
+      props.onSelectedStatesChange?.(props.canvasId, columnIndex, rowIndex);
+    }
   };
 
   const tick = () => {
@@ -403,114 +459,109 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       rowIndex + viewport.current.top < gridContext.gridSize.numRows;
     if (isInsideHorizontalBody) {
       if (isInsideVerticalBody) {
-        const margin = canvasContext.scrollBar? canvasContext.scrollBar.margin: SCROLLBAR_MARGIN;
-        const radius = canvasContext.scrollBar? canvasContext.scrollBar.radius: SCROLLBAR_RADIUS;
+        const margin = canvasContext.scrollBar
+          ? canvasContext.scrollBar.margin
+          : SCROLLBAR_MARGIN;
+        const radius = canvasContext.scrollBar
+          ? canvasContext.scrollBar.radius
+          : SCROLLBAR_RADIUS;
         if (
-          canvasContext.canvasSize.width -
-          margin -
-          radius * 2 <=
-          x &&
+          canvasContext.canvasSize.width - margin - radius * 2 <= x &&
           x <= canvasContext.canvasSize.width - margin
         ) {
           const header = overscroll.current.y + canvasContext.headerOffset.top;
           const topEdge =
             header -
             radius +
-            ((canvasContext.canvasSize.height -
-                header -
-                radius * 2) *
+            ((canvasContext.canvasSize.height - header - radius * 2) *
               viewport.current.top) /
-            gridContext.gridSize.numRows;
+              gridContext.gridSize.numRows;
           const bottomEdge =
             header +
             radius * 2 +
-            ((canvasContext.canvasSize.height -
-                header -
-                radius * 2) *
+            ((canvasContext.canvasSize.height - header - radius * 2) *
               viewport.current.bottom) /
-            gridContext.gridSize.numRows;
+              gridContext.gridSize.numRows;
 
           if (header <= y && y < topEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_LOWER
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
             };
           } else if (y < bottomEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE,
             };
           } else {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
             };
           }
         }
-        const scrollbarMargin = (canvasContext.scrollBar?.margin || SCROLLBAR_MARGIN);
-        const scrollbarRadius = (canvasContext.scrollBar?.radius || SCROLLBAR_RADIUS);
+        const scrollbarMargin =
+          canvasContext.scrollBar?.margin || SCROLLBAR_MARGIN;
+        const scrollbarRadius =
+          canvasContext.scrollBar?.radius || SCROLLBAR_RADIUS;
         if (
           canvasContext.canvasSize.height -
-          scrollbarMargin -
-          scrollbarRadius * 2 <=
-          y &&
+            scrollbarMargin -
+            scrollbarRadius * 2 <=
+            y &&
           y <= canvasContext.canvasSize.height - scrollbarMargin
         ) {
           const header = overscroll.current.x + canvasContext.headerOffset.left;
           const leftEdge =
             header -
             scrollbarRadius +
-            ((canvasContext.canvasSize.width -
-                header -
-                scrollbarRadius * 2) *
+            ((canvasContext.canvasSize.width - header - scrollbarRadius * 2) *
               viewport.current.left) /
-            gridContext.gridSize.numColumns;
+              gridContext.gridSize.numColumns;
           const rightEdge =
             header +
             scrollbarRadius * 2 +
-            ((canvasContext.canvasSize.width -
-                header -
-                scrollbarRadius * 2) *
+            ((canvasContext.canvasSize.width - header - scrollbarRadius * 2) *
               viewport.current.right) /
-            gridContext.gridSize.numColumns;
+              gridContext.gridSize.numColumns;
 
           if (header <= x && x <= leftEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_LOWER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
             };
           } else if (x <= rightEdge) {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_HANDLE,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
             };
           } else {
             return {
               columnIndex: POINTER_CONTEXT_SCROLLBAR_HIGHER,
-              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER
+              rowIndex: POINTER_CONTEXT_SCROLLBAR_OTHER,
             };
           }
         }
         return {
           columnIndex: Math.floor(columnIndex + viewport.current.left),
-          rowIndex: Math.floor(rowIndex + viewport.current.top)
+          rowIndex: Math.floor(rowIndex + viewport.current.top),
         };
       } else {
         return {
           columnIndex: Math.floor(columnIndex + viewport.current.left),
-          rowIndex: POINTER_CONTEXT_HEADER
+          rowIndex: POINTER_CONTEXT_HEADER,
         };
       }
     } else {
       if (isInsideVerticalBody) {
         return {
           columnIndex: POINTER_CONTEXT_HEADER,
-          rowIndex: Math.floor(rowIndex + viewport.current.top)
+          rowIndex: Math.floor(rowIndex + viewport.current.top),
         };
       } else {
         return {
           columnIndex: POINTER_CONTEXT_HEADER,
-          rowIndex: POINTER_CONTEXT_HEADER
+          rowIndex: POINTER_CONTEXT_HEADER,
         };
       }
     }
@@ -528,8 +579,11 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       cellPosition.rowIndex === POINTER_CONTEXT_HEADER
     ) {
       canvasContext.canvasRef.current.style.cursor = 'grab';
-      updateSelectedIndices(cellPosition.columnIndex, cellPosition.rowIndex);
-      webGpuContext?.renderBundleBuilder?.updateSelectedIndicesStorage(selectedStates);
+      updateSelectedIndices(
+        props.canvasId,
+        cellPosition.columnIndex,
+        cellPosition.rowIndex
+      );
     }
 
     if (
@@ -543,15 +597,15 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       pointerState.current = {
         start: {
           x,
-          y
+          y,
         },
         previous: {
           x,
-          y
+          y,
         },
         startViewportSize: {
           width: viewport.current.right - viewport.current.left,
-          height: viewport.current.bottom - viewport.current.top
+          height: viewport.current.bottom - viewport.current.top,
         },
         startCellSize: {
           width:
@@ -559,13 +613,13 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
             (viewport.current.right - viewport.current.left),
           height:
             (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
-            (viewport.current.bottom - viewport.current.top)
+            (viewport.current.bottom - viewport.current.top),
         },
         startViewport: { ...viewport.current },
         delta: {
           x: 0,
-          y: 0
-        }
+          y: 0,
+        },
       };
       return;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
@@ -573,13 +627,13 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
         viewport.current = {
           ...viewport.current,
           left: 0,
-          right: viewport.current.right - viewport.current.left
+          right: viewport.current.right - viewport.current.left,
         };
       } else {
         viewport.current = {
           ...viewport.current,
           left: viewport.current.left * 2 - viewport.current.right,
-          right: viewport.current.left
+          right: viewport.current.left,
         };
       }
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
@@ -587,13 +641,13 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
         viewport.current = {
           ...viewport.current,
           top: 0,
-          bottom: viewport.current.bottom - viewport.current.top
+          bottom: viewport.current.bottom - viewport.current.top,
         };
       } else {
         viewport.current = {
           ...viewport.current,
           top: viewport.current.top * 2 - viewport.current.bottom,
-          bottom: viewport.current.top
+          bottom: viewport.current.top,
         };
       }
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
@@ -604,7 +658,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
         viewport.current = {
           ...viewport.current,
           left: viewport.current.right,
-          right: viewport.current.right * 2 - viewport.current.left
+          right: viewport.current.right * 2 - viewport.current.left,
         };
       } else {
         viewport.current = {
@@ -612,7 +666,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
           left:
             gridContext.gridSize.numColumns -
             (viewport.current.right - viewport.current.left),
-          right: gridContext.gridSize.numColumns
+          right: gridContext.gridSize.numColumns,
         };
       }
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
@@ -623,7 +677,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
         viewport.current = {
           ...viewport.current,
           top: viewport.current.bottom,
-          bottom: viewport.current.bottom * 2 - viewport.current.top
+          bottom: viewport.current.bottom * 2 - viewport.current.top,
         };
       } else {
         viewport.current = {
@@ -631,7 +685,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
           top:
             gridContext.gridSize.numRows -
             (viewport.current.bottom - viewport.current.top),
-          bottom: gridContext.gridSize.numRows
+          bottom: gridContext.gridSize.numRows,
         };
       }
     }
@@ -648,11 +702,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
   const onUp = () => {
     canvasContext.canvasRef.current!.style.cursor = 'default';
     pointerState.current = null;
-    updateFocusedIndices(-1, -1);
-    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
-      focusedStates
-    );
-    startInertia();
+    updateFocusedIndices(props.canvasId, -1, -1);
   };
 
   const onMouseUp = () => {
@@ -666,11 +716,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
   const onMouseOut = () => {
     canvasContext.canvasRef.current!.style.cursor = 'default';
     // pointerState.current = null;
-    updateFocusedIndices(-1, -1);
-    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
-      focusedStates
-    );
-    startInertia();
+    updateFocusedIndices(props.canvasId, -1, -1);
   };
 
   const onMouseEnter = () => {
@@ -697,7 +743,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
         canvasContext.canvasSize.width,
       y:
         (-movementY * pointerState.current.startViewportSize.height) /
-        canvasContext.canvasSize.height
+        canvasContext.canvasSize.height,
     };
   };
 
@@ -739,10 +785,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       scrollBarState.current
     );
 
-    updateFocusedIndices(cellPosition.columnIndex, cellPosition.rowIndex);
-    webGpuContext?.renderBundleBuilder?.updateFocusedIndicesStorage(
-      focusedStates
-    );
+    updateFocusedIndices(props.canvasId, cellPosition.columnIndex, cellPosition.rowIndex);
   };
 
   const onMouseMove = (event: MouseEvent) => {
@@ -756,7 +799,6 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       canvasContext.canvasRef.current.style.cursor = 'default';
       onHover(event.clientX, event.clientY);
     }
-    startInertia();
   };
 
   const onTouchMove = (event: TouchEvent) => {
@@ -773,13 +815,12 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
       );
       pointerState.current.previous = {
         x: event.touches[0].clientX,
-        y: event.touches[0].clientY
+        y: event.touches[0].clientY,
       };
     } else {
       canvasContext.canvasRef.current.style.cursor = 'default';
       onHover(event.touches[0].clientX, event.touches[0].clientY);
     }
-    startInertia();
   };
 
   const onWheel = (event: WheelEvent) => {
@@ -794,16 +835,16 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
 
     const viewportSize = {
       width: viewport.current.right - viewport.current.left,
-      height: viewport.current.bottom - viewport.current.top
+      height: viewport.current.bottom - viewport.current.top,
     };
 
     const cx =
       (viewportSize.width * dx) /
-      (canvasContext.canvasSize.width - canvasContext.headerOffset.left) +
+        (canvasContext.canvasSize.width - canvasContext.headerOffset.left) +
       viewport.current.left;
     const cy =
       (viewportSize.height * dy) /
-      (canvasContext.canvasSize.height - canvasContext.headerOffset.top) +
+        (canvasContext.canvasSize.height - canvasContext.headerOffset.top) +
       viewport.current.top;
 
     let left = cx + (viewport.current.left - cx) * scale;
@@ -841,23 +882,23 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
     regulateViewport(
       {
         width: right - left,
-        height: bottom - top
+        height: bottom - top,
       },
       {
         width:
           (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
-          right -
+            right -
           left,
         height:
           (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
-          bottom -
-          top
+            bottom -
+          top,
       },
       {
         left,
         right,
         top,
-        bottom
+        bottom,
       }
     );
 
@@ -876,8 +917,8 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
             Math.abs(overscroll.current.y) > 0.1
           ) {
             overscroll.current = {
-              x: overscroll.current.x * edgeFriction,
-              y: overscroll.current.y * edgeFriction
+              x: overscroll.current.x * EDGE_FRICTION,
+              y: overscroll.current.y * EDGE_FRICTION,
             };
             return true;
           } else {
@@ -891,8 +932,8 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
             Math.abs(velocity.current.x) > 0.01 ||
             Math.abs(velocity.current.y) > 0.01
           ) {
-            velocity.current.x *= translateFriction;
-            velocity.current.y *= translateFriction;
+            velocity.current.x *= TRANSLATE_FRICTION;
+            velocity.current.y *= TRANSLATE_FRICTION;
             return true;
           } else {
             velocity.current.x = 0;
@@ -961,7 +1002,7 @@ export const GridUI = forwardRef<GridUIHandles, GridUIProps>((props, ref) => {
     eventHandlers.current,
     onMouseDown,
     onMouseMove,
-    onWheel
+    onWheel,
   ]);
 
   return null;

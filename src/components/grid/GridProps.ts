@@ -65,9 +65,12 @@ export type GridProps = {
     margin: number;
   };
 
+  onDataChange?: (sourceId: string, data: Float32Array) => void;
   onFocusedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
   onSelectedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
 };
 
 export const SCROLLBAR_RADIUS = 5.0;
 export const SCROLLBAR_MARGIN = 2.0;
+
+export default GridProps;

@@ -1,24 +1,13 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { resolve } from 'path';
 
 const libConfig = defineConfig({
   root: __dirname,
   cacheDir: './node_modules/.vite/.',
 
-  server: {
-    port: 4200,
-    host: 'localhost',
-  },
-
-  preview: {
-    port: 4300,
-    host: 'localhost',
-  },
-
-  plugins: [react(), nxViteTsPaths(),
+  plugins: [react(),
     /*
     dts({
       // insertTypesEntry: true,
@@ -29,7 +18,6 @@ const libConfig = defineConfig({
     }),
      */
   ],
-
 
   build: {
     outDir: './dist/lib',
@@ -73,10 +61,30 @@ const libConfig = defineConfig({
 });
 
 const examplesConfig = defineConfig({
+  root: __dirname,
+  cacheDir: './node_modules/.vite/.',
+
+  server: {
+    port: 4200,
+    host: 'localhost',
+  },
+
+  preview: {
+    port: 4300,
+    host: 'localhost',
+  },
+
+  resolve:{
+    alias:{
+      'webgpu-react-grid': resolve(__dirname, 'src/index.ts'),
+    }
+  },
+
   plugins: [react()],
   build: {
     outDir: 'dist/webgpu-react-grid',
     rollupOptions: {
+      external: ['react', 'react-dom', '@webgpu/types', 'webgpu-react-grid'],
       input: {
         main: resolve(__dirname, 'examples/index.html'),
       },

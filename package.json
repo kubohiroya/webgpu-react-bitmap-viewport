@@ -1,7 +1,7 @@
 {
   "name": "webgpu-react-grid",
   "description": "A React component for visualizing a grid of floating-point values using WebGPU",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "license": "MIT",
   "projectType": "library",
   "repository": {
@@ -27,11 +27,11 @@
     "types"
   ],
   "scripts": {
-    "start": "nx serve",
+    "start": "vite serve",
     "build": "vite build --mode lib",
     "build-example": "vite build --base=/webgpu-react-grid/ --outDir=dist/webgpu-react-grid",
     "doc": "typedoc",
-    "test": "nx test",
+    "test": "vite test",
     "predeploy": "pnpm run build-example",
     "deploy": "gh-pages -d dist/webgpu-react-grid -r git@github.com:kubohiroya/webgpu-react-grid.git",
     "prepublish": "pnpm run build",
@@ -44,14 +44,6 @@
   "devDependencies": {
     "@emotion/babel-plugin": "11.11.0",
     "@emotion/react": "^11.11.4",
-    "@nx/cypress": "18.3.4",
-    "@nx/eslint": "18.3.4",
-    "@nx/eslint-plugin": "18.3.4",
-    "@nx/js": "18.3.4",
-    "@nx/react": "18.3.4",
-    "@nx/vite": "18.3.4",
-    "@nx/web": "18.3.4",
-    "@nx/workspace": "18.3.4",
     "@swc-node/register": "~1.8.0",
     "@swc/cli": "~0.1.65",
     "@swc/core": "~1.3.107",
@@ -60,13 +52,13 @@
     "@types/node": "18.16.9",
     "@types/react": "18.2.33",
     "@types/react-dom": "18.2.14",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
     "@vitejs/plugin-react": "^4.3.1",
     "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
     "@webgpu/types": "^0.1.42",
-    "cypress": "^13.11.0",
+    "cypress": "^13.12.0",
     "eslint": "~8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-cypress": "^2.15.2",
@@ -76,7 +68,6 @@
     "eslint-plugin-react-hooks": "4.6.0",
     "gh-pages": "^6.1.1",
     "jsdom": "~22.1.0",
-    "nx": "18.3.4",
     "prettier": "^2.8.8",
     "typedoc": "^0.25.13",
     "typedoc-plugin-markdown": "^4.0.3",
@@ -84,8 +75,5 @@
     "vite": "~5.0.13",
     "vite-plugin-glsl": "^1.3.0",
     "vitest": "^1.6.0"
-  },
-  "nx": {
-    "includedScripts": []
   }
 }

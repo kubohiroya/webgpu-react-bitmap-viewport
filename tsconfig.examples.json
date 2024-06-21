@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist/examples",
+    "types": ["node", "vite/client", "@webgpu/types"],
+    "composite": true
+  },
+  "paths": {
+    "webgpu-react-grid": ["./src/index.ts"]
+  },
+  "exclude": ["node_modules", "dist"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "examples/src/**/*.ts",
+    "examples/src/**/*.tsx"
+  ]
+}

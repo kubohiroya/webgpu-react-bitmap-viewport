@@ -3,7 +3,7 @@
     "rootDir": ".",
     "sourceMap": true,
     "declaration": true,
-    "declarationDir": "./dist/webgpu-react-grid",
+    "declarationDir": "types",
     "emitDeclarationOnly": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
@@ -15,24 +15,20 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {},
     "jsx": "react-jsx",
     "allowJs": false,
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "jsxImportSource": "@emotion/react",
-    "types": ["vite/client", "vitest"]
+    "types": ["vite/client", "vitest", "node", "@webgpu/types"],
   },
   "references": [
     {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
+      "path": "./tsconfig.examples.json"
     }
   ],
-  "compileOnSave": false,
-  "include": ["src/**/*.ts", "src/**/*.tsx", "example/src/**/*.ts",  "example/src/**/*.tsx"],
-  "exclude": ["node_modules", "tmp"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "tmp", "dist"],
+  "compileOnSave": false
 }

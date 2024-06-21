@@ -7,5 +7,6 @@
   "excludeExternals": true,
   "includeVersion": true,
   "hideGenerator": true,
-  "exclude": ["**/node_modules/**/*", "**/dist/**/*", "**/lib/**/*"]
+  "exclude": ["**/node_modules/**/*", "**/dist/**/*", "**/lib/**/*"],
+  "include": ["src/**/*"]
 }
