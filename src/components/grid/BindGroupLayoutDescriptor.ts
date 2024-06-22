@@ -35,6 +35,13 @@ export const BIND_GROUP_LAYOUT_DESCRIPTOR: GPUBindGroupLayoutDescriptor = {
       buffer: {
         type: 'read-only-storage'
       }
+    },
+    {
+      binding: 5,
+      visibility: GPUShaderStage.VERTEX,
+      buffer: {
+        type: 'read-only-storage'
+      }
     }
   ]
 };

@@ -1,16 +1,15 @@
 import {
   createF32UniformBufferSource,
-  createStorageBuffer,
   createUint32BufferSource,
-  createUniformBuffer,
-  createVertexBuffer,
+  createViewportBuffer,
+  F32UNIFORMS_LENGTH,
+  U32UNIFORMS_LENGTH,
   F32UNIFORMS_BYTE_LENGTH,
   U32UNIFORMS_BYTE_LENGTH,
-  updateBuffer
-} from './GPUBufferFactories';
+} from './GridBufferFactories';
 import { GridContextProps } from './GridContext';
 import GRID_SHADER_CODE from './GridShader.wgsl?raw';
-import { CanvasElementContextValue } from './CanvasElementContext';
+import { CanvasElementContextType } from './CanvasElementContext';
 import { vertices, VERTICES_BYTE_LENGTH } from './Vertices';
 import { F32LEN, U32LEN } from './Constants';
 import {
@@ -20,35 +19,42 @@ import {
 } from './DrawIndirectBufferFactory';
 import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
 import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridProps';
+import { createStorageBuffer, createUniformBuffer, createVertexBuffer, updateBuffer } from './WebGPUBufferFactories';
 
 export class RenderBundleBuilder {
   private device: GPUDevice;
-  private canvasElementContext: CanvasElementContextValue;
-  private canvasContext: GPUCanvasContext;
   private canvasFormat: GPUTextureFormat;
+  private canvasContext: GPUCanvasContext;
+  private canvasElementContext: CanvasElementContextType;
+
   private bindGroup: GPUBindGroup;
 
+  private f32UniformBufferSource: Float32Array;
+  private u32UniformBufferSource: Uint32Array;
+  private drawIndirectBufferSource: Uint32Array;
+
+  private vertexBuffer: GPUBuffer;
   private f32UniformBuffer: GPUBuffer;
   private u32UniformBuffer: GPUBuffer;
+  private viewportStateStorage: GPUBuffer;
   private gridDataBufferStorage: GPUBuffer;
   private focusedStateStorage: GPUBuffer;
   private selectedStateStorage: GPUBuffer;
-  private drawIndirectBufferSource: Uint32Array;
   private drawIndirectBuffer: GPUBuffer;
 
   private columnFocusSelectPipeline: GPURenderPipeline;
   private rowFocusSelectPipeline: GPURenderPipeline;
   private bodyPipeline: GPURenderPipeline;
+  private viewportShadowPipeline: GPURenderPipeline;
   private leftHeaderPipeline: GPURenderPipeline;
   private topHeaderPipeline: GPURenderPipeline;
   private scrollBarBackgroundPipeline: GPURenderPipeline;
   private scrollBarBodyPipeline: GPURenderPipeline;
 
-  private vertexBuffer: GPUBuffer;
-
   private columnFocusRenderBundle: GPURenderBundle;
   private rowFocusRenderBundle: GPURenderBundle;
   private bodyRenderBundle: GPURenderBundle;
+  private viewportShadowRenderBundle: GPURenderBundle;
   private topHeaderRenderBundle: GPURenderBundle;
   private leftHeaderRenderBundle: GPURenderBundle;
   private scrollBarBackgroundRenderBundle: GPURenderBundle;
@@ -58,11 +64,13 @@ export class RenderBundleBuilder {
     device: GPUDevice,
     canvasFormat: GPUTextureFormat,
     canvasContext: GPUCanvasContext,
-    canvasElementContext: CanvasElementContextValue,
-    gridContext: GridContextProps
+    canvasElementContext: CanvasElementContextType,
+    gridSize: { numColumns: number; numRows: number },
+    numViewports: number
   ) {
     this.device = device;
     this.canvasFormat = canvasFormat;
+    this.canvasContext = canvasContext;
     this.canvasElementContext = canvasElementContext;
 
     const shaderModule = device.createShaderModule({
@@ -159,6 +167,14 @@ export class RenderBundleBuilder {
       'vertexBody',
       'fragmentBody'
     );
+
+    this.viewportShadowPipeline = createPipeline(
+      'viewportShadow',
+      device,
+      'vertexViewportShadow',
+      'fragmentViewportShadow'
+    );
+
     this.leftHeaderPipeline = createPipeline(
       'leftHeader',
       device,
@@ -190,6 +206,12 @@ export class RenderBundleBuilder {
       }
     );
 
+    this.drawIndirectBufferSource = new Uint32Array(
+      DRAW_INDIRECT_BUFFER_SOURCE
+    );
+    this.u32UniformBufferSource = new Uint32Array(U32UNIFORMS_LENGTH);
+    this.f32UniformBufferSource = new Float32Array(F32UNIFORMS_LENGTH);
+
     this.vertexBuffer = createVertexBuffer(
       'Vertices',
       device,
@@ -198,17 +220,13 @@ export class RenderBundleBuilder {
 
     updateBuffer(this.device, this.vertexBuffer, new Float32Array(vertices));
 
-    this.drawIndirectBufferSource = new Uint32Array(
-      DRAW_INDIRECT_BUFFER_SOURCE
-    );
-
     this.drawIndirectBuffer = device.createBuffer({
       label: 'DrawIndirect',
       size: DRAW_INDIRECT_BUFFER_SOURCE.length * U32LEN,
       usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST
     });
 
-    this.updateDrawIndirectBuffer({ numColumnsToShow: 1, numRowsToShow: 1 });
+    this.updateDrawIndirectBuffer(1, 1, numViewports);
 
     this.f32UniformBuffer = createUniformBuffer(
       'F32Uniforms',
@@ -221,8 +239,14 @@ export class RenderBundleBuilder {
       U32UNIFORMS_BYTE_LENGTH
     );
 
+    this.viewportStateStorage = createViewportBuffer(
+      'ViewportBuffer',
+      device,
+      numViewports
+    );
+
     const numCells =
-      Math.max(gridContext.gridSize.numColumns, gridContext.gridSize.numRows) *
+      Math.max(gridSize.numColumns, gridSize.numRows) *
       F32LEN;
     this.focusedStateStorage = createStorageBuffer(
       'FocusedStateBuffer',
@@ -237,7 +261,7 @@ export class RenderBundleBuilder {
     this.gridDataBufferStorage = createStorageBuffer(
       'GridDataBuffer',
       device,
-      gridContext.gridSize.numColumns * gridContext.gridSize.numRows * 4
+      gridSize.numColumns * gridSize.numRows * 4
     );
 
     this.bindGroup = this.createBindGroup(
@@ -245,6 +269,7 @@ export class RenderBundleBuilder {
       bindGroupLayout,
       this.f32UniformBuffer,
       this.u32UniformBuffer,
+      this.viewportStateStorage,
       this.focusedStateStorage,
       this.selectedStateStorage,
       this.gridDataBufferStorage
@@ -253,6 +278,7 @@ export class RenderBundleBuilder {
     this.columnFocusRenderBundle = this.createColumnFocusRenderBundle();
     this.rowFocusRenderBundle = this.createRowFocusRenderBundle();
     this.bodyRenderBundle = this.createBodyRenderBundle();
+    this.viewportShadowRenderBundle = this.createViewportShadowRenderBundle();
     this.topHeaderRenderBundle = this.createTopHeaderRenderBundle();
     this.leftHeaderRenderBundle = this.createLeftHeaderRenderBundle();
     this.scrollBarBodyRenderBundle = this.createScrollBarBodyRenderBundle();
@@ -262,35 +288,40 @@ export class RenderBundleBuilder {
 
   updateF32UniformBuffer(
     gridContext: GridContextProps,
-    viewport: {
-      left: number;
-      top: number;
-      right: number;
-      bottom: number;
-    },
-    overscroll: { x: number; y: number }
+    overscroll: { x: number; y: number },
   ) {
     updateBuffer(
       this.device,
       this.f32UniformBuffer,
       createF32UniformBufferSource(
+        this.f32UniformBufferSource,
         this.canvasElementContext,
         gridContext,
-        viewport,
         overscroll
       )
+    );
+  }
+
+  updateViewportStateStorage(
+    viewportStates: Float32Array,
+  ){
+    updateBuffer(
+      this.device,
+      this.viewportStateStorage,
+      viewportStates
     );
   }
 
   updateU32UniformBuffer(
     gridContext: GridContextProps,
     numCellsToShow: { numColumnsToShow: number; numRowsToShow: number },
-    scrollBarState: number
+    scrollBarState: number,
+    index: number
   ) {
     updateBuffer(
       this.device,
       this.u32UniformBuffer,
-      createUint32BufferSource(gridContext, numCellsToShow, scrollBarState)
+      createUint32BufferSource(this.u32UniformBufferSource, gridContext, numCellsToShow, scrollBarState, index)
     );
   }
 
@@ -319,6 +350,7 @@ export class RenderBundleBuilder {
     bindGroupLayout: GPUBindGroupLayout,
     f32UniformBuffer: GPUBuffer,
     u32UniformBuffer: GPUBuffer,
+    viewportBuffer: GPUBuffer,
     focusedStateStorage: GPUBuffer,
     selectedStateStorage: GPUBuffer,
     gridDataBufferStorage: GPUBuffer
@@ -337,14 +369,18 @@ export class RenderBundleBuilder {
         },
         {
           binding: 2,
-          resource: { buffer: focusedStateStorage }
+          resource: { buffer: viewportBuffer }
         },
         {
           binding: 3,
-          resource: { buffer: selectedStateStorage }
+          resource: { buffer: focusedStateStorage }
         },
         {
           binding: 4,
+          resource: { buffer: selectedStateStorage }
+        },
+        {
+          binding: 5,
           resource: { buffer: gridDataBufferStorage }
         }
       ]
@@ -367,17 +403,16 @@ export class RenderBundleBuilder {
     return encoder.finish();
   }
 
-  updateDrawIndirectBuffer({
-                             numColumnsToShow,
-                             numRowsToShow
-                           }: {
-    numColumnsToShow: number;
-    numRowsToShow: number;
-  }) {
+  updateDrawIndirectBuffer(
+    numColumnsToShow: number,
+    numRowsToShow: number,
+    numViewports: number
+  ) {
     updateDrawIndirectBufferSource(
       this.drawIndirectBufferSource,
       numColumnsToShow,
-      numRowsToShow
+      numRowsToShow,
+      numViewports
     );
     this.device.queue.writeBuffer(
       this.drawIndirectBuffer,
@@ -391,6 +426,14 @@ export class RenderBundleBuilder {
       'body',
       this.bodyPipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('BODY')!
+    );
+  }
+
+  createViewportShadowRenderBundle() {
+    return this.createRenderBundle(
+      'viewportShadow',
+      this.viewportShadowPipeline,
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('VIEWPORT_SHADOW')!
     );
   }
 
@@ -479,6 +522,7 @@ export class RenderBundleBuilder {
     this.executeRenderBundles([
       this.columnFocusRenderBundle,
       this.rowFocusRenderBundle,
+      this.viewportShadowRenderBundle,
       this.bodyRenderBundle,
       this.topHeaderRenderBundle,
       this.leftHeaderRenderBundle,

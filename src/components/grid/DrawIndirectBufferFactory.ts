@@ -11,28 +11,29 @@ export const DRAW_INDIRECT_BUFFER_SOURCE_INDEX: Record<string, number> = {
   TOP_HEADER: 1,
   LEFT_HEADER: 2,
   SCROLLBAR_BACKGROUND: 3,
-  SCROLLBAR_BODY: 4
+  SCROLLBAR_BODY: 4,
+  VIEWPORT_SHADOW: 5
 };
 
-const TO_BE_REPLACED = 0;
+const INSTANCE_COUNT_TO_BE_REPLACED = 0;
 const DRAW_INDIRECT_ITEM_LEN = 4;
 
 export const DRAW_INDIRECT_BUFFER_SOURCE = [
   // 0 body
   2 * NUM_VERTICES_PER_POLYGON, // vertexCount
-  TO_BE_REPLACED, // instanceCount(numColumnsToShow * numRowsToShow)
+  INSTANCE_COUNT_TO_BE_REPLACED, // instanceCount(numColumnsToShow * numRowsToShow)
   FIRST_VERTEX_OF_MARGINED_RECT_INDEX, // firstVertex
   0, // firstInstance
 
   // 1 topHeader
   2 * NUM_VERTICES_PER_POLYGON, // vertexCount
-  TO_BE_REPLACED, // instanceCount(numColumnsToShow * 3)
+  INSTANCE_COUNT_TO_BE_REPLACED, // instanceCount(numColumnsToShow * 3)
   FIRST_VERTEX_OF_MARGINED_RECT_INDEX, // firstVertex
   0, // firstInstance
 
   // 2 leftHeader
   2 * NUM_VERTICES_PER_POLYGON, // vertexCount
-  TO_BE_REPLACED, // instanceCount(numRowsToShow * 3)
+  INSTANCE_COUNT_TO_BE_REPLACED, // instanceCount(numRowsToShow * 3)
   FIRST_VERTEX_OF_MARGINED_RECT_INDEX, // firstVertex
   0, // firstInstance
 
@@ -46,6 +47,12 @@ export const DRAW_INDIRECT_BUFFER_SOURCE = [
   (2 + NUM_SCROLLBAR_END_ARCS) * NUM_VERTICES_PER_POLYGON, // vertexCount
   2, // instanceCount(2 is stands for horizontal and vertical axis)
   FIRST_VERTEX_OF_RECT_AND_PIES_INDEX, // firstVertex
+  0, // firstInstance
+
+  // 5 viewportShadow
+  4 * 2 * NUM_VERTICES_PER_POLYGON, // vertexCount
+  INSTANCE_COUNT_TO_BE_REPLACED, // instanceCount
+  FIRST_VERTEX_OF_RECT_INDEX, // firstVertex
   0 // firstInstance
 ];
 
@@ -64,7 +71,8 @@ const INSTANCE_COUNT_BYTE_INDEX = 1;
 export const updateDrawIndirectBufferSource = (
   drawIndirectBufferSource: Uint32Array,
   numColumnsToShow: number,
-  numRowsToShow: number
+  numRowsToShow: number,
+  numViewports: number,
 ) => {
   drawIndirectBufferSource[
   DRAW_INDIRECT_BUFFER_SOURCE_INDEX.BODY * DRAW_INDIRECT_ITEM_LEN +
@@ -78,4 +86,8 @@ export const updateDrawIndirectBufferSource = (
   DRAW_INDIRECT_BUFFER_SOURCE_INDEX.LEFT_HEADER * DRAW_INDIRECT_ITEM_LEN +
   INSTANCE_COUNT_BYTE_INDEX
     ] = numRowsToShow;
+  drawIndirectBufferSource[
+  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.VIEWPORT_SHADOW * DRAW_INDIRECT_ITEM_LEN +
+  INSTANCE_COUNT_BYTE_INDEX
+    ] = numViewports;
 };

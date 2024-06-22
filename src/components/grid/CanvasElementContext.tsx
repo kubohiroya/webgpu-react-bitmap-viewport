@@ -26,19 +26,19 @@ export type CanvasElementEventHandlers = Partial<{
   onWheel: (event: WheelEvent) => void;
 }>;
 
-export type CanvasElementContextValue = CanvasElementContextCommons &
+export type CanvasElementContextType = CanvasElementContextCommons &
   CanvasElementEventHandlers & {
   canvasRef: React.RefObject<HTMLCanvasElement>;
 };
 
 export const CanvasElementContext =
-  React.createContext<CanvasElementContextValue | null>(null);
+  React.createContext<CanvasElementContextType | null>(null);
 
 export const CanvasElementContextProvider = (
   props: CanvasElementContextProps & { children?: ReactNode }
 ) => {
   const canvasRef = React.createRef<HTMLCanvasElement>();
-  const value: CanvasElementContextValue = {
+  const value: CanvasElementContextType = {
     ...props,
     canvasRef
   };
@@ -66,7 +66,7 @@ export const useCanvasElementContext = () => {
   const context = React.useContext(CanvasElementContext);
   if (!context) {
     throw new Error(
-      'useLayoutContext must be used within a LayoutContextProvider'
+      'useCanvasElementContext must be used within a CanvasElementContext'
     );
   }
   return context;

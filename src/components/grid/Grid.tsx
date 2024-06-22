@@ -17,41 +17,48 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
   const gridUIRef = React.useRef<GridHandles>(null);
 
   useImperativeHandle(ref, () => ({
-    updateData: (sourceId: string, data: Float32Array) => {
-      gridUIRef.current?.updateData(sourceId, data);
+    updateData: (sourceIndex: number, data: Float32Array) => {
+      gridUIRef.current?.updateData(sourceIndex, data);
     },
-    updateFocusedState: (sourceId: string, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.updateFocusedState(sourceId, columnIndex, rowIndex);
+    updateFocusedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+      gridUIRef.current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
     },
-    updateSelectedState: (sourceId: string, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.updateSelectedState(sourceId, columnIndex, rowIndex);
+    updateSelectedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+      gridUIRef.current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
+    },
+    refreshViewportState: (sourceIndex: number) => {
+      gridUIRef.current?.refreshViewportState(sourceIndex);
     }
   }));
 
+  const canvasId = "webgpu-react-grid-"+props.index;
+
   return (
     <CanvasElementContextProvider
-      canvasId={props.canvasId}
+      canvasId={canvasId}
       headerOffset={props.headerOffset}
       canvasSize={props.canvasSize}
       scrollBar={props.scrollBar}
-      //multisample={4}
+      // multisample={4}
     >
       <GridContextProvider gridSize={props.gridSize} data={props.data}>
-        <WebGPUContextProvider>
-          <ViewportContextProvider
-            initialViewport={props.initialViewport}
-            initialOverscroll={props.initialOverscroll}
-          >
+        <ViewportContextProvider
+          index={props.index}
+          numViewports={props.numViewports}
+          viewportStates={props.viewportStates}
+          initialOverscroll={props.initialOverscroll}
+        >
+          <WebGPUContextProvider>
             <GridUI
               ref={gridUIRef}
-              canvasId={props.canvasId}
               focusedStates={props.focusedStates}
               selectedStates={props.selectedStates}
               onFocusedStatesChange={props.onFocusedStatesChange}
               onSelectedStatesChange={props.onSelectedStatesChange}
+              onViewportStateChange={props.onViewportStateChange}
             />
-          </ViewportContextProvider>
-        </WebGPUContextProvider>
+          </WebGPUContextProvider>
+        </ViewportContextProvider>
       </GridContextProvider>
     </CanvasElementContextProvider>
   );

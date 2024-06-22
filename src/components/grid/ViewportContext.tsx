@@ -1,12 +1,9 @@
 import React, { ReactNode } from 'react';
 
 export type ViewportContextProps = {
-  initialViewport?: {
-    top: number;
-    bottom: number;
-    left: number;
-    right: number;
-  };
+  index: number;
+  numViewports: number;
+  viewportStates: Float32Array;
   initialOverscroll?: {
     x: number;
     y: number;

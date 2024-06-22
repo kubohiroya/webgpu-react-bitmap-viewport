@@ -1,26 +1,21 @@
 import React, { ReactNode, useLayoutEffect, useState } from 'react';
-import { CanvasElementContextValue, useCanvasElementContext } from './CanvasElementContext';
+import { CanvasElementContextType, useCanvasElementContext } from './CanvasElementContext';
 import { RenderBundleBuilder } from './RenderBundleBuilder';
 import { GridContextProps, GridContextValue, useGridContext } from './GridContext';
+import { useViewportContext } from './ViewportContext';
 
-type WebGPUContextValue = {
+export type WebGPUContextType = {
   device: GPUDevice | null;
   canvasContext: GPUCanvasContext | null;
-  format: GPUTextureFormat | null;
+  canvasFormat: GPUTextureFormat | null;
   texture: GPUTexture | null;
-  gridContext: GridContextValue | null;
-  canvasElementContext: CanvasElementContextValue | null;
-  renderBundleBuilder: RenderBundleBuilder | null;
 };
 
-export const WebGPUContext = React.createContext<WebGPUContextValue>({
+export const WebGPUContext = React.createContext<WebGPUContextType>({
   device: null,
   canvasContext: null,
-  format: null,
+  canvasFormat: null,
   texture: null,
-  gridContext: null,
-  canvasElementContext: null,
-  renderBundleBuilder: null
 });
 
 export const WebGPUContextProvider = ({
@@ -31,14 +26,11 @@ export const WebGPUContextProvider = ({
   const canvasElementContext = useCanvasElementContext();
   const gridContext = useGridContext();
 
-  const [context, setContext] = useState<WebGPUContextValue>({
+  const [context, setContext] = useState<WebGPUContextType>({
     device: null,
     canvasContext: null,
-    format: null,
+    canvasFormat: null,
     texture: null,
-    gridContext: null,
-    canvasElementContext: null,
-    renderBundleBuilder: null
   });
 
   useLayoutEffect(() => {
@@ -82,7 +74,7 @@ export const WebGPUContextProvider = ({
       };
       await initWebGPU(
         (device: GPUDevice, gridContextProps: GridContextProps) => {
-          const format = navigator.gpu.getPreferredCanvasFormat();
+          const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
           const canvasElement = canvasElementContext.canvasRef.current;
 
           if (!canvasElement) {
@@ -91,33 +83,23 @@ export const WebGPUContextProvider = ({
 
           const canvasContext = canvasElement.getContext('webgpu');
 
-          if (!canvasContext || !navigator.gpu) {
+          if (!canvasContext || !navigator.gpu || !canvasFormat) {
             throw new Error('WebGPU not supported on this browser.');
           }
           canvasContext.configure({
             device,
-            format,
+            format: canvasFormat,
             //alphaMode: 'opaque',
             alphaMode: 'premultiplied'
           });
 
           const texture = canvasContext.getCurrentTexture();
-          const renderBundleBuilder = new RenderBundleBuilder(
-            device,
-            format,
-            canvasContext,
-            canvasElementContext,
-            gridContextProps
-          );
 
           setContext({
             canvasContext,
             device,
             texture,
-            format,
-            gridContext,
-            canvasElementContext,
-            renderBundleBuilder
+            canvasFormat
           });
         }
       );
@@ -132,8 +114,7 @@ export const WebGPUContextProvider = ({
 
   if (
     !context.device ||
-    !context.canvasContext ||
-    !context.renderBundleBuilder
+    !context.canvasContext
   ) {
     return;
   }
@@ -154,8 +135,7 @@ export const useWebGPUContext = () => {
 
   if (
     !context.device ||
-    !context.canvasContext ||
-    !context.renderBundleBuilder
+    !context.canvasContext
   ) {
     return;
   }

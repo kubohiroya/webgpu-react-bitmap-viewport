@@ -25,7 +25,6 @@
     "paths": {
       "webgpu-react-grid": ["./src"]
     },
-    "composite": true
   },
   "references": [
     {

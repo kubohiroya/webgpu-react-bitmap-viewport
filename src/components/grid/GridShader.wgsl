@@ -3,10 +3,25 @@ const FALSE = 0u;
 override scrollBarRadius: f32 = 5.0;
 override scrollBarMargin: f32 = 2.0;
 
+const rectVertices = array<vec2f, 6>(
+  //   X,    Y,
+  // bottom right triangle (anti-clockwise)
+  // 0 left-bottom 1 right-bottom 2 right-top
+   vec2f(-1, -1), vec2f(1, -1), vec2f(1, 1),
+  // top left triangle (anti-clockwise)
+  // 3 left-bottom 4 right-top 5 left-top
+   vec2f(-1, -1),  vec2f(1, 1),  vec2f(-1, 1)
+);
+
 struct VertexInput {
   @builtin(instance_index) instanceIndex: u32,
   @builtin(vertex_index) vertexIndex: u32,
   @location(0) position: vec2f,
+};
+
+struct RectVertexInput {
+  @builtin(instance_index) instanceIndex: u32,
+  @builtin(vertex_index) vertexIndex: u32,
 };
 
 struct VertexOutput {
@@ -22,10 +37,7 @@ struct F32uni {
   gridSize: vec2f,
   canvasSize: vec2f,
   header: vec2f,
-  viewportLeftTop: vec2f,
-  viewportRightBottom: vec2f,
-  viewportSize: vec2f,
-  overscroll: vec2f,
+  overscroll: vec2f
 };
 @group(0) @binding(0) var<uniform> f32uni: F32uni;
 
@@ -34,19 +46,26 @@ struct U32uni {
   numColumnsToShow: u32,
   numRowsToShow: u32,
   scrollBarState: u32,
+  viewportIndex: u32,
 };
 @group(0) @binding(1) var<uniform> u32uni: U32uni;
-@group(0) @binding(2) var<storage, read> focused: array<u32>;
-@group(0) @binding(3) var<storage, read> selected: array<u32>;
-@group(0) @binding(4) var<storage, read> gridData: array<f32>;
+@group(0) @binding(2) var<storage, read> viewports: array<vec4f>;
+@group(0) @binding(3) var<storage, read> focused: array<u32>;
+@group(0) @binding(4) var<storage, read> selected: array<u32>;
+@group(0) @binding(5) var<storage, read> gridData: array<f32>;
+
+fn shapeToWorld(center: vec2f, scale: vec2f, position: vec2f) -> vec2f {
+  return center + (scale * position * vec2f(0.5, -0.5));
+}
 
 fn cellToWorld(cellX: u32, cellY: u32, position: vec2f) -> vec2f {
   let cell = vec2f(f32(cellX), f32(cellY));
-  return floor(f32uni.viewportLeftTop) + (cell + (position * vec2f(0.5, -0.5) + 0.5) );
+  return floor(viewports[u32uni.viewportIndex].xy) + (cell + (position * vec2f(0.5, -0.5) + 0.5) );
 }
 
 fn worldToViewport(world: vec2f) -> vec2f {
-  return (world - f32uni.viewportLeftTop) / f32uni.viewportSize;
+  let viewportSize = viewports[u32uni.viewportIndex].zw - viewports[u32uni.viewportIndex].xy;
+  return (world - viewports[u32uni.viewportIndex].xy) / viewportSize;
 }
 
 fn viewportToFrame(viewport: vec2f) -> vec2f {
@@ -74,6 +93,15 @@ fn transform(cellX: u32, cellY: u32, position: vec2f) -> vec2f {
   return dimension;
 }
 
+fn transform2(center: vec2f, scale: vec2f, position: vec2f) -> vec2f {
+  let world = shapeToWorld(center, scale, position); // 0.0 - 1.0
+  let viewport = worldToViewport(world);  // 0.0 - 1.0
+  let frame = viewportToFrame(viewport); // 0.0 - 1.0
+  let canvas = frameToCanvas(frame); // 0.0 - 1.0
+  let dimension = canvasToDimension(canvas);
+  return dimension;
+}
+
 @vertex
 fn vertexBody(
     input: VertexInput
@@ -81,8 +109,10 @@ fn vertexBody(
     var output: VertexOutput;
     let cellX: u32 = input.instanceIndex % u32uni.numColumnsToShow;
     let cellY: u32 = input.instanceIndex / u32uni.numColumnsToShow;
-    let gridX: u32 = cellX + u32(f32uni.viewportLeftTop.x);
-    let gridY: u32 = cellY + u32(f32uni.viewportLeftTop.y);
+    let left = u32(viewports[u32uni.viewportIndex].x);
+    let top = u32(viewports[u32uni.viewportIndex].y);
+    let gridX: u32 = cellX + left;
+    let gridY: u32 = cellY + top;
     output.position = vec4f(transform(cellX, cellY, input.position), 0.0, 1.0);
     output.vertexIndex = input.vertexIndex;
     let gridIndex = gridX + gridY * u32uni.gridSize.x;
@@ -99,8 +129,9 @@ fn vertexBody(
 fn vertexLeftHeader(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
   let cellY: u32 = input.instanceIndex;
-  let gridY: u32 = cellY + u32(f32uni.viewportLeftTop.y);
-  let rowIndex: u32 = u32(f32uni.viewportLeftTop.y) + input.instanceIndex;
+  let top: u32 = u32(viewports[u32uni.viewportIndex].y);
+  let gridY: u32 = cellY + top;
+  let rowIndex: u32 = top + input.instanceIndex;
   var transformed: vec2f = transform(0, cellY, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   // output.vertexIndex = input.vertexIndex;
@@ -129,8 +160,9 @@ fn vertexLeftHeader(input: VertexInput) -> VertexOutput {
 fn vertexTopHeader(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
   let cellX: u32 = input.instanceIndex;
-  let gridX: u32 = cellX + u32(f32uni.viewportLeftTop.x);
-  let colIndex = u32(f32uni.viewportLeftTop.x) + input.instanceIndex;
+  let left: u32 = u32(viewports[u32uni.viewportIndex].x);
+  let gridX: u32 = cellX + left;
+  let colIndex = left + input.instanceIndex;
   var transformed: vec2f = transform(cellX, 0, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   // output.vertexIndex = input.vertexIndex;
@@ -160,8 +192,9 @@ fn vertexTopHeader(input: VertexInput) -> VertexOutput {
 fn vertexColumnFocusSelect(input: VertexInput) -> VertexOutput{
   var output: VertexOutput;
   let cellX: u32 = input.instanceIndex;
-  let gridX: u32 = cellX + u32(f32uni.viewportLeftTop.x);
-  let colIndex = u32(f32uni.viewportLeftTop.x) + input.instanceIndex;
+  let left: u32 = u32(viewports[u32uni.viewportIndex].x);
+  let gridX: u32 = cellX + left;
+  let colIndex = left + input.instanceIndex;
   var transformed: vec2f = transform(cellX, 0, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   output.isFocused = select(FALSE, TRUE, checkColumnFocused(colIndex));
@@ -181,8 +214,9 @@ fn vertexColumnFocusSelect(input: VertexInput) -> VertexOutput{
 fn vertexRowFocusSelect(input: VertexInput) -> VertexOutput{
   var output: VertexOutput;
   let cellY: u32 = input.instanceIndex;
-  let gridY: u32 = cellY + u32(f32uni.viewportLeftTop.y);
-  let rowIndex: u32 = u32(f32uni.viewportLeftTop.y) + input.instanceIndex;
+  let top: u32 = u32(viewports[u32uni.viewportIndex].y);
+  let gridY: u32 = cellY + top;
+  let rowIndex: u32 = top + input.instanceIndex;
   var transformed: vec2f = transform(0, cellY, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   output.isFocused = select(FALSE, TRUE, checkRowFocused(rowIndex));
@@ -246,14 +280,16 @@ fn vertexScrollBarBody(input: VertexInput) -> VertexOutput{
   const NUM_VERTICES_PER_POLYGON = 3;
   if(input.instanceIndex == 0){ // horizontal scrollbar
     output.isFocused = select(FALSE, TRUE, u32uni.scrollBarState == 1u || u32uni.scrollBarState == 3u);
+    let viewportLeft = viewports[u32uni.viewportIndex].x;
+    let viewportRight = viewports[u32uni.viewportIndex].z;//means right
     let left: f32 = -1 +
       2 * ((f32uni.header.x - f32uni.overscroll.x + scrollBarRadius) / f32uni.canvasSize.x +
-                            f32uni.viewportLeftTop.x *
+                            viewportLeft *
                             (f32uni.canvasSize.x - f32uni.header.x - scrollBarRadius * 2) /
                              f32uni.canvasSize.x / f32uni.gridSize.x);
     let right: f32 = -1 +
       2 * ((f32uni.header.x - f32uni.overscroll.x + scrollBarRadius) / f32uni.canvasSize.x +
-                            f32uni.viewportRightBottom.x *
+                            viewportRight *
                             (f32uni.canvasSize.x - f32uni.header.x - scrollBarRadius * 2) /
                              f32uni.canvasSize.x / f32uni.gridSize.x);
     if(6 <= input.vertexIndex && input.vertexIndex < baseIndex){
@@ -276,12 +312,14 @@ fn vertexScrollBarBody(input: VertexInput) -> VertexOutput{
 
   } else if(input.instanceIndex == 1){ // vertical scrollbar
     output.isFocused = select(FALSE, TRUE, u32uni.scrollBarState == 2u || u32uni.scrollBarState == 3u);
+    let viewportTop = viewports[u32uni.viewportIndex].y;
+    let viewportBottom = viewports[u32uni.viewportIndex].w;//means bottom
     let top: f32 = 1 - 2 * ((f32uni.header.y - f32uni.overscroll.y + scrollBarRadius) / f32uni.canvasSize.y +
-                            f32uni.viewportLeftTop.y *
+                            viewportTop *
                             (f32uni.canvasSize.y - f32uni.header.y - scrollBarRadius * 2) /
                             f32uni.canvasSize.y / f32uni.gridSize.y);
     let bottom: f32 = 1 - 2 * ((f32uni.header.y - f32uni.overscroll.y + scrollBarRadius) / f32uni.canvasSize.y +
-                            f32uni.viewportRightBottom.y *
+                            viewportBottom *
                             (f32uni.canvasSize.y - f32uni.header.y- scrollBarRadius * 2) / f32uni.canvasSize.y / f32uni.gridSize.y);
 
     if(input.vertexIndex < baseIndex){
@@ -302,6 +340,24 @@ fn vertexScrollBarBody(input: VertexInput) -> VertexOutput{
       return output;
     }
   }
+  return output;
+}
+
+@vertex
+fn vertexViewportShadow(input: RectVertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  if(input.instanceIndex == u32uni.viewportIndex){
+    return output;
+  }
+  let viewport: vec4f = viewports[input.instanceIndex];
+  let left = viewport.x;
+  let top = viewport.y;
+  let right = viewport.z;
+  let bottom = viewport.w;
+  let scale = vec2f(right - left, bottom - top);
+  let center = vec2f(left + right, top + bottom) / 2.0;
+  output.position = vec4f(transform2(center, scale, rectVertices[input.vertexIndex % 6]), 0.0, 1.0);
+  output.cellValue = f32(input.instanceIndex) / f32(arrayLength(&viewports));
   return output;
 }
 
@@ -485,4 +541,10 @@ fn fragmentScrollBarBody(input: VertexOutput) -> @location(0) vec4f{
   }else{
     return vec4f(0.3, 0.3, 0.3, 0.6);
   }
+}
+
+@fragment
+fn fragmentViewportShadow(input: VertexOutput) -> @location(0) vec4f {
+  let rgb = hsvToRgb(input.cellValue * 0.8, 0.3, 1.0);
+  return vec4f(rgb, 0.4);
 }
