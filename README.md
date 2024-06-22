@@ -1,6 +1,6 @@
 # WebGPU-React-Grid - A React component for visualizing a grid of floating-point values using WebGPU
 [![npm version](https://badge.fury.io/js/webgpu-react-grid.svg)](https://badge.fury.io/js/webgpu-react-grid)
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/silevis/reactgrid/blob/develop/LICENSE)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/kubohiroya/webgpu-react-grid/blob/main/LICENSE)
 
 
 WebGPU-React-Grid is an open-source React component for visualizing a grid of floating-point values using WebGPU.
