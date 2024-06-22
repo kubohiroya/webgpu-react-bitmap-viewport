@@ -1,5 +1,5 @@
-import { useRef } from "react";
 import { Grid, GridHandles } from "webgpu-react-grid";
+import { useRef } from "react";
 
 const gridSize = { numColumns: 128, numRows: 128 };
 const gridSizeMax = Math.max(gridSize.numColumns, gridSize.numRows);

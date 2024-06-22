@@ -5,7 +5,7 @@ import * as React from 'react';
  */
 export type GridProps = {
   /** The ID of the canvas element. */
-  canvasId: string;
+  index: number;
 
   /** The offset of the header in the grid. */
   headerOffset: {
@@ -23,6 +23,8 @@ export type GridProps = {
     height: number;
   };
 
+  numViewports: number;
+
   /** The size of the grid. */
   gridSize: {
     /** The number of columns in the grid. */
@@ -39,17 +41,8 @@ export type GridProps = {
   /** The selected states of the grid, stored in a Uint8Array: notSelected=0, verticalSelected=1, horizontalSelected=2, verticalAndHorizontalSelected=3*/
   selectedStates: Uint8Array;
 
-  /** The initial viewport settings for the grid. */
-  initialViewport?: {
-    /** The top boundary of the viewport. */
-    top: number;
-    /** The bottom boundary of the viewport. */
-    bottom: number;
-    /** The left boundary of the viewport. */
-    left: number;
-    /** The right boundary of the viewport. */
-    right: number;
-  };
+  /** The set of viewport left,top,right,bottom values for the grid in a Float32Array. */
+  viewportStates: Float32Array;
 
   /** The initial overscroll settings for the grid. */
   initialOverscroll?: {
@@ -67,12 +60,13 @@ export type GridProps = {
     margin: number;
   };
 
-  onFocusedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
-  onSelectedStatesChange?: (sourceId: string, columnIndex: number, rowIndex: number) => void;
+  onDataChange?: (sourceIndex: number, data: Float32Array) => void;
+  onFocusedStatesChange?: (sourceIndex: number, columnIndex: number, rowIndex: number) => void;
+  onSelectedStatesChange?: (sourceIndex: number, columnIndex: number, rowIndex: number) => void;
+  onViewportStateChange?: (
+    sourceIndex: number
+  ) => void;
 };
-
-export const SCROLLBAR_RADIUS = 5.0;
-export const SCROLLBAR_MARGIN = 2.0;
 
 declare const Grid: React.FC<GridProps>;
 export default Grid;

@@ -28,10 +28,10 @@ npm install webgpu-react-grid
 # Usage
 
 ```tsx
-import { useRef } from "react";
 import { Grid, GridHandles } from "webgpu-react-grid";
+import { useRef } from "react";
 
-const gridSize = { numColumns: 1024, numRows: 1024 };
+const gridSize = { numColumns: 128, numRows: 128 };
 const gridSizeMax = Math.max(gridSize.numColumns, gridSize.numRows);
 
 const data =  new Float32Array(gridSize.numRows * gridSize.numColumns);
@@ -46,17 +46,24 @@ for (let i = 0; i < data.length; i++) {
 const focusedStates = new Uint8Array(gridSizeMax);
 const selectedStates = new Uint8Array(gridSizeMax);
 
-const GRID_ID_1 = 'example1';
-const GRID_ID_2 = 'example2';
+const viewportStates = new Float32Array([
+  0.0, 0.0, 16.0, 16.0,
+  8.0, 8.0, 24.0, 24.0,
+]);
 
 export const GridExample = () => {
-  const gridRef1 = useRef<GridHandles>(null);
-  const gridRef2 = useRef<GridHandles>(null);
+  const gridRefs =
+    [
+      useRef<GridHandles>(null),
+      useRef<GridHandles>(null)
+    ];
+
   return (
     <>
       <Grid
-        ref={gridRef1}
-        canvasId={GRID_ID_1}
+        index={0}
+        ref={gridRefs[0]}
+        numViewports={2}
         headerOffset={{ left: 28, top: 28 }}
         canvasSize={{ width: 512, height: 512 }}
         scrollBar={{
@@ -67,22 +74,21 @@ export const GridExample = () => {
         data={data}
         focusedStates={focusedStates}
         selectedStates={selectedStates}
-        onFocusedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef2.current?.updateFocusedState(sourceId, columnIndex, rowIndex);
+        viewportStates={viewportStates}
+        onFocusedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+          gridRefs[1].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
-        onSelectedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef2.current?.updateSelectedState(sourceId, columnIndex, rowIndex);
+        onSelectedStatesChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
+          gridRefs[1].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
-        initialViewport={{
-          top: 0.0,
-          bottom: 16.0,
-          left: 0.0,
-          right: 16.0,
+        onViewportStateChange={(sourceIndex: number) => {
+          gridRefs[1].current?.refreshViewportState(sourceIndex);
         }}
       />
       <Grid
-        canvasId={GRID_ID_2}
-        ref={gridRef2}
+        index={1}
+        ref={gridRefs[1]}
+        numViewports={2}
         headerOffset={{ left: 28, top: 28 }}
         canvasSize={{ width: 512, height: 512 }}
         scrollBar={{
@@ -93,17 +99,15 @@ export const GridExample = () => {
         data={data}
         focusedStates={focusedStates}
         selectedStates={selectedStates}
-        onFocusedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef1.current?.updateFocusedState(sourceId, columnIndex, rowIndex);
+        viewportStates={viewportStates}
+        onFocusedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+          gridRefs[0].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
-        onSelectedStatesChange={(sourceId: string, columnIndex: number, rowIndex: number) => {
-          gridRef1.current?.updateSelectedState(sourceId, columnIndex, rowIndex);
+        onSelectedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+          gridRefs[0].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
-        initialViewport={{
-          top: 0.0,
-          bottom: 24.0,
-          left: 0.0,
-          right: 24.0,
+        onViewportStateChange={(sourceIndex: number) => {
+          gridRefs[0].current?.refreshViewportState(sourceIndex);
         }}
       />
     </>
