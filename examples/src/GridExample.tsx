@@ -1,7 +1,7 @@
 import { Grid, GridHandles } from "webgpu-react-grid";
 import { useRef } from "react";
 
-const gridSize = { numColumns: 128, numRows: 128 };
+const gridSize = { numColumns: 1024, numRows: 1024 };
 const gridSizeMax = Math.max(gridSize.numColumns, gridSize.numRows);
 
 const data =  new Float32Array(gridSize.numRows * gridSize.numColumns);
