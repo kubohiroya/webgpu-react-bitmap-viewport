@@ -4,14 +4,15 @@
     "rootDir": ".",
     "outDir": "./dist/examples",
     "baseUrl": ".",
-    "types": ["node", "vite/client", "@webgpu/types"],
+    "types": ["node", "vite/client", "@webgpu/types", "dist/types/src/index.ts"],
     "esModuleInterop": true,
-    "composite": true
+    "composite": true,
+    "paths": {
+      "webgpu-react-grid": ["dist/types/src/index.ts"],
+    }
   },
-  "exclude": ["node_modules", "dist"],
+  "exclude": ["node_modules"],
   "include": [
-    "./src/**/*",
-    "./examples/src/**/*.ts",
-    "./examples/src/**/*.tsx"
+    "examples/src/**/*",
   ]
 }

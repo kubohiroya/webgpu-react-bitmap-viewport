@@ -1,8 +1,12 @@
 {
+  "basePath": ".",
+  "cleanOutputDir": false,
   "entryPoints": ["src/index.ts"],
-  "out": "dist/webgpu-react-grid/docs",
+  "out": "dist/webgpu-react-grid",
+  "emit": "both",
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeExternals": true,
-  "includes": "./src"
+  "includes": ["src"],
+  "exclude": ["node_modules"]
 }

@@ -83,10 +83,10 @@ export const GridExample = () => {
         selectedStates={selectedStates}
         viewportStates={viewportStates}
         onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[1].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[1].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
-          gridRefs[1].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[1].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
           gridRefs[1].current?.refreshViewportState(sourceIndex);
@@ -108,10 +108,10 @@ export const GridExample = () => {
         selectedStates={selectedStates}
         viewportStates={viewportStates}
         onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[0].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[0].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[0].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[0].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
           gridRefs[0].current?.refreshViewportState(sourceIndex);
@@ -128,22 +128,23 @@ graph TD;
         Application((Application))
         Application --> |width,height|canvasSize
         Application --> |numColumns,numRows|GridSize --> GridProps
-        Application <==> |numColumns*numRows|data
-        Application <==> |left,top,right,bottom|viewportStates
-        Application <==> focusedStates
-        Application <==> selectedStates
+        Application ==> |numColumns*numRows|data
+        Application ==> |left,top,right,bottom|viewportStates
+        Application ==> focusedStates
+        Application ==> selectedStates
     data -->|Float32Array| GridProps[GridProps]
-    focusedStates <--> |Uint32Array| GridProps
-    selectedStates <--> |Uint32Array| GridProps
-    viewportStates <--> |Float32Array| GridProps
+    focusedStates --> |Uint32Array| GridProps
+    selectedStates --> |Uint32Array| GridProps
+    viewportStates --> |Float32Array| GridProps
     canvasSize --> GridProps
-    GridProps <--> |React Component| Grid
+    GridProps --> |React Component Property| Grid
+    Application --> |React Component|Grid
 ```
 
 ```mermaid
 graph TD;
-        Application((Application)) --> |updateFocusedState|Grid
-        Application --> |updateSelectedState|Grid
+        Application((Application)) --> |refreshFocusedState|Grid
+        Application --> |refreshSelectedState|Grid
         Application --> |refreshViewportState|Grid
         Grid -.-> |onFocusedStateChange|Application
         Grid -.-> |onSelectedStateChange|Application
@@ -152,26 +153,46 @@ graph TD;
 
 ```mermaid
 graph TD;
-    subgraph Inside React Component
-    GridProps <---> |React Component| Grid
-    WebGPUContext --> |device,canvasContext,format,texture| Grid
-    GridProps --> F32UniformBufferSource --> GPUBuffer
-    GridProps --> U32UniformBufferSource --> GPUBuffer
-    GridProps --> data --> GPUBuffer
-    GridProps --> focusedStates --> GPUBuffer
-    GridProps --> selectedStates --> GPUBuffer
+    subgraph Inside React Component: part 1
+    GridProps ---> |React Component Property| Grid
+        refreshFocusedState[/refreshFocusedState\] -.-> |React Component Method| Grid
+        refreshSelectedState[/refreshSelectedState\] -.-> |React Component Method| Grid
+        refreshViewportState[/refreshViewportState\] -.-> |React Component Method| Grid
+    Grid --> |canvasSize|CanvasElementContext --> GridUI
+    CanvasElementContext --> |width,height|canvas
+    Grid --> |refreshFocusedState,refreshSelectedState,refreshViewportState|GridUI
+    Grid --> |gridSize|GridContext --> GridUI
+    Grid --> |viewportStates|ViewportContext --> GridUI     
+    Grid --> WebGPUContext --> |device,canvasContext,format,texture| GridUI
+    GridContext --> GridUI
+    CanvasElementContext --> WebGPUContext
+    GridContext --> WebGPUContext
+    onMouseEnter[/onMouseEnter\] -.-> canvas
+    onMouseOut[/onMouseLeave\] -.-> canvas
+    onMouseDown[/onMouseDown\] -.-> canvas
+    onMouseMove[/onMouseMove\] -.-> canvas
+    end
+```
+```mermaid
+graph TD;
+    subgraph Inside React Component: part 2    
+    GridUI --> F32UniformBufferSource --> GPUBuffer
+    GridUI --> U32UniformBufferSource --> GPUBuffer
+    GridUI --> data --> GPUBuffer
+    GridUI --> focusedStates --> GPUBuffer
+    GridUI --> selectedStates --> GPUBuffer
     GPUBindGroupLayout --> GPUPipelineLayout
     GPUPipelineLayout --> GPURenderPipeline
-    WGSL[[WGSL]] --> GPUShaderModule
+    WGSL[[WGSL\nGridShader]] --> GPUShaderModule
     GPUShaderModule --> GPURenderPipeline
     Vertices --> GPUBuffer
     GPUBuffer --> GPUBindGroup
     GPUBindGroupLayout --> GPUBindGroup
     GPURenderPipeline --> GPURenderBundle
     GPUBindGroup --> GPURenderBundle
-    Grid --> GPUBindGroupLayout
-    Grid --> Vertices
-    Grid --> GPURenderPassEncoder
+    GridUI --> GPUBindGroupLayout
+    GridUI --> Vertices
+    GridUI --> GPURenderPassEncoder
     GPURenderBundle --> GPURenderPassEncoder
     GPURenderPassEncoder --> |submit|GPUDevice
     end

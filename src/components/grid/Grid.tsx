@@ -17,14 +17,14 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
   const gridUIRef = React.useRef<GridHandles>(null);
 
   useImperativeHandle(ref, () => ({
-    updateData: (sourceIndex: number, data: Float32Array) => {
-      gridUIRef.current?.updateData(sourceIndex, data);
+    refreshData: (sourceIndex: number) => {
+      gridUIRef.current?.refreshData(sourceIndex);
     },
-    updateFocusedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
+    refreshFocusedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+      gridUIRef.current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
     },
-    updateSelectedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
+    refreshSelectedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+      gridUIRef.current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
     },
     refreshViewportState: (sourceIndex: number) => {
       gridUIRef.current?.refreshViewportState(sourceIndex);

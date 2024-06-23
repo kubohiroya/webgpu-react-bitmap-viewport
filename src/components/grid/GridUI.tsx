@@ -43,22 +43,22 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const renderBundleBuilder = useRef<RenderBundleBuilder>();
 
   useImperativeHandle(ref, () => ({
-    updateData: (sourceIndex: number, data: Float32Array) => {
-      updateData(sourceIndex, data);
+    refreshData: (sourceIndex: number) => {
+      refreshData(sourceIndex);
     },
-    updateFocusedState: (
+    refreshFocusedState: (
       sourceIndex: number,
       columnIndex: number,
       rowIndex: number
     ) => {
-      updateFocusedState(sourceIndex, columnIndex, rowIndex);
+      refreshFocusedState(sourceIndex, columnIndex, rowIndex);
     },
-    updateSelectedState: (
+    refreshSelectedState: (
       sourceIndex: number,
       columnIndex: number,
       rowIndex: number
     ) => {
-      updateSelectedState(sourceIndex, columnIndex, rowIndex);
+      refreshSelectedState(sourceIndex, columnIndex, rowIndex);
     },
     refreshViewportState: (
       sourceIndex: number
@@ -287,15 +287,14 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
   };
 
-  const updateData = (sourceIndex: number, data: Float32Array) => {
-    gridContext.data = data;
-    renderBundleBuilder.current?.updateDataBufferStorage(data);
+  const refreshData = (sourceIndex: number) => {
+    renderBundleBuilder.current?.updateDataBufferStorage(gridContext.data);
     if (sourceIndex === viewportContext.index) {
-      props.onDataChanged?.(sourceIndex, data);
+      props.onDataChanged?.(sourceIndex, gridContext.data);
     }
   };
 
-  const updateFocusedState = (
+  const refreshFocusedState = (
     sourceIndex: number,
     columnIndex: number,
     rowIndex: number
@@ -330,7 +329,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
   };
 
-  const updateSelectedState = (
+  const refreshSelectedState = (
     sourceIndex: number,
     columnIndex: number,
     rowIndex: number
@@ -598,7 +597,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       cellPosition.rowIndex === POINTER_CONTEXT_HEADER
     ) {
       canvasElementContext.canvasRef.current.style.cursor = 'grab';
-      updateSelectedState(
+      refreshSelectedState(
         viewportContext.index,
         cellPosition.columnIndex,
         cellPosition.rowIndex
@@ -753,7 +752,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const onUp = () => {
     canvasElementContext.canvasRef.current!.style.cursor = 'default';
     pointerState.current = null;
-    updateFocusedState(viewportContext.index, -1, -1);
+    refreshFocusedState(viewportContext.index, -1, -1);
   };
 
   const onMouseUp = () => {
@@ -766,8 +765,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
 
   const onMouseOut = () => {
     canvasElementContext.canvasRef.current!.style.cursor = 'default';
-    // pointerState.current = null;
-    updateFocusedState(viewportContext.index, -1, -1);
+    refreshFocusedState(viewportContext.index, -1, -1);
   };
 
   const onMouseEnter = () => {
@@ -839,7 +837,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       viewportContext.index
     );
 
-    updateFocusedState(
+    refreshFocusedState(
       viewportContext.index,
       cellPosition.columnIndex,
       cellPosition.rowIndex

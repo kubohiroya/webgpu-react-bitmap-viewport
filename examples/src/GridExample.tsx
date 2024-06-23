@@ -46,10 +46,10 @@ export const GridExample = () => {
         selectedStates={selectedStates}
         viewportStates={viewportStates}
         onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[1].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[1].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
-          gridRefs[1].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[1].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
           gridRefs[1].current?.refreshViewportState(sourceIndex);
@@ -71,10 +71,10 @@ export const GridExample = () => {
         selectedStates={selectedStates}
         viewportStates={viewportStates}
         onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[0].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[0].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[0].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
+          gridRefs[0].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
           gridRefs[0].current?.refreshViewportState(sourceIndex);

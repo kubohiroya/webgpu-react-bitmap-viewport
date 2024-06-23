@@ -1,8 +1,6 @@
 import React, { ReactNode, useLayoutEffect, useState } from 'react';
-import { CanvasElementContextType, useCanvasElementContext } from './CanvasElementContext';
-import { RenderBundleBuilder } from './RenderBundleBuilder';
+import { useCanvasElementContext } from './CanvasElementContext';
 import { GridContextProps, GridContextValue, useGridContext } from './GridContext';
-import { useViewportContext } from './ViewportContext';
 
 export type WebGPUContextType = {
   device: GPUDevice | null;

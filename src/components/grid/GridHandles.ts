@@ -1,6 +1,6 @@
 export type GridHandles = {
-  updateData: (sourceIndex: number, data: Float32Array) => void,
-  updateFocusedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => void,
-  updateSelectedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => void,
+  refreshData: (sourceIndex: number) => void,
+  refreshFocusedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => void,
+  refreshSelectedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => void,
   refreshViewportState: (sourceIndex: number) => void,
 };
