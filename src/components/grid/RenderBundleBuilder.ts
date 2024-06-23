@@ -18,8 +18,9 @@ import {
   updateDrawIndirectBufferSource
 } from './DrawIndirectBufferFactory';
 import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
-import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridProps';
+
 import { createStorageBuffer, createUniformBuffer, createVertexBuffer, updateBuffer } from './WebGPUBufferFactories';
+import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridParamsDefault';
 
 export class RenderBundleBuilder {
   private device: GPUDevice;
@@ -329,19 +330,19 @@ export class RenderBundleBuilder {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
   }
 
-  updateFocusedStateStorage(focusedState: Uint8Array) {
+  updateFocusedStateStorage(focusedState: Uint32Array) {
     updateBuffer(
       this.device,
       this.focusedStateStorage,
-      new Uint32Array(focusedState)
+      focusedState
     );
   }
 
-  updateSelectedStateStorage(selectedState: Uint8Array) {
+  updateSelectedStateStorage(selectedState: Uint32Array) {
     updateBuffer(
       this.device,
       this.selectedStateStorage,
-      new Uint32Array(selectedState)
+      selectedState
     );
   }
 

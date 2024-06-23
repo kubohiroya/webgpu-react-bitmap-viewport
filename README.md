@@ -1,4 +1,5 @@
 # WebGPU-React-Grid - A React component for visualizing a grid of floating-point values using WebGPU
+[![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
 [![npm version](https://badge.fury.io/js/webgpu-react-grid.svg)](https://badge.fury.io/js/webgpu-react-grid)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/kubohiroya/webgpu-react-grid/blob/main/LICENSE)
 
@@ -8,12 +9,12 @@ WebGPU-React-Grid is an open-source React component for visualizing a grid of fl
 ![animation](https://github.com/kubohiroya/webgpu-react-grid/assets/1578247/eb774c1d-48d7-4bc2-a89c-7d11f4dc28c9)
 
 - High-performance rendering using WebGPU
-- Supports large grid sizes (e.g. 1024x1024)
+- Supports large grid sizes (e.g. 5000x5000)
 - Supports viewport navigation via mouse drag and scrollbar handling.
 - Enables zooming in and out with mouse wheel.
 - Highlights the column and row under the current mouse pointer.
 - Allows toggling selection state of columns and rows via mouse interaction.
-- Customizable properties for canvas size, grid size, viewport display size, header area size, and scrollbar size through React component props.
+- Customizable for canvas size, grid size, viewport display size, header area size, and scrollbar size through React component props.
 
 # Live demo
 
@@ -24,8 +25,12 @@ WebGPU-React-Grid is an open-source React component for visualizing a grid of fl
 Download the latest version of WebGPU-React-Grid from the npm repository:
 
 ```bash
-npm install webgpu-react-grid
+pnpm install webgpu-react-grid
 ```
+
+# API
+
+[doc](https://kubohiroya.github.io/webgpu-react-grid/docs/modules.html)
 
 # Usage
 
@@ -45,12 +50,12 @@ for (let i = 0; i < data.length; i++) {
   }
 }
 
-const focusedStates = new Uint8Array(gridSizeMax);
-const selectedStates = new Uint8Array(gridSizeMax);
+const focusedStates = new Uint32Array(gridSizeMax);
+const selectedStates = new Uint32Array(gridSizeMax);
 
 const viewportStates = new Float32Array([
-  0.0, 0.0, 16.0, 16.0,
-  8.0, 8.0, 24.0, 24.0,
+  0.0, 0.0, 16.0, 16.0, // viewport index 0: left, top, right, bottom
+  8.0, 8.0, 24.0, 24.0, // viewport index 1: left, top, right, bottom
 ]);
 
 export const GridExample = () => {
@@ -77,10 +82,10 @@ export const GridExample = () => {
         focusedStates={focusedStates}
         selectedStates={selectedStates}
         viewportStates={viewportStates}
-        onFocusedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+        onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
           gridRefs[1].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
-        onSelectedStatesChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
+        onSelectedStateChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
           gridRefs[1].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
@@ -102,10 +107,10 @@ export const GridExample = () => {
         focusedStates={focusedStates}
         selectedStates={selectedStates}
         viewportStates={viewportStates}
-        onFocusedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+        onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
           gridRefs[0].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
-        onSelectedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+        onSelectedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
           gridRefs[0].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
@@ -116,12 +121,66 @@ export const GridExample = () => {
   );
 }
 ```
+# Design
+
+```mermaid
+graph TD;
+        Application((Application))
+        Application --> |width,height|canvasSize
+        Application --> |numColumns,numRows|GridSize --> GridProps
+        Application <==> |numColumns*numRows|data
+        Application <==> |left,top,right,bottom|viewportStates
+        Application <==> focusedStates
+        Application <==> selectedStates
+    data -->|Float32Array| GridProps[GridProps]
+    focusedStates <--> |Uint32Array| GridProps
+    selectedStates <--> |Uint32Array| GridProps
+    viewportStates <--> |Float32Array| GridProps
+    canvasSize --> GridProps
+    GridProps <--> |React Component| Grid
+```
+
+```mermaid
+graph TD;
+        Application((Application)) --> |updateFocusedState|Grid
+        Application --> |updateSelectedState|Grid
+        Application --> |refreshViewportState|Grid
+        Grid -.-> |onFocusedStateChange|Application
+        Grid -.-> |onSelectedStateChange|Application
+        Grid -.-> |onViewportStateChange|Application
+```
+
+```mermaid
+graph TD;
+    subgraph Inside React Component
+    GridProps <---> |React Component| Grid
+    WebGPUContext --> |device,canvasContext,format,texture| Grid
+    GridProps --> F32UniformBufferSource --> GPUBuffer
+    GridProps --> U32UniformBufferSource --> GPUBuffer
+    GridProps --> data --> GPUBuffer
+    GridProps --> focusedStates --> GPUBuffer
+    GridProps --> selectedStates --> GPUBuffer
+    GPUBindGroupLayout --> GPUPipelineLayout
+    GPUPipelineLayout --> GPURenderPipeline
+    WGSL[[WGSL]] --> GPUShaderModule
+    GPUShaderModule --> GPURenderPipeline
+    Vertices --> GPUBuffer
+    GPUBuffer --> GPUBindGroup
+    GPUBindGroupLayout --> GPUBindGroup
+    GPURenderPipeline --> GPURenderBundle
+    GPUBindGroup --> GPURenderBundle
+    Grid --> GPUBindGroupLayout
+    Grid --> Vertices
+    Grid --> GPURenderPassEncoder
+    GPURenderBundle --> GPURenderPassEncoder
+    GPURenderPassEncoder --> |submit|GPUDevice
+    end
+```
 
 # Prerequisites:
- - WebGPU compatible browser (e.g. Chrome with WebGPU enabled)
- - react: `^18.2.0`
- - react-dom: `^18.2.0`
-
+- WebGPU compatible browser (e.g. Chrome with WebGPU enabled)
+- react: `^18.2.0`
+- react-dom: `^18.2.0`
 
 # Licensing
 

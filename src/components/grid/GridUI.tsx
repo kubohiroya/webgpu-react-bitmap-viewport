@@ -3,35 +3,17 @@ import { useCanvasElementContext } from './CanvasElementContext';
 import { useViewportContext } from './ViewportContext';
 import { useGridContext } from './GridContext';
 import { useWebGPUContext } from './WebGPUContext';
-import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridProps';
 import { GridHandles } from './GridHandles';
 import { RenderBundleBuilder } from './RenderBundleBuilder';
-import { U32LEN } from './Constants';
-
-const EDGE_FRICTION = 0.8;
-const TRANSLATE_FRICTION = 0.975;
-
-const POINTER_CONTEXT_BODY = 0;
-const POINTER_CONTEXT_HEADER = -1;
-const POINTER_CONTEXT_SCROLLBAR_HANDLE = -2;
-const POINTER_CONTEXT_SCROLLBAR_LOWER = -3;
-const POINTER_CONTEXT_SCROLLBAR_HIGHER = -4;
-const POINTER_CONTEXT_SCROLLBAR_OTHER = -5;
-
-const FOCUS_STATE_BODY_DEFAULT = 0;
-const FOCUS_STATE_BODY_HORIZONTAL_FOCUSED = 1;
-const FOCUS_STATE_BODY_VERTICAL_FOCUSED = 2;
-
-const SELECT_STATE_DEFAULT = 0;
-const SELECT_STATE_SELECTED = 1;
-
-const FOCUS_STATE_SCROLLBAR_DEFAULT = 0;
-const FOCUS_STATE_SCROLLBAR_HORIZONTAL = 1;
-const FOCUS_STATE_SCROLLBAR_VERTICAL = 2;
+import { EDGE_FRICTION, SCROLLBAR_MARGIN, SCROLLBAR_RADIUS, TRANSLATE_FRICTION } from './GridParamsDefault';
+import { FocusedStateValues, POINTER_CONTEXT_HEADER,
+  POINTER_CONTEXT_SCROLLBAR_HANDLE,
+  POINTER_CONTEXT_SCROLLBAR_HIGHER,
+  POINTER_CONTEXT_SCROLLBAR_LOWER, POINTER_CONTEXT_SCROLLBAR_OTHER, SelectedStateValues } from './GridConstatns';
 
 type GridUIProps = {
-  focusedStates: Uint8Array;
-  selectedStates: Uint8Array;
+  focusedStates: Uint32Array;
+  selectedStates: Uint32Array;
   onDataChanged?: (sourceIndex: number, data: Float32Array) => void;
   onFocusedStatesChange?: (
     sourceIndex: number,
@@ -112,7 +94,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const velocity = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const eventHandlersInitialized = useRef<boolean>(false);
 
-  const scrollBarState = useRef<number>(FOCUS_STATE_SCROLLBAR_DEFAULT);
+  const scrollBarState = useRef<number>(FocusedStateValues.NotFocused);
   const offset = viewportContext.index * 4;
   const getViewportLeft = () =>
     viewportContext.viewportStates[offset + 0];
@@ -154,7 +136,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     const verticalUnderflow = newViewport.top < 0;
     const verticalOverflow = newViewport.bottom > gridContext.gridSize.numRows;
     const enableOverscroll =
-      scrollBarState.current === FOCUS_STATE_SCROLLBAR_DEFAULT;
+      scrollBarState.current === FocusedStateValues.NotFocused;
 
     if (horizontalUnderflow) {
       velocity.current.y = 0;
@@ -233,7 +215,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         pointerState.current.startViewport.top;
 
       const [dx, dy] =
-        scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL
+        scrollBarState.current === FocusedStateValues.HorizontalFocused
           ? [
               (-1 *
                 (gridContext.gridSize.numColumns *
@@ -242,7 +224,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
                   canvasElementContext.headerOffset.left),
               0,
             ]
-          : scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
+          : scrollBarState.current === FocusedStateValues.VerticalFocused
           ? [
               0,
               (-1 *
@@ -287,8 +269,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
             (canvasElementContext.canvasSize.height - canvasElementContext.headerOffset.top) /
             startViewportSize.height,
         },
-        scrollBarState.current === FOCUS_STATE_SCROLLBAR_HORIZONTAL ||
-          scrollBarState.current === FOCUS_STATE_SCROLLBAR_VERTICAL
+        scrollBarState.current === FocusedStateValues.HorizontalFocused ||
+          scrollBarState.current === FocusedStateValues.VerticalFocused
           ? {
               left: getViewportLeft(),
               right: getViewportRight(),
@@ -324,15 +306,15 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     ) {
       return;
     }
-    focusedStates.fill(0);
+    focusedStates.fill(FocusedStateValues.NotFocused);
 
     if (columnIndex !== -1 && rowIndex === -1) {
-      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
+      focusedStates[columnIndex] = FocusedStateValues.HorizontalFocused;
     } else if (columnIndex === -1 && rowIndex !== -1) {
-      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
+      focusedStates[rowIndex] = FocusedStateValues.VerticalFocused;
     } else if (columnIndex !== -1 && rowIndex !== -1) {
-      focusedStates[columnIndex] = FOCUS_STATE_BODY_HORIZONTAL_FOCUSED;
-      focusedStates[rowIndex] = FOCUS_STATE_BODY_VERTICAL_FOCUSED;
+      focusedStates[columnIndex] = FocusedStateValues.HorizontalFocused;
+      focusedStates[rowIndex] = FocusedStateValues.VerticalFocused;
     }
 
     prevFocusedColumnIndex.current = columnIndex;
@@ -364,12 +346,12 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
               const value = selectedStates[i];
               selectedStates[i] =
                 rowIndex === i
-                  ? value === SELECT_STATE_DEFAULT
-                    ? SELECT_STATE_SELECTED
-                    : SELECT_STATE_DEFAULT
+                  ? value === SelectedStateValues.NotSelected
+                    ? SelectedStateValues.Selected
+                    : SelectedStateValues.NotSelected
                   : value;
             } else {
-              selectedStates[i] = SELECT_STATE_DEFAULT;
+              selectedStates[i] = SelectedStateValues.NotSelected;
             }
           }
         }
@@ -380,12 +362,12 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
               const value = selectedStates[i];
               selectedStates[i] =
                 columnIndex === i
-                  ? value === SELECT_STATE_SELECTED
-                    ? SELECT_STATE_DEFAULT
-                    : SELECT_STATE_SELECTED
+                  ? value === SelectedStateValues.NotSelected
+                    ? SelectedStateValues.Selected
+                    : SelectedStateValues.NotSelected
                   : value;
             } else {
-              selectedStates[i] = SELECT_STATE_DEFAULT;
+              selectedStates[i] = SelectedStateValues.NotSelected;
             }
           }
         } else {
@@ -394,9 +376,9 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
               const value = selectedStates[i];
               selectedStates[i] =
                 rowIndex === i || columnIndex === i
-                  ? value === SELECT_STATE_DEFAULT
-                    ? SELECT_STATE_SELECTED
-                    : SELECT_STATE_DEFAULT
+                  ? value === SelectedStateValues.NotSelected
+                    ? SelectedStateValues.Selected
+                    : SelectedStateValues.NotSelected
                   : value;
             }
           }
@@ -826,28 +808,28 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     ) {
       canvasElementContext.canvasRef.current!.style.cursor = 'pointer';
       scrollBarState.current =
-        FOCUS_STATE_SCROLLBAR_HORIZONTAL | FOCUS_STATE_SCROLLBAR_VERTICAL;
+        FocusedStateValues.HorizontalFocused | FocusedStateValues.VerticalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
       canvasElementContext.canvasRef.current!.style.cursor = 'pointer';
-      scrollBarState.current = FOCUS_STATE_SCROLLBAR_HORIZONTAL;
+      scrollBarState.current = FocusedStateValues.HorizontalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
       canvasElementContext.canvasRef.current!.style.cursor = 'pointer';
-      scrollBarState.current = FOCUS_STATE_SCROLLBAR_VERTICAL;
+      scrollBarState.current = FocusedStateValues.VerticalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
       canvasElementContext.canvasRef.current!.style.cursor = 'w-resize';
-      scrollBarState.current = FOCUS_STATE_SCROLLBAR_HORIZONTAL;
+      scrollBarState.current = FocusedStateValues.HorizontalFocused
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
       canvasElementContext.canvasRef.current!.style.cursor = 'e-resize';
-      scrollBarState.current = FOCUS_STATE_SCROLLBAR_HORIZONTAL;
+      scrollBarState.current = FocusedStateValues.HorizontalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
       canvasElementContext.canvasRef.current!.style.cursor = 'n-resize';
-      scrollBarState.current = FOCUS_STATE_SCROLLBAR_VERTICAL;
+      scrollBarState.current = FocusedStateValues.VerticalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
       canvasElementContext.canvasRef.current!.style.cursor = 's-resize';
-      scrollBarState.current = FOCUS_STATE_SCROLLBAR_VERTICAL;
+      scrollBarState.current = FocusedStateValues.VerticalFocused;
     } else {
       canvasElementContext.canvasRef.current!.style.cursor = 'cell';
-      scrollBarState.current = FOCUS_STATE_SCROLLBAR_DEFAULT;
+      scrollBarState.current = FocusedStateValues.NotFocused
     }
 
     renderBundleBuilder.current?.updateU32UniformBuffer(

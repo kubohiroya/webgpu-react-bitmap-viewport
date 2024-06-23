@@ -1,7 +1,7 @@
 import { Grid, GridHandles } from "webgpu-react-grid";
 import { useRef } from "react";
 
-const gridSize = { numColumns: 1024, numRows: 1024 };
+const gridSize = { numColumns: 5000, numRows: 5000 };
 const gridSizeMax = Math.max(gridSize.numColumns, gridSize.numRows);
 
 const data =  new Float32Array(gridSize.numRows * gridSize.numColumns);
@@ -13,12 +13,12 @@ for (let i = 0; i < data.length; i++) {
   }
 }
 
-const focusedStates = new Uint8Array(gridSizeMax);
-const selectedStates = new Uint8Array(gridSizeMax);
+const focusedStates = new Uint32Array(gridSizeMax);
+const selectedStates = new Uint32Array(gridSizeMax);
 
 const viewportStates = new Float32Array([
-  0.0, 0.0, 16.0, 16.0,
-  8.0, 8.0, 24.0, 24.0,
+  0.0, 0.0, 16.0, 16.0, // viewport index 0: left, top, right, bottom
+  8.0, 8.0, 24.0, 24.0, // viewport index 1: left, top, right, bottom
 ]);
 
 export const GridExample = () => {
@@ -45,10 +45,10 @@ export const GridExample = () => {
         focusedStates={focusedStates}
         selectedStates={selectedStates}
         viewportStates={viewportStates}
-        onFocusedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+        onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
           gridRefs[1].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
-        onSelectedStatesChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
+        onSelectedStateChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
           gridRefs[1].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
@@ -70,10 +70,10 @@ export const GridExample = () => {
         focusedStates={focusedStates}
         selectedStates={selectedStates}
         viewportStates={viewportStates}
-        onFocusedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+        onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
           gridRefs[0].current?.updateFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
-        onSelectedStatesChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+        onSelectedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
           gridRefs[0].current?.updateSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {

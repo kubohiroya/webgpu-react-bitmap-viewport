@@ -545,6 +545,6 @@ fn fragmentScrollBarBody(input: VertexOutput) -> @location(0) vec4f{
 
 @fragment
 fn fragmentViewportShadow(input: VertexOutput) -> @location(0) vec4f {
-  let rgb = hsvToRgb(input.cellValue * 0.8, 0.3, 1.0);
-  return vec4f(rgb, 0.4);
+  let rgb = hsvToRgb(input.cellValue * 0.8, 0.1, 0.5);
+  return vec4f(rgb, 1.0);
 }

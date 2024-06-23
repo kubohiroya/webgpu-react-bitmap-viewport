@@ -53,8 +53,8 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
               ref={gridUIRef}
               focusedStates={props.focusedStates}
               selectedStates={props.selectedStates}
-              onFocusedStatesChange={props.onFocusedStatesChange}
-              onSelectedStatesChange={props.onSelectedStatesChange}
+              onFocusedStatesChange={props.onFocusedStateChange}
+              onSelectedStatesChange={props.onSelectedStateChange}
               onViewportStateChange={props.onViewportStateChange}
             />
           </WebGPUContextProvider>

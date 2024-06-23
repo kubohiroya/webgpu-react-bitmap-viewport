@@ -37,9 +37,9 @@ export type GridProps = {
   data: Float32Array;
 
   /** The focused states of the grid, stored in a Uint8Array: notFocused=0, verticalFocused=1, horizontalFocused=2, verticalAndHorizontalFocused=3*/
-  focusedStates: Uint8Array;
+  focusedStates: Uint32Array;
   /** The selected states of the grid, stored in a Uint8Array: notSelected=0, verticalSelected=1, horizontalSelected=2, verticalAndHorizontalSelected=3*/
-  selectedStates: Uint8Array;
+  selectedStates: Uint32Array;
 
   /** The set of viewport left,top,right,bottom values for the grid in a Float32Array. */
   viewportStates: Float32Array;
@@ -60,9 +60,9 @@ export type GridProps = {
     margin: number;
   };
 
-  onDataChange?: (sourceIndex: number, data: Float32Array) => void;
-  onFocusedStatesChange?: (sourceIndex: number, columnIndex: number, rowIndex: number) => void;
-  onSelectedStatesChange?: (sourceIndex: number, columnIndex: number, rowIndex: number) => void;
+  onDataChange?: (sourceIndex: number) => void;
+  onFocusedStateChange?: (sourceIndex: number, columnIndex: number, rowIndex: number) => void;
+  onSelectedStateChange?: (sourceIndex: number, columnIndex: number, rowIndex: number) => void;
   onViewportStateChange?: (
     sourceIndex: number
   ) => void;
