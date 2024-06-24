@@ -1,7 +1,7 @@
 {
   "name": "webgpu-react-grid",
   "description": "A WebGPU-enhanced React component for visualizing a grid of floating-point values through one or more viewports",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "license": "MIT",
   "projectType": "library",
   "repository": {
@@ -21,7 +21,7 @@
   },
   "main": "dist/lib/webgpu-react-grid.umd.js",
   "module": "dist/lib/webgpu-react-grid.es.js",
-  "types": "dist/type/src/index.d.ts",
+  "types": "dist/types/src/index.d.ts",
   "files": [
     "dist/lib",
     "dist/types",

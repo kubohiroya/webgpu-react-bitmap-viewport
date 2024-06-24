@@ -1,4 +1,3 @@
-/// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
@@ -7,17 +6,7 @@ const libConfig = defineConfig({
   root: __dirname,
   cacheDir: './node_modules/.vite/.',
 
-  plugins: [react(),
-    /*
-    dts({
-      // insertTypesEntry: true,
-      // tsconfigPath: './tsconfig.json',
-      // outDir: 'dist/types',
-      // exclude: ['src/main.tsx'],
-      // rollupTypes: true
-    }),
-     */
-  ],
+  plugins: [react()],
 
   build: {
     outDir: './dist/lib',
@@ -31,7 +20,7 @@ const libConfig = defineConfig({
       fileName: (format) => `webgpu-react-grid.${format}.js`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', '@webgpu/types'],
+      external: ['react', 'react-dom', 'jsx-runtime', '@webgpu/types'],
       output: {
         globals: {
           react: 'React',
@@ -42,20 +31,6 @@ const libConfig = defineConfig({
     sourcemap: true,
   },
 
-  test: {
-    globals: true,
-    cache: {
-      dir: './node_modules/.vitest',
-    },
-    environment: 'jsdom',
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-
-    reporters: ['default'],
-    coverage: {
-      reportsDirectory: './coverage/webgpu-react-grid',
-      provider: 'v8',
-    },
-  },
   publicDir: 'public',
 
 });

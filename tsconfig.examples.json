@@ -2,17 +2,22 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
+    "declaration": false,
     "outDir": "./dist/examples",
     "baseUrl": ".",
-    "types": ["node", "vite/client", "@webgpu/types", "dist/types/src/index.ts"],
+    "types": ["node", "vite/client", "@webgpu/types", "webgpu-react-grid"],
+    "typeRoots": ["node_modules/@types", "node_modules/@webgpu/types/dist", "dist/types/src"],
     "esModuleInterop": true,
     "composite": true,
     "paths": {
-      "webgpu-react-grid": ["dist/types/src/index.ts"],
+      "webgpu-react-grid": ["dist/types/src/index.d.ts"],
     }
   },
-  "exclude": ["node_modules"],
   "include": [
-    "examples/src/**/*",
+    "examples/src",
+    "dist/types/src"
+  ],
+  "files": [
+    "dist/types/src/index.d.ts"
   ]
 }

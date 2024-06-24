@@ -357,7 +357,7 @@ fn vertexViewportShadow(input: RectVertexInput) -> VertexOutput {
   let scale = vec2f(right - left, bottom - top);
   let center = vec2f(left + right, top + bottom) / 2.0;
   output.position = vec4f(transform2(center, scale, rectVertices[input.vertexIndex % 6]), 0.0, 1.0);
-  output.cellValue = f32(input.instanceIndex) / f32(arrayLength(&viewports));
+  output.cellValue = f32(input.instanceIndex) / (f32(arrayLength(&viewports)) - 1.0);
   return output;
 }
 
@@ -545,6 +545,6 @@ fn fragmentScrollBarBody(input: VertexOutput) -> @location(0) vec4f{
 
 @fragment
 fn fragmentViewportShadow(input: VertexOutput) -> @location(0) vec4f {
-  let rgb = hsvToRgb(input.cellValue * 0.8, 0.1, 0.5);
-  return vec4f(rgb, 1.0);
+  let rgb = hsvToRgb(input.cellValue * 0.8, 0.5, 0.5);
+  return vec4f(rgb, 0.3);
 }

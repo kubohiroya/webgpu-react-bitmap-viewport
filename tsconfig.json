@@ -21,7 +21,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "types": ["vite/client", "node", "@webgpu/types"],
+    "types": ["node", "vite/client", "@webgpu/types"],
     "composite": true
   },
   "references": [
@@ -29,7 +29,6 @@
       "path": "./tsconfig.examples.json"
     }
   ],
-  "exclude": ["node_modules"],
   "include": ["src"],
   "compileOnSave": false
 }

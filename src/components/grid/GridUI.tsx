@@ -203,6 +203,9 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         overscroll.current.y = 0;
       }
     }
+    if(!(getViewportTop() <= getViewportBottom() && getViewportLeft() <= getViewportRight())) {
+      throw new Error(`viewport must be valid rectangle: top:${getViewportTop()} <= bottom:${getViewportBottom()} && left:${getViewportLeft()} <= right:${getViewportRight()}}`);
+    }
   };
 
   const updateViewport = () => {
