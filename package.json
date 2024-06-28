@@ -30,9 +30,9 @@
   "scripts": {
     "start": "vite serve",
     "typedoc": "typedoc",
-    "build-lib": "vite build --mode lib && pnpm typedoc",
+    "build-lib": "vite build --mode lib",
     "build-example": "vite build",
-    "build": "pnpm run build-lib && pnpm run build-example",
+    "build": "pnpm run build-lib && pnpm run build-example && pnpm typedoc",
     "test": "vite test",
     "predeploy": "pnpm run build",
     "deploy": "gh-pages -d dist/webgpu-react-grid -r git@github.com:kubohiroya/webgpu-react-grid.git",
