@@ -16,6 +16,7 @@ export const DRAW_INDIRECT_BUFFER_SOURCE_INDEX: Record<string, number> = {
 };
 
 const INSTANCE_COUNT_TO_BE_REPLACED = 0;
+
 const DRAW_INDIRECT_ITEM_LEN = 4;
 
 export const DRAW_INDIRECT_BUFFER_SOURCE = [
@@ -66,28 +67,41 @@ export const DRAW_INDIRECT_BUFFER_BYTE_INDEX = new Map<string, number>(
   )
 );
 
-const INSTANCE_COUNT_BYTE_INDEX = 1;
+const INSTANCE_COUNT_INDEX = 1;
+const FIRST_VERTEX_INDEX = 2;
 
 export const updateDrawIndirectBufferSource = (
   drawIndirectBufferSource: Uint32Array,
+  canvasSize: { width: number; height: number },
+  headerMargin: {left: number, top: number },
   numColumnsToShow: number,
   numRowsToShow: number,
   numViewports: number,
 ) => {
+
+  const vertices = Math.min((canvasSize.width - headerMargin.left)/numColumnsToShow, (canvasSize.height - headerMargin.top) / numRowsToShow) < 20 ? FIRST_VERTEX_OF_RECT_INDEX : FIRST_VERTEX_OF_MARGINED_RECT_INDEX;
+
   drawIndirectBufferSource[
-  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.BODY * DRAW_INDIRECT_ITEM_LEN +
-  INSTANCE_COUNT_BYTE_INDEX
+  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.BODY * DRAW_INDIRECT_ITEM_LEN +INSTANCE_COUNT_INDEX
     ] = numColumnsToShow * numRowsToShow;
+  drawIndirectBufferSource[DRAW_INDIRECT_BUFFER_SOURCE_INDEX.BODY * DRAW_INDIRECT_ITEM_LEN + FIRST_VERTEX_INDEX ] = vertices;
+
   drawIndirectBufferSource[
-  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.TOP_HEADER * DRAW_INDIRECT_ITEM_LEN +
-  INSTANCE_COUNT_BYTE_INDEX
+  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.TOP_HEADER * DRAW_INDIRECT_ITEM_LEN + INSTANCE_COUNT_INDEX
     ] = numColumnsToShow;
+  // drawIndirectBufferSource[DRAW_INDIRECT_BUFFER_SOURCE_INDEX.TOP_HEADER * DRAW_INDIRECT_ITEM_LEN + FIRST_VERTEX_INDEX ] = vertices;
+
   drawIndirectBufferSource[
-  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.LEFT_HEADER * DRAW_INDIRECT_ITEM_LEN +
-  INSTANCE_COUNT_BYTE_INDEX
+  DRAW_INDIRECT_BUFFER_SOURCE_INDEX.LEFT_HEADER * DRAW_INDIRECT_ITEM_LEN + INSTANCE_COUNT_INDEX
     ] = numRowsToShow;
+  // drawIndirectBufferSource[DRAW_INDIRECT_BUFFER_SOURCE_INDEX.LEFT_HEADER * DRAW_INDIRECT_ITEM_LEN + FIRST_VERTEX_INDEX ] = vertices;
+
   drawIndirectBufferSource[
   DRAW_INDIRECT_BUFFER_SOURCE_INDEX.VIEWPORT_SHADOW * DRAW_INDIRECT_ITEM_LEN +
-  INSTANCE_COUNT_BYTE_INDEX
+  INSTANCE_COUNT_INDEX
     ] = numViewports;
+
+
+
+
 };

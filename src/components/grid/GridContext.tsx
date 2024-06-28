@@ -1,7 +1,9 @@
 import React, { ReactNode } from 'react';
+import { GridShaderMode } from './GridShaderMode';
 
 export type GridContextProps = {
-  data: Float32Array;
+  mode: GridShaderMode;
+  data: Float32Array|Uint32Array;
   gridSize: { numColumns: number; numRows: number };
 };
 
@@ -12,10 +14,7 @@ export const GridContext = React.createContext<GridContextProps | null>(null);
 export const GridContextProvider = (
   props: GridContextProps & { children: ReactNode }
 ) => {
-  const value: GridContextProps = {
-    data: props.data,
-    gridSize: props.gridSize
-  };
+  const value: GridContextProps = props;
   return (
     <GridContext.Provider value={value}>{props.children}</GridContext.Provider>
   );

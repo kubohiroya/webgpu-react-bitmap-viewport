@@ -7,11 +7,7 @@ const root = ReactDOM.createRoot(
 );
 
 const render = () => {
-  root.render(
-    <>
-      <GridExample />
-    </>
-  );
+  root.render(<GridExample />);
 };
 
 render();

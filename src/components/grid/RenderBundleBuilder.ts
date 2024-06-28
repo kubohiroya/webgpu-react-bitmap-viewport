@@ -8,7 +8,11 @@ import {
   U32UNIFORMS_BYTE_LENGTH,
 } from './GridBufferFactories';
 import { GridContextProps } from './GridContext';
-import GRID_SHADER_CODE from './GridShader.wgsl?raw';
+
+import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
+import GRID_SHADER_RGBA_CODE from './GridShaderRGBA.wgsl?raw';
+import GRID_SHADER_HUE_CODE from './GridShaderHue.wgsl?raw';
+
 import { CanvasElementContextType } from './CanvasElementContext';
 import { vertices, VERTICES_BYTE_LENGTH } from './Vertices';
 import { F32LEN, U32LEN } from './Constants';
@@ -21,8 +25,10 @@ import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
 
 import { createStorageBuffer, createUniformBuffer, createVertexBuffer, updateBuffer } from './WebGPUBufferFactories';
 import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridParamsDefault';
+import { GridShaderMode } from './GridShaderMode';
 
 export class RenderBundleBuilder {
+
   private device: GPUDevice;
   private canvasFormat: GPUTextureFormat;
   private canvasContext: GPUCanvasContext;
@@ -62,6 +68,7 @@ export class RenderBundleBuilder {
   private scrollBarBodyRenderBundle: GPURenderBundle;
 
   constructor(
+    mode: GridShaderMode,
     device: GPUDevice,
     canvasFormat: GPUTextureFormat,
     canvasContext: GPUCanvasContext,
@@ -76,7 +83,7 @@ export class RenderBundleBuilder {
 
     const shaderModule = device.createShaderModule({
       label: 'Grid shader',
-      code: GRID_SHADER_CODE
+      code: GRID_SHADER_CODE + (mode === GridShaderMode.HUE ? GRID_SHADER_HUE_CODE : GRID_SHADER_RGBA_CODE)
     });
 
     const bindGroupLayout = device.createBindGroupLayout(
@@ -262,7 +269,7 @@ export class RenderBundleBuilder {
     this.gridDataBufferStorage = createStorageBuffer(
       'GridDataBuffer',
       device,
-      gridSize.numColumns * gridSize.numRows * 4
+      gridSize.numColumns * gridSize.numRows * (mode === GridShaderMode.RGBA ? U32LEN : F32LEN )
     );
 
     this.bindGroup = this.createBindGroup(
@@ -326,7 +333,7 @@ export class RenderBundleBuilder {
     );
   }
 
-  updateDataBufferStorage(data: Float32Array) {
+  updateDataBufferStorage(data: Float32Array|Uint32Array) {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
   }
 
@@ -411,6 +418,8 @@ export class RenderBundleBuilder {
   ) {
     updateDrawIndirectBufferSource(
       this.drawIndirectBufferSource,
+      this.canvasElementContext.canvasSize,
+      this.canvasElementContext.headerOffset,
       numColumnsToShow,
       numRowsToShow,
       numViewports

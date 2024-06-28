@@ -31,7 +31,7 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
     }
   }));
 
-  const canvasId = "webgpu-react-grid-"+props.index;
+  const canvasId = "webgpu-react-grid-"+props.viewportIndex;
 
   return (
     <CanvasElementContextProvider
@@ -41,9 +41,9 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
       scrollBar={props.scrollBar}
       // multisample={4}
     >
-      <GridContextProvider gridSize={props.gridSize} data={props.data}>
+      <GridContextProvider mode={props.mode} gridSize={props.gridSize} data={props.data}>
         <ViewportContextProvider
-          index={props.index}
+          viewportIndex={props.viewportIndex}
           numViewports={props.numViewports}
           viewportStates={props.viewportStates}
           initialOverscroll={props.initialOverscroll}

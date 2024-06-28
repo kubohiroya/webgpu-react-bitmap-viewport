@@ -1,7 +1,7 @@
 {
   "name": "webgpu-react-grid",
-  "description": "A WebGPU-enhanced React component for visualizing a grid of floating-point values through one or more viewports",
-  "version": "0.5.4",
+  "description": "an open-source React component for visualizing a grid of values using WebGPU",
+  "version": "0.6.0",
   "license": "MIT",
   "projectType": "library",
   "repository": {
@@ -29,10 +29,10 @@
   ],
   "scripts": {
     "start": "vite serve",
-    "build-lib": "vite build --mode lib",
-    "build-example": "vite build",
     "typedoc": "typedoc",
-    "build": "pnpm run build-lib && pnpm run build-example && pnpm typedoc",
+    "build-lib": "vite build --mode lib && pnpm typedoc",
+    "build-example": "vite build",
+    "build": "pnpm run build-lib && pnpm run build-example",
     "test": "vite test",
     "predeploy": "pnpm run build",
     "deploy": "gh-pages -d dist/webgpu-react-grid -r git@github.com:kubohiroya/webgpu-react-grid.git",

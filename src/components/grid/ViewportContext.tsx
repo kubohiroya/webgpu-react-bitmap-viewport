@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 
 export type ViewportContextProps = {
-  index: number;
+  viewportIndex: number;
   numViewports: number;
   viewportStates: Float32Array;
   initialOverscroll?: {

@@ -12,7 +12,7 @@ const rectVertices = [
   -1, -1, 1, 1, -1, 1
 ];
 
-const marginedRectVertices = rectVertices.map((value) => value * 0.8);
+const marginedRectVertices = rectVertices.map((value) => value * 0.95);
 
 export const NUM_SCROLLBAR_END_ARCS = 24;
 const setOfPiesVertices = new Array(

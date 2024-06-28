@@ -1,20 +1,20 @@
-# WebGPU-React-Grid - A React component for visualizing a grid of floating-point values using WebGPU
+# WebGPU-React-Grid - A React component for visualizing a grid of values using WebGPU
 [![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
 [![npm version](https://badge.fury.io/js/webgpu-react-grid.svg)](https://badge.fury.io/js/webgpu-react-grid)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/kubohiroya/webgpu-react-grid/blob/main/LICENSE)
 
 
-WebGPU-React-Grid is an open-source React component for visualizing a grid of floating-point values using WebGPU.
+WebGPU-React-Grid is an open-source React component for visualizing a grid of values using WebGPU.
 
 ![animation](https://github.com/kubohiroya/webgpu-react-grid/assets/1578247/eb774c1d-48d7-4bc2-a89c-7d11f4dc28c9)
 
-- High-performance rendering using WebGPU
-- Supports large grid sizes (e.g. 5000x5000)
-- Supports viewport navigation via mouse drag and scrollbar handling.
-- Enables zooming in and out with mouse wheel.
-- Highlights the column and row under the current mouse pointer.
-- Allows toggling selection state of columns and rows via mouse interaction.
-- Customizable for canvas size, grid size, viewport display size, header area size, and scrollbar size through React component props.
+- A React component displaying bitmap image data or grid data using WebGPU API directly
+- Customizable for canvas size, grid size, viewport display size, header area size, and scrollbar size through React component props
+- Uint32Array of RGBA color values or Float32Array of HSV color sources can be rendered using a WebGPU Shader Language program
+- The display supports viewport navigation via mouse drag and scrollbar handling, and zoom in and out via mouse wheel
+- Highlights the column and row under the current mouse pointer
+- Toggle the selected state of each column and row, and highlight the selected ones
+- Supports many-to-many relationship of viewports and grid data sources
 
 # Live demo
 

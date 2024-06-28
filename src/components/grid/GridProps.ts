@@ -1,9 +1,17 @@
+import { GridShaderMode } from "./GridShaderMode";
+
 /**
  * Properties for the Grid component.
  */
 export type GridProps = {
+  /** The shader mode to use for the grid.
+   * ShaderMode.SINGLE_VALUE: Single value shader mode.
+   * ShaderMode.RGB: RGB shader mode.
+   * */
+  mode: GridShaderMode;
+
   /** The ID of the canvas element. */
-  index: number;
+  viewportIndex: number;
 
   /** The offset of the header in the grid. */
   headerOffset: {
@@ -31,8 +39,8 @@ export type GridProps = {
     numRows: number;
   };
 
-  /** The data to be displayed in the grid, stored in a Float32Array. */
-  data: Float32Array;
+  /** The data to be displayed in the grid, stored in a Float32Array for SingleValueGrid or Uint32Array for RGBAGrid. */
+  data: Float32Array|Uint32Array;
 
   /** The focused states of the grid, stored in a Uint32Array: notFocused=0, verticalFocused=1, horizontalFocused=2, verticalAndHorizontalFocused=3*/
   focusedStates: Uint32Array;
