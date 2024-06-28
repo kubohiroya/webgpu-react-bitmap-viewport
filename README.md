@@ -30,7 +30,7 @@ pnpm install webgpu-react-grid
 
 # API
 
-[doc](https://kubohiroya.github.io/webgpu-react-grid/docs/modules.html)
+[doc](https://kubohiroya.github.io/webgpu-react-grid/modules.html)
 
 # Usage
 
