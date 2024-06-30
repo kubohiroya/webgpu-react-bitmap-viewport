@@ -260,7 +260,7 @@ fn vertexScrollBarBackground(input: VertexInput) -> VertexOutput{
     output.position = rectangleVertexPosition(input.vertexIndex, left, top, right, bottom);
     output.isFocused = select(FALSE, TRUE, u32uni.scrollBarState == 1u || u32uni.scrollBarState == 3u);
   }else{ //vertical
-    let left = 1.0 - 2 * (scrollBarRadius * 2 + scrollBarMargin) / f32uni.canvasSize.y;
+    let left = 1.0 - 2 * (scrollBarRadius * 2 + scrollBarMargin) / f32uni.canvasSize.x;
     let top = 1.0 - 2 * f32uni.header.y / f32uni.canvasSize.y;
     let right = 1.0 - 2 * scrollBarMargin / f32uni.canvasSize.x;
     let bottom = -1.0;

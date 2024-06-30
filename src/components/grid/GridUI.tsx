@@ -198,6 +198,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     startViewportSize: { width: number; height: number };
     startCellSize: { width: number; height: number };
     delta: { x: number; y: number };
+    isMouseOut: boolean;
   } | null>(null);
 
   const velocity = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -549,6 +550,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const tick = () => {
+    //console.log('tick', velocity.current, overscroll.current);
+
     updateViewport();
     updateNumCellsToShow();
     executeRenderBundles();
@@ -762,6 +765,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
           x: 0,
           y: 0,
         },
+        isMouseOut: false
       };
       return;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
@@ -849,15 +853,26 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     onUp();
   };
 
-  const onMouseOut = () => {
+  const onMouseOut = (event: MouseEvent) => {
     canvasElementContext.canvasRef.current!.style.cursor = 'default';
     scrollBarState.current = ScrollBarStateValues.OutOfFrame;
+    if(pointerState.current){
+      pointerState.current.isMouseOut = true;
+    }
     updateU32UniformBuffer();
     refreshFocusedState(viewportContext.viewportIndex, -1, -1);
-    tick();
+    startInertia();
   };
 
-  const onMouseEnter = () => {
+  const onMouseEnter = (event: MouseEvent) => {
+    if(pointerState.current){
+      pointerState.current.isMouseOut = false;
+    }
+    if(event.buttons === 0){
+      onUp();
+      velocity.current = {x: 0, y: 0};
+      return;
+    }
     scrollBarState.current = ScrollBarStateValues.NotFocused;
     updateU32UniformBuffer();
     tick();
@@ -1107,11 +1122,12 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const startInertia = () => {
+
     if (tickerRef.current) {
       return;
     }
     tickerRef.current = setInterval(() => {
-      if (!pointerState.current) {
+      if (!pointerState.current || pointerState.current.isMouseOut) {
         const decreaseOverscroll = () => {
           if (
             Math.abs(overscroll.current.x) > 0.1 ||
