@@ -1,7 +1,7 @@
 {
   "name": "webgpu-react-grid",
-  "description": "an open-source React component for visualizing a grid of values using WebGPU",
-  "version": "0.6.0",
+  "description": "a React component that uses WebGPU to render a grid of pixel data within a viewport",
+  "version": "0.6.1",
   "license": "MIT",
   "projectType": "library",
   "repository": {

@@ -3,18 +3,17 @@
 [![npm version](https://badge.fury.io/js/webgpu-react-grid.svg)](https://badge.fury.io/js/webgpu-react-grid)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/kubohiroya/webgpu-react-grid/blob/main/LICENSE)
 
-
-WebGPU-React-Grid is an open-source React component for visualizing a grid of values using WebGPU.
+WebGPU-React-Grid is an open-source React component that uses WebGPU to render a grid of pixel data within a viewport.
 
 ![animation](https://github.com/kubohiroya/webgpu-react-grid/assets/1578247/eb774c1d-48d7-4bc2-a89c-7d11f4dc28c9)
 
-- A React component displaying bitmap image data or grid data using WebGPU API directly
-- Customizable for canvas size, grid size, viewport display size, header area size, and scrollbar size through React component props
-- Uint32Array of RGBA color values or Float32Array of HSV color sources can be rendered using a WebGPU Shader Language program
-- The display supports viewport navigation via mouse drag and scrollbar handling, and zoom in and out via mouse wheel
+- A React component displaying grid of pixel data using WebGPU API within a viewport, with no dependencies other than React
+- Customizable for grid size, viewport display size, canvas size, header area size, and scrollbar size through React component props
+- A image data (e.g., a grid of RGBA color values(Uint32Array) or HSV color values(Float32Array)) synchronized to a GPUBuffer can be extracted and rendered as a set of (one or more) viewport contents
+- The display supports viewport navigation via mouse drag and scrollbar handling, as well as zoom in and out via the mouse wheel
 - Highlights the column and row under the current mouse pointer
-- Toggle the selected state of each column and row, and highlight the selected ones
-- Supports many-to-many relationship of viewports and grid data sources
+- Allows toggling the selected state of each column and row, and highlight the selected ones
+- Supports many-to-many relationships between viewports and grid data sources
 
 # Live demo
 

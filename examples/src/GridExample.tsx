@@ -5,44 +5,63 @@ import { RGBARandomGridExample } from "./RGBARandomGridExample"
 export const GridExample = ()=>{
   return <>
     <div>
-      <RGBAImageGridExample src={"/webgpu-react-grid/The_Great_Wave_off_Kanagawa.jpg"}
+      <h2>RGBAImageGrid</h2>
+      <RGBAImageGridExample src={'/webgpu-react-grid/The_Great_Wave_off_Kanagawa.jpg'}
                             canvasSizes={
                               [
                                 { width: 1094, height: 726 },
                                 { width: 220, height: 220 },
-                                { width: 420, height: 220 }
+                                { width: 520, height: 220 }
                               ]
                             }
+                            headerOffset={{ left: 20, top: 20 }}
       />
     </div>
     <div>
+      <h2>HueGrid</h2>
       <HueGridExample
-        gridSize={
-          {
-            numColumns: 200,
-            numRows: 200
-          }}
-        canvasSizes={
-      [
-        { width: 800, height: 800 },
-        { width: 200, height: 200 },
-        { width: 100, height: 100 }
-      ]
-    }/>
-    </div>
-    <div>
-      <RGBARandomGridExample
-        gridSize={
-          {
-            numColumns: 200,
-            numRows: 200
-          }}
         canvasSizes={
           [
-            { width: 800, height: 800 },
-            { width: 200, height: 200 },
-            { width: 100, height: 100 }
+            { width: 520, height: 520 },
+            { width: 220, height: 420 },
+            { width: 220, height: 120 }
           ]
+        }
+        headerOffset={{ left: 20, top: 20 }}
+        gridSize={
+          {
+            numColumns: 200,
+            numRows: 200
+          }}
+        viewportStates={new Float32Array([
+          0.0, 0.0, 200.0, 200.0, // viewport index 0: left, top, right, bottom
+          50.0, 50.0, 100.0, 150.0, // viewport index 1: left, top, right, bottom
+          0.0, 100.0, 100.0, 150.0, // viewport index 2: left, top, right, bottom
+        ])
+        }
+      />
+    </div>
+    <div>
+      <h2>RGBARandomGrid</h2>
+      <RGBARandomGridExample
+        canvasSizes={
+          [
+            { width: 520, height: 520 },
+            { width: 220, height: 420 },
+            { width: 220, height: 120 }
+          ]
+        }
+        headerOffset={{ left: 20, top: 20 }}
+        gridSize={
+          {
+            numColumns: 200,
+            numRows: 200
+          }}
+        viewportStates={new Float32Array([
+          0.0, 0.0, 200.0, 200.0, // viewport index 0: left, top, right, bottom
+          50.0, 50.0, 100.0, 150.0, // viewport index 1: left, top, right, bottom
+          0.0, 100.0, 100.0, 150.0, // viewport index 2: left, top, right, bottom
+        ])
         }
       />
     </div>

@@ -9,6 +9,10 @@ type RGBAImageGridExample = {
     width: number;
     height: number;
   }[];
+  headerOffset: {
+    top: number;
+    left: number;
+  }
 };
 
 export const RGBAImageGridExample = (props: RGBAImageGridExample) => {
@@ -37,7 +41,7 @@ export const RGBAImageGridExample = (props: RGBAImageGridExample) => {
       const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
       const viewportStates: Float32Array = new Float32Array([
         //0.0,0.0,1074.0,706.0,//
-        0,0,537,353,//// // viewport index 0: left, top, right, bottom
+        0,0,gridSize.numColumns,gridSize.numRows,//// // viewport index 0: left, top, right, bottom
         55.0,
         55.0,
         90.0,
@@ -68,7 +72,7 @@ export const RGBAImageGridExample = (props: RGBAImageGridExample) => {
     <GridGroup
       mode={GridShaderMode.RGBA}
       gridSize={state.gridSize}
-      headerOffset={{ left: 20, top: 20 }}
+      headerOffset={props.headerOffset}
       scrollBar={{
         radius: 5.0,
         margin: 2.0,

@@ -2,14 +2,19 @@ import { GridShaderMode } from "webgpu-react-grid";
 import { GridGroup } from "./GridGroup";
 
 type RGBARandomGridExampleProps = {
+  canvasSizes: {
+    width: number;
+    height: number;
+  }[],
+  headerOffset: {
+    top: number,
+    left: number,
+  },
   gridSize: {
     numColumns: number;
     numRows:number;
   },
-  canvasSizes: {
-    width: number;
-    height: number;
-  }[];
+  viewportStates: Float32Array;
 }
 
 export const RGBARandomGridExample = (props: RGBARandomGridExampleProps) => {
@@ -38,16 +43,10 @@ export const RGBARandomGridExample = (props: RGBARandomGridExampleProps) => {
   const focusedStates: Uint32Array = new Uint32Array(gridSizeMax);
   const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
 
-  const viewportStates: Float32Array = new Float32Array([
-    0.0, 0.0, 200.0, 200.0, // viewport index 0: left, top, right, bottom
-    55.0, 55.0, 90.0, 90.0, // viewport index 1: left, top, right, bottom
-    64.0, 64.0, 80.0, 80.0 // viewport index 2: left, top, right, bottom
-  ]);
-
   return <GridGroup
     mode={GridShaderMode.RGBA}
     gridSize={props.gridSize}
-    headerOffset={{ left: 20, top: 20 }}
+    headerOffset={props.headerOffset}
     scrollBar={{
       radius: 5.0,
       margin: 2.0,
@@ -56,6 +55,6 @@ export const RGBARandomGridExample = (props: RGBARandomGridExampleProps) => {
     data={data}
     focusedStates={focusedStates}
     selectedStates={selectedStates}
-    viewportStates={viewportStates}
+    viewportStates={props.viewportStates}
   />;
 };
