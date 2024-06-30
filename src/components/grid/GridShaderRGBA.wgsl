@@ -41,30 +41,7 @@ fn vertexBody(
     return output;
 }
 
-@vertex
-fn vertexViewportShadow(input: RectVertexInput) -> VertexOutput {
-  var output: VertexOutput;
-  if(input.instanceIndex == u32uni.viewportIndex){
-    return output;
-  }
-  let viewport: vec4f = viewports[input.instanceIndex];
-  let left = viewport.x;
-  let top = viewport.y;
-  let right = viewport.z;
-  let bottom = viewport.w;
-  let scale = vec2f(right - left, bottom - top);
-  let center = vec2f(left + right, top + bottom) / 2.0;
-  output.position = vec4f(transform2(center, scale, rectVertices[input.vertexIndex % 6]), 0.0, 1.0);
-  output.rgba = vec4f(0.3, 0.3, 0.3, 0.075);
-  return output;
-}
-
 @fragment
 fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
-  return input.rgba;
-}
-
-@fragment
-fn fragmentViewportShadow(input: VertexOutput) -> @location(0) vec4f {
   return input.rgba;
 }

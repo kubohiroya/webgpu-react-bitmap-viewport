@@ -31,8 +31,6 @@ const libConfig = defineConfig({
     sourcemap: true,
   },
 
-  publicDir: 'public',
-
 });
 
 const examplesConfig = defineConfig({
@@ -48,6 +46,8 @@ const examplesConfig = defineConfig({
     port: 4300,
     host: 'localhost',
   },
+
+  publicDir: './examples/public',
 
   base: '/webgpu-react-grid',
 

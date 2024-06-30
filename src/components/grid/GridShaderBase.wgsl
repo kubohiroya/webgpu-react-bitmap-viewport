@@ -345,6 +345,45 @@ fn vertexScrollBarBody(input: VertexInput) -> VertexOutput{
 }
 
 
+@vertex
+fn vertexViewportShadow(input: RectVertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  if(u32uni.scrollBarState != 99u){
+    return output;
+  }
+  let viewport: vec4f = viewports[input.instanceIndex];
+  let left = viewport.x;
+  let top = viewport.y;
+  let right = viewport.z;
+  let bottom = viewport.w;
+  var rect: vec4f;
+  switch(u32(input.vertexIndex / 6)){
+    case 1u: {
+      rect = vec4f(0, 0, f32uni.gridSize.x, top);
+      break;
+    }
+    case 2u: {
+      rect = vec4f(right, top, f32uni.gridSize.x, bottom);
+      break;
+    }
+    case 3u: {
+      rect = vec4f(0, bottom, f32uni.gridSize.x, f32uni.gridSize.y);
+      break;
+    }
+    case 4u: {
+      rect = vec4f(0, top, left, bottom);
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+  let scale = vec2f(rect.z - rect.x, rect.w - rect.y);
+  let center = vec2f(rect.z + rect.x, rect.w + rect.y) / 2.0;
+  output.position = vec4f(transform2(center, scale, rectVertices[input.vertexIndex % 6]), 0.0, 1.0);
+  return output;
+}
+
 // HSVからRGBへの変換を行う関数
 fn hsvToRgb(h: f32, s: f32, v: f32) -> vec3f {
     if (s == 0.0) {
@@ -488,4 +527,9 @@ fn fragmentScrollBarBody(input: VertexOutput) -> @location(0) vec4f{
   }else{
     return vec4f(0.3, 0.3, 0.3, 0.6);
   }
+}
+
+@fragment
+fn fragmentViewportShadow(input: VertexOutput) -> @location(0) vec4f {
+  return vec4f(0.1, 0.1, 0.1, 0.1);
 }

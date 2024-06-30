@@ -532,8 +532,8 @@ export class RenderBundleBuilder {
     this.executeRenderBundles([
       this.columnFocusRenderBundle,
       this.rowFocusRenderBundle,
-      this.viewportShadowRenderBundle,
       this.bodyRenderBundle,
+      this.viewportShadowRenderBundle,
       this.topHeaderRenderBundle,
       this.leftHeaderRenderBundle,
       this.scrollBarBackgroundRenderBundle,
