@@ -11,7 +11,7 @@ export const GridExample = ()=>{
                               [
                                 { width: 1094, height: 726 },
                                 { width: 220, height: 220 },
-                                { width: 520, height: 220 }
+                                { width: 420, height: 220 }
                               ]
                             }
                             headerOffset={{ left: 20, top: 20 }}

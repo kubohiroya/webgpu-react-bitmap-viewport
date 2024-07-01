@@ -73,23 +73,22 @@ function regulateRectangleTranslate(
       regulatedTarget.right = gridSize.numColumns;
       regulatedTarget.top = 0;
       regulatedTarget.bottom = gridSize.numRows;
+      return regulatedTarget;
     }else if (canvasAspectRatio > gridAspectRatio) {
-      const yOffset = (gridSize.numRows - targetHeight) / 2;
+      const yCenter = (newViewport.top + newViewport.bottom) / 2;
+      const yOffset =  gridSize.numColumns / marginedCanvasSize.width * marginedCanvasSize.height / 2;
       regulatedTarget.left = 0;
       regulatedTarget.right = gridSize.numColumns;
-      if(regulatedTarget.top < 0 || gridSize.numRows < regulatedTarget.bottom){
-        regulatedTarget.top = 0;
-        regulatedTarget.bottom = gridSize.numRows;
-      }else{
-        regulatedTarget.top = newViewport.top - yOffset;
-        regulatedTarget.bottom = newViewport.bottom + yOffset;
-      }
+      regulatedTarget.top = yCenter - yOffset;
+      regulatedTarget.bottom = yCenter + yOffset;
       return regulatedTarget;
     } else {
+      const xCenter = (newViewport.left + newViewport.right) / 2;
+      const xOffset =  gridSize.numRows / marginedCanvasSize.height * marginedCanvasSize.width / 2;
       regulatedTarget.top = 0;
       regulatedTarget.bottom = gridSize.numRows;
-      regulatedTarget.left = (newViewport.left + newViewport.right - viewportSize.width ) / 2;
-      regulatedTarget.right = (newViewport.left + newViewport.right + viewportSize.width) / 2;
+      regulatedTarget.left = xCenter - xOffset;
+      regulatedTarget.right = xCenter + xOffset;
       return regulatedTarget;
     }
   }
