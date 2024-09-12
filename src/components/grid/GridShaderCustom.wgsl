@@ -32,38 +32,13 @@ fn vertexBody(
 
 @fragment
 fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
+  let s = select(1, 0.5, isTrue(input.isFocused));
+  let v = select(1, 0.5, isTrue(input.isSelected));
   let isInfinity = select(FALSE, TRUE, checkInfinity(input.cellValue));
-  if(isInfinity == TRUE) {
-    if(isTrue(input.isFocused)) {
-      if(isTrue(input.isSelected)) {
-        return vec4f(0.6, 0.6, 0.6, 0.9);
-      } else {
-        return vec4f(0.6, 0.6, 0.3, 0.9);
-      }
-    }else{
-      if(isTrue(input.isSelected)) {
-        return vec4f(0.6, 0.3, 0.6, 0.9);
-      } else {
-        return vec4f(0.6, 0.3, 0.3, 0.9);
-      }
-    }
-  }else{
-    if(isTrue(input.isFocused)) {
-      if(isTrue(input.isSelected)) {
-        let rgb = hsvToRgb(input.cellValue * 0.8, 0.5, 0.5);
-        return vec4f(rgb, 0.9);
-      } else {
-        let rgb = hsvToRgb(input.cellValue * 0.8, 1.0, 0.5);
-        return vec4f(rgb, 0.9);
-      }
-    } else {
-      if(isTrue(input.isSelected)) {
-        let rgb = hsvToRgb(input.cellValue * 0.8, 0.5, 1.0);
-        return vec4f(rgb, 0.9);
-      } else {
-        let rgb = hsvToRgb(input.cellValue * 0.8, 1.0, 1.0);
-        return vec4f(rgb, 0.9);
-      }
-    }
+  if(isInfinity == TRUE){
+      let rgb = hsvToRgb(1.0, 0.0, 1.0);
+      return vec4f(rgb, 1.0);
   }
+  let rgb = hsvToRgb(input.cellValue, 0.9, 0.9);
+  return vec4f(rgb, 1.0);
 }

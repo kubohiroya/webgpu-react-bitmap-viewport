@@ -1,7 +1,7 @@
 import { Grid, GridHandles, GridShaderMode } from "webgpu-react-grid";
 import { useRef } from "react";
 
-type GridExampleProps = {
+type GridGroupProps = {
   mode: GridShaderMode;
   gridSize: {
     numColumns: number;
@@ -25,7 +25,7 @@ type GridExampleProps = {
   viewportStates: Float32Array;
 }
 
-export const GridGroup = (props: GridExampleProps) => {
+export const GridGroup = (props: GridGroupProps) => {
   const gridRefs =
     [
       useRef<GridHandles>(null),

@@ -3,7 +3,7 @@ import { GridGroup } from './GridGroup';
 import { loadImage } from './loadImage';
 import { useEffect, useState } from 'react';
 
-type RGBAImageGridExample = {
+type RGBAImageGridExampleProps = {
   src: string;
   canvasSizes: {
     width: number;
@@ -15,7 +15,7 @@ type RGBAImageGridExample = {
   }
 };
 
-export const RGBAImageGridExample = (props: RGBAImageGridExample) => {
+export const RGBAImageGridExample = (props: RGBAImageGridExampleProps) => {
   const [state, setState] = useState<{
     data: Uint32Array;
     width: number;
@@ -85,3 +85,4 @@ export const RGBAImageGridExample = (props: RGBAImageGridExample) => {
     />
   );
 };
+export default RGBAImageGridExample;

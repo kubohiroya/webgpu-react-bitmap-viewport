@@ -1199,7 +1199,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     canvas.addEventListener('touchend', onTouchEnd, { passive: true });
     canvas.addEventListener('mouseenter', onMouseEnter, { passive: true });
     canvas.addEventListener('mouseout', onMouseOut, { passive: true });
-    canvas.addEventListener('wheel', onWheel);
+    canvas.addEventListener('wheel', onWheel, {passive: false});
     eventHandlersInitialized.current = true;
 
     renderBundleBuilder.current.updateDataBufferStorage(gridContext.data);

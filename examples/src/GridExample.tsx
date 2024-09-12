@@ -1,9 +1,24 @@
 import { HueGridExample } from "./HueGridExample"
 import { RGBAImageGridExample } from "./RGBAImageGridExample"
 import { RGBARandomGridExample } from "./RGBARandomGridExample"
+import SchellingModel from "./schelling_segregation/SchellingModel"
 
 export const GridExample = ()=>{
   return <>
+    <div>
+      <h2>Schelling's model of segregation</h2>
+      <SchellingModel
+        density={0.8}
+        theta={0.5}
+        shares={[0.6, 0.3, 0.1]}
+        values={[0.4, 0.5, 0.75]}
+        //shares={[0.5, 0.5]}
+        //values={[0.01, 0.7]}
+        canvasSize={{width: 256, height: 256}}
+        headerOffset={{left: 0, top: 0}}
+        gridSize={{numColumns: 1024, numRows: 1024}}
+      />
+    </div>
     <div>
       <h2>RGBAImageGrid</h2>
       <RGBAImageGridExample src={'/webgpu-react-grid/The_Great_Wave_off_Kanagawa.jpg'}

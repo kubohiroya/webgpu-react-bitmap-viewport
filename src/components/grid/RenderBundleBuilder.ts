@@ -12,6 +12,7 @@ import { GridContextProps } from './GridContext';
 import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
 import GRID_SHADER_RGBA_CODE from './GridShaderRGBA.wgsl?raw';
 import GRID_SHADER_HUE_CODE from './GridShaderHue.wgsl?raw';
+import GRID_SHADER_CUSTOM_CODE from './GridShaderCustom.wgsl?raw';
 
 import { CanvasElementContextType } from './CanvasElementContext';
 import { vertices, VERTICES_BYTE_LENGTH } from './Vertices';
@@ -83,7 +84,7 @@ export class RenderBundleBuilder {
 
     const shaderModule = device.createShaderModule({
       label: 'Grid shader',
-      code: GRID_SHADER_CODE + (mode === GridShaderMode.HUE ? GRID_SHADER_HUE_CODE : GRID_SHADER_RGBA_CODE)
+      code: GRID_SHADER_CODE + (mode === GridShaderMode.HUE ? GRID_SHADER_HUE_CODE : mode === GridShaderMode.RGBA ? GRID_SHADER_RGBA_CODE : GRID_SHADER_CUSTOM_CODE)
     });
 
     const bindGroupLayout = device.createBindGroupLayout(
