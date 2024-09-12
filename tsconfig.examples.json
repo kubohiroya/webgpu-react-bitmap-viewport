@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
-    "declaration": false,
+    "declaration": true,
     "outDir": "./dist/examples",
     "baseUrl": ".",
     "types": ["node", "vite/client", "@webgpu/types", "webgpu-react-grid"],

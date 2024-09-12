@@ -6,22 +6,21 @@
     "outDir": "dist",
     "declarationDir": "dist/types",
     "emitDeclarationOnly": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "es2017",
     "module": "esnext",
-    "lib": ["es2020", "dom"],
+    "lib": ["esnext", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "jsx": "react-jsx",
     "allowJs": false,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "strict": true,
-    "types": ["node", "vite/client", "@webgpu/types"],
+    "types": ["node", "@webgpu/types", "vite/client"],
     "composite": true
   },
   "references": [
@@ -29,6 +28,6 @@
       "path": "./tsconfig.examples.json"
     }
   ],
-  "include": ["src"],
-  "compileOnSave": false
+  "compileOnSave": false,
+  "include": ["src/**/*.ts", "src/**/*.tsx", "examples/src/**/*.ts", "examples/src/**/*.tsx", "examples/src/**/*.wgsl"],
 }

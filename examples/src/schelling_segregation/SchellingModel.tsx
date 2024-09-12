@@ -17,7 +17,7 @@ type SchellingModelProps = {
   density: number,
   shares: number[],
   values: number[],
-  theta: number,
+  tolerance: number,
 }
 
 type SchellingState = {
@@ -127,7 +127,7 @@ export default function SchellingModel(props: SchellingModelProps) {
         const numSurroundingPeople = surroundingEthnicGroupIDs.filter(value => value !== NULL_VALUE).length;
         const numSurroundingSameEthinicPeople = surroundingEthnicGroupIDs.filter(value => value === ethnicGroupID).length;
         const s = numSurroundingSameEthinicPeople / numSurroundingPeople;
-        if(s < props.theta){
+        if(s < props.tolerance){
           const pos = Math.floor(Math.random() * state.zeroIndices.length);
           const zeroIndex = state.zeroIndices[pos];
           state.data[zeroIndex] = ethnicGroupID;
@@ -138,10 +138,7 @@ export default function SchellingModel(props: SchellingModelProps) {
       }
     }
     if(numMoved > 0){
-      // console.log('moved ', moved.length);
-      //gridRefs[0].current?.refreshData(0);
       setState({...state, data: state.data, zeroIndices: state.zeroIndices});
-      //setTimeout(tick, 500);
     }else{
       console.log('no one moved');
     }

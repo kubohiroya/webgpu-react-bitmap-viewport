@@ -9,8 +9,9 @@ import {
 } from './GridBufferFactories';
 import { GridContextProps } from './GridContext';
 
-import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
+// @ts-ignore
 import GRID_SHADER_RGBA_CODE from './GridShaderRGBA.wgsl?raw';
+import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
 import GRID_SHADER_HUE_CODE from './GridShaderHue.wgsl?raw';
 import GRID_SHADER_CUSTOM_CODE from './GridShaderCustom.wgsl?raw';
 
@@ -50,15 +51,6 @@ export class RenderBundleBuilder {
   private selectedStateStorage: GPUBuffer;
   private drawIndirectBuffer: GPUBuffer;
 
-  private columnFocusSelectPipeline: GPURenderPipeline;
-  private rowFocusSelectPipeline: GPURenderPipeline;
-  private bodyPipeline: GPURenderPipeline;
-  private viewportShadowPipeline: GPURenderPipeline;
-  private leftHeaderPipeline: GPURenderPipeline;
-  private topHeaderPipeline: GPURenderPipeline;
-  private scrollBarBackgroundPipeline: GPURenderPipeline;
-  private scrollBarBodyPipeline: GPURenderPipeline;
-
   private columnFocusRenderBundle: GPURenderBundle;
   private rowFocusRenderBundle: GPURenderBundle;
   private bodyRenderBundle: GPURenderBundle;
@@ -68,7 +60,7 @@ export class RenderBundleBuilder {
   private scrollBarBackgroundRenderBundle: GPURenderBundle;
   private scrollBarBodyRenderBundle: GPURenderBundle;
 
-  constructor(
+  public constructor(
     mode: GridShaderMode,
     device: GPUDevice,
     canvasFormat: GPUTextureFormat,
@@ -98,7 +90,7 @@ export class RenderBundleBuilder {
 
     this.canvasContext = canvasContext;
 
-    const createPipeline = (
+    const createRenderPipeline = (
       label: string,
       device: GPUDevice,
       vertexEntryPoint: string,
@@ -158,51 +150,51 @@ export class RenderBundleBuilder {
       });
     };
 
-    this.columnFocusSelectPipeline = createPipeline(
+    const columnFocusSelectPipeline = createRenderPipeline(
       'columnFocusSelect',
       device,
       'vertexColumnFocusSelect',
       'fragmentColumnFocusSelect'
     );
-    this.rowFocusSelectPipeline = createPipeline(
+    const rowFocusSelectPipeline = createRenderPipeline(
       'rowFocusSelect',
       device,
       'vertexRowFocusSelect',
       'fragmentRowFocusSelect'
     );
-    this.bodyPipeline = createPipeline(
+    const bodyPipeline = createRenderPipeline(
       'body',
       device,
       'vertexBody',
       'fragmentBody'
     );
 
-    this.viewportShadowPipeline = createPipeline(
+    const viewportShadowPipeline = createRenderPipeline(
       'viewportShadow',
       device,
       'vertexViewportShadow',
       'fragmentViewportShadow'
     );
 
-    this.leftHeaderPipeline = createPipeline(
+    const leftHeaderPipeline = createRenderPipeline(
       'leftHeader',
       device,
       'vertexLeftHeader',
       'fragmentLeftHeader'
     );
-    this.topHeaderPipeline = createPipeline(
+    const topHeaderPipeline = createRenderPipeline(
       'topHeader',
       device,
       'vertexTopHeader',
       'fragmentTopHeader'
     );
-    this.scrollBarBackgroundPipeline = createPipeline(
+    const scrollBarBackgroundPipeline = createRenderPipeline(
       'scrollBarBackground',
       device,
       'vertexScrollBarBackground',
       'fragmentScrollBarBackground'
     );
-    this.scrollBarBodyPipeline = createPipeline(
+    const scrollBarBodyPipeline = createRenderPipeline(
       'scrollBarBody',
       device,
       'vertexScrollBarBody',
@@ -284,18 +276,17 @@ export class RenderBundleBuilder {
       this.gridDataBufferStorage
     );
 
-    this.columnFocusRenderBundle = this.createColumnFocusRenderBundle();
-    this.rowFocusRenderBundle = this.createRowFocusRenderBundle();
-    this.bodyRenderBundle = this.createBodyRenderBundle();
-    this.viewportShadowRenderBundle = this.createViewportShadowRenderBundle();
-    this.topHeaderRenderBundle = this.createTopHeaderRenderBundle();
-    this.leftHeaderRenderBundle = this.createLeftHeaderRenderBundle();
-    this.scrollBarBodyRenderBundle = this.createScrollBarBodyRenderBundle();
-    this.scrollBarBackgroundRenderBundle =
-      this.createScrollBarBackgroundRenderBundle();
+    this.columnFocusRenderBundle = this.createColumnFocusRenderBundle(columnFocusSelectPipeline);
+    this.rowFocusRenderBundle = this.createRowFocusRenderBundle(rowFocusSelectPipeline);
+    this.bodyRenderBundle = this.createBodyRenderBundle(bodyPipeline);
+    this.viewportShadowRenderBundle = this.createViewportShadowRenderBundle(viewportShadowPipeline);
+    this.topHeaderRenderBundle = this.createTopHeaderRenderBundle(topHeaderPipeline);
+    this.leftHeaderRenderBundle = this.createLeftHeaderRenderBundle(leftHeaderPipeline);
+    this.scrollBarBodyRenderBundle = this.createScrollBarBodyRenderBundle(scrollBarBodyPipeline);
+    this.scrollBarBackgroundRenderBundle = this.createScrollBarBackgroundRenderBundle(scrollBarBackgroundPipeline);
   }
 
-  updateF32UniformBuffer(
+  public updateF32UniformBuffer(
     gridContext: GridContextProps,
     overscroll: { x: number; y: number },
   ) {
@@ -311,7 +302,7 @@ export class RenderBundleBuilder {
     );
   }
 
-  updateViewportStateStorage(
+  public updateViewportStateStorage(
     viewportStates: Float32Array,
   ){
     updateBuffer(
@@ -321,7 +312,7 @@ export class RenderBundleBuilder {
     );
   }
 
-  updateU32UniformBuffer(
+  public updateU32UniformBuffer(
     gridContext: GridContextProps,
     numCellsToShow: { numColumnsToShow: number; numRowsToShow: number },
     scrollBarState: number,
@@ -334,11 +325,11 @@ export class RenderBundleBuilder {
     );
   }
 
-  updateDataBufferStorage(data: Float32Array|Uint32Array) {
+  public updateDataBufferStorage(data: Float32Array|Uint32Array) {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
   }
 
-  updateFocusedStateStorage(focusedState: Uint32Array) {
+  public updateFocusedStateStorage(focusedState: Uint32Array) {
     updateBuffer(
       this.device,
       this.focusedStateStorage,
@@ -346,7 +337,7 @@ export class RenderBundleBuilder {
     );
   }
 
-  updateSelectedStateStorage(selectedState: Uint32Array) {
+  public updateSelectedStateStorage(selectedState: Uint32Array) {
     updateBuffer(
       this.device,
       this.selectedStateStorage,
@@ -354,7 +345,7 @@ export class RenderBundleBuilder {
     );
   }
 
-  createBindGroup(
+  private createBindGroup(
     label: string,
     bindGroupLayout: GPUBindGroupLayout,
     f32UniformBuffer: GPUBuffer,
@@ -396,7 +387,7 @@ export class RenderBundleBuilder {
     });
   }
 
-  createRenderBundle(
+  private createRenderBundle(
     label: string,
     pipeline: GPURenderPipeline,
     indirectOffset: number
@@ -412,7 +403,7 @@ export class RenderBundleBuilder {
     return encoder.finish();
   }
 
-  updateDrawIndirectBuffer(
+  public updateDrawIndirectBuffer(
     numColumnsToShow: number,
     numRowsToShow: number,
     numViewports: number
@@ -432,71 +423,69 @@ export class RenderBundleBuilder {
     );
   }
 
-  createBodyRenderBundle() {
+  private createBodyRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'body',
-      this.bodyPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('BODY')!
     );
   }
 
-  createViewportShadowRenderBundle() {
+  private createViewportShadowRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'viewportShadow',
-      this.viewportShadowPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('VIEWPORT_SHADOW')!
     );
   }
 
-  createColumnFocusRenderBundle() {
+  private createColumnFocusRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'columnFocus',
-      this.columnFocusSelectPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('TOP_HEADER')!
     );
   }
 
-  createRowFocusRenderBundle() {
+  private createRowFocusRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'rowFocus',
-      this.rowFocusSelectPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('LEFT_HEADER')!
     );
   }
 
-  createTopHeaderRenderBundle() {
+  private createTopHeaderRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'topHeader',
-      this.topHeaderPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('TOP_HEADER')!
     );
   }
-
-  createLeftHeaderRenderBundle() {
+  private createLeftHeaderRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'leftHeader',
-      this.leftHeaderPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('LEFT_HEADER')!
     );
   }
 
-  createScrollBarBackgroundRenderBundle() {
+  private createScrollBarBackgroundRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'scrollBarBackground',
-      this.scrollBarBackgroundPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('SCROLLBAR_BACKGROUND')!
     );
   }
-
-  createScrollBarBodyRenderBundle() {
+  private createScrollBarBodyRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'scrollBarBody',
-      this.scrollBarBodyPipeline,
+      pipeline,
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('SCROLLBAR_BODY')!
     );
   }
 
-  executeRenderBundles(renderBundles: GPURenderBundle[]) {
+  private createCommandBuffer(renderBundles: GPURenderBundle[]) {
     const commandEncoder = this.device.createCommandEncoder();
     const multisample = this.canvasElementContext.multisample;
     const texture =
@@ -526,19 +515,21 @@ export class RenderBundleBuilder {
     });
     passEncoder.executeBundles(renderBundles);
     passEncoder.end();
-    this.device.queue.submit([commandEncoder.finish()]);
+    return commandEncoder.finish();
   }
 
-  execute() {
-    this.executeRenderBundles([
-      this.columnFocusRenderBundle,
-      this.rowFocusRenderBundle,
-      this.bodyRenderBundle,
-      this.viewportShadowRenderBundle,
-      this.topHeaderRenderBundle,
-      this.leftHeaderRenderBundle,
-      this.scrollBarBackgroundRenderBundle,
-      this.scrollBarBodyRenderBundle
+  public execute() {
+    this.device.queue.submit([
+      this.createCommandBuffer([
+        this.columnFocusRenderBundle,
+        this.rowFocusRenderBundle,
+        this.bodyRenderBundle,
+        this.viewportShadowRenderBundle,
+        this.topHeaderRenderBundle,
+        this.leftHeaderRenderBundle,
+        this.scrollBarBackgroundRenderBundle,
+        this.scrollBarBodyRenderBundle
+      ])
     ]);
   }
 }

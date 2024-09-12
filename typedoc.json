@@ -7,6 +7,5 @@
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeExternals": true,
-  "includes": ["src"],
   "exclude": ["node_modules"]
 }
