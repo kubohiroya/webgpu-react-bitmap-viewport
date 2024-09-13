@@ -1,4 +1,4 @@
-import SCHELLING_COMPUTE_SHADER from './SchellingModel.wgsl?raw';
+import SCHELLING_COMPUTE_SHADER from './SchellingModelShader.wgsl?raw';
 
 export class SchellingCommandBufferBuilder{
   device: GPUDevice;
@@ -92,7 +92,7 @@ export class SchellingCommandBufferBuilder{
     });
 
     const bindGroup = this.device.createBindGroup({
-      layout: computePipeline.getBindGroupLayout(0),
+      layout: computePipeline.getBindGroupLayout(1),
       entries: [
         { binding: 0, resource: { buffer: gridBuffer } },
         { binding: 1, resource: { buffer: newGridBuffer } },

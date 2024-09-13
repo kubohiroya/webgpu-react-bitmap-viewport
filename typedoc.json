@@ -1,11 +1,9 @@
 {
-  "basePath": ".",
+  "$schema": "https://typedoc.org/schema.json",
   "cleanOutputDir": false,
   "entryPoints": ["src/index.ts"],
+  "entryPointStrategy": "expand",
   "out": "dist/webgpu-react-grid",
   "emit": "both",
-  "excludePrivate": true,
-  "excludeProtected": true,
-  "excludeExternals": true,
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist", "examples/src/**/*"]
 }
