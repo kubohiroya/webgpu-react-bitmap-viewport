@@ -1,6 +1,6 @@
 import SCHELLING_COMPUTE_SHADER from './SchellingModelShader.wgsl?raw';
 
-export class SchellingCommandBufferBuilder{
+export default class SchellingModelRunner{
   device: GPUDevice;
   gridWidth: number;
   gridHeight: number;
@@ -130,31 +130,35 @@ export class SchellingCommandBufferBuilder{
 
   public async execute(){
 
-    for (let step = 0; true; step++) {
+    for (let step = 0; step < 1; step++) {
 
       const commandBuffer = this.createCommandBuffer(this.device, this.gridWidth, this.gridHeight,
         this.randomTableBuffer, this.computePipeline, this.bindGroup);
 
-      this.device.queue.submit([commandBuffer]);
+      if(false){
+        this.device.queue.submit([commandBuffer]);
+        // 結果をGPUから取得
+        const resultBuffer = this.device.createBuffer({
+          size: this.gridData.byteLength,
+          usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+        });
+        const copyEncoder = this.device.createCommandEncoder();
+        copyEncoder.copyBufferToBuffer(this.newGridBuffer, 0, resultBuffer, 0, this.gridData.byteLength);
+        this.device.queue.submit([copyEncoder.finish()]);
+        await resultBuffer.mapAsync(GPUMapMode.READ);
+        const result = new Float32Array(resultBuffer.getMappedRange());
+        await resultBuffer.unmap();
+        console.log(`Step ${step + 1}:`, result);
 
-      // 結果をGPUから取得
-      const resultBuffer = this.device.createBuffer({
-        size: this.gridData.byteLength,
-        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
-      });
-
-      const copyEncoder = this.device.createCommandEncoder();
-      copyEncoder.copyBufferToBuffer(this.newGridBuffer, 0, resultBuffer, 0, this.gridData.byteLength);
-      this.device.queue.submit([copyEncoder.finish()]);
-
-      await resultBuffer.mapAsync(GPUMapMode.READ);
-      const result = new Float32Array(resultBuffer.getMappedRange());
-      console.log(`Step ${step + 1}:`, result);
+      }else{
+        const copyEncoder = this.device.createCommandEncoder();
+        copyEncoder.copyBufferToBuffer(this.newGridBuffer, 0, this.gridBuffer, 0, this.gridData.byteLength);
+        this.device.queue.submit([commandBuffer, copyEncoder.finish()]);
+      }
 
       // newGridData を gridData に更新して次のステップへ
       // this.newGridData.set(result);
-      this.gridBuffer.unmap();
-      resultBuffer.unmap();
+      // // await this.gridBuffer.unmap();
     }
 
   }

@@ -9,7 +9,6 @@ import {
 } from './GridBufferFactories';
 import { GridContextProps } from './GridContext';
 
-// @ts-ignore
 import GRID_SHADER_RGBA_CODE from './GridShaderRGBA.wgsl?raw';
 import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
 import GRID_SHADER_HUE_CODE from './GridShaderHue.wgsl?raw';
@@ -485,7 +484,7 @@ export class RenderBundleBuilder {
     );
   }
 
-  private createCommandBuffer(renderBundles: GPURenderBundle[]) {
+  public createCommandBuffer() {
     const commandEncoder = this.device.createCommandEncoder();
     const multisample = this.canvasElementContext.multisample;
     const texture =
@@ -500,8 +499,10 @@ export class RenderBundleBuilder {
           usage: GPUTextureUsage.RENDER_ATTACHMENT
         })
         : this.canvasContext.getCurrentTexture();
+
     const resolveTarget =
       multisample !== undefined ? { resolveTarget: texture.createView() } : {};
+
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
@@ -513,6 +514,17 @@ export class RenderBundleBuilder {
         }
       ]
     });
+
+    const renderBundles: GPURenderBundle[] = [
+      this.columnFocusRenderBundle,
+      this.rowFocusRenderBundle,
+      this.bodyRenderBundle,
+      this.viewportShadowRenderBundle,
+      this.topHeaderRenderBundle,
+      this.leftHeaderRenderBundle,
+      this.scrollBarBackgroundRenderBundle,
+      this.scrollBarBodyRenderBundle
+    ];
     passEncoder.executeBundles(renderBundles);
     passEncoder.end();
     return commandEncoder.finish();
@@ -520,16 +532,7 @@ export class RenderBundleBuilder {
 
   public execute() {
     this.device.queue.submit([
-      this.createCommandBuffer([
-        this.columnFocusRenderBundle,
-        this.rowFocusRenderBundle,
-        this.bodyRenderBundle,
-        this.viewportShadowRenderBundle,
-        this.topHeaderRenderBundle,
-        this.leftHeaderRenderBundle,
-        this.scrollBarBackgroundRenderBundle,
-        this.scrollBarBodyRenderBundle
-      ])
+      this.createCommandBuffer()
     ]);
   }
 }

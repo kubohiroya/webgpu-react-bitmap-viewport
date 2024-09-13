@@ -548,7 +548,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
   };
 
-  const tick = () => {
+  const update = () => {
     //console.log('tick', velocity.current, overscroll.current);
 
     updateViewport();
@@ -830,12 +830,12 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
 
   const onMouseDown = (event: MouseEvent) => {
     onDown(event.clientX, event.clientY);
-    tick();
+    update();
   };
 
   const onTouchStart = (event: TouchEvent) => {
     onDown(event.touches[0].clientX, event.touches[0].clientY);
-    tick();
+    update();
   };
 
   const onUp = () => {
@@ -874,7 +874,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
     scrollBarState.current = ScrollBarStateValues.NotFocused;
     updateU32UniformBuffer();
-    tick();
+    update();
   };
 
   const onDrag = (
@@ -1042,7 +1042,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     renderBundleBuilder.current?.updateViewportStateStorage(
       viewportContext.viewportStates
     );
-    tick();
+    update();
 
     /*
     const horizontalUnderflow = -1 * left;
@@ -1165,7 +1165,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
           tickerRef.current = undefined;
         }
       }
-      requestAnimationFrame(tick);
+      requestAnimationFrame(update);
     }, 16); // 約60fpsでアニメーション
   };
 
@@ -1206,7 +1206,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     renderBundleBuilder.current.updateSelectedStateStorage(selectedStates);
     renderBundleBuilder.current.updateFocusedStateStorage(focusedStates);
 
-    tick();
+    update();
 
     return () => {
       if (canvas) {
