@@ -28,7 +28,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "vite serve",
+    "dev": "vite serve",
     "typedoc": "typedoc",
     "build-lib": "vite build --mode lib",
     "build-example": "vite build",
@@ -70,7 +70,7 @@
     "gh-pages": "^6.1.1",
     "jsdom": "~22.1.0",
     "prettier": "^2.8.8",
-    "typedoc": "^0.25.13",
+    "typedoc": "^0.26",
     "typedoc-plugin-markdown": "^4.2.7",
     "typescript": "~5.4.5",
     "vite": "~5.0.13",

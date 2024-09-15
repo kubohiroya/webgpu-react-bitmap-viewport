@@ -20,16 +20,20 @@ import { F32LEN, U32LEN } from './Constants';
 import {
   DRAW_INDIRECT_BUFFER_BYTE_INDEX,
   DRAW_INDIRECT_BUFFER_SOURCE,
-  updateDrawIndirectBufferSource
+  updateDrawIndirectBufferSource,
 } from './DrawIndirectBufferFactory';
 import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
 
-import { createStorageBuffer, createUniformBuffer, createVertexBuffer, updateBuffer } from './WebGPUBufferFactories';
+import {
+  createStorageBuffer,
+  createUniformBuffer,
+  createVertexBuffer,
+  updateBuffer,
+} from './WebGPUBufferFactories';
 import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridParamsDefault';
 import { GridShaderMode } from './GridShaderMode';
 
 export class RenderBundleBuilder {
-
   private device: GPUDevice;
   private canvasFormat: GPUTextureFormat;
   private canvasContext: GPUCanvasContext;
@@ -75,7 +79,13 @@ export class RenderBundleBuilder {
 
     const shaderModule = device.createShaderModule({
       label: 'Grid shader',
-      code: GRID_SHADER_CODE + (mode === GridShaderMode.HUE ? GRID_SHADER_HUE_CODE : mode === GridShaderMode.RGBA ? GRID_SHADER_RGBA_CODE : GRID_SHADER_CUSTOM_CODE)
+      code:
+        GRID_SHADER_CODE +
+        (mode === GridShaderMode.HUE
+          ? GRID_SHADER_HUE_CODE
+          : mode === GridShaderMode.RGBA
+          ? GRID_SHADER_RGBA_CODE
+          : GRID_SHADER_CUSTOM_CODE),
     });
 
     const bindGroupLayout = device.createBindGroupLayout(
@@ -84,7 +94,7 @@ export class RenderBundleBuilder {
 
     const pipelineLayout = device.createPipelineLayout({
       label: 'Grid renderer pipeline layout',
-      bindGroupLayouts: [bindGroupLayout]
+      bindGroupLayouts: [bindGroupLayout],
     });
 
     this.canvasContext = canvasContext;
@@ -98,10 +108,10 @@ export class RenderBundleBuilder {
     ) => {
       const multisample = canvasElementContext.multisample
         ? {
-          multisample: {
-            count: canvasElementContext.multisample
+            multisample: {
+              count: canvasElementContext.multisample,
+            },
           }
-        }
         : {};
 
       return device.createRenderPipeline({
@@ -119,11 +129,11 @@ export class RenderBundleBuilder {
                 {
                   format: 'float32x2',
                   offset: 0,
-                  shaderLocation: 0
-                }
-              ]
-            }
-          ]
+                  shaderLocation: 0,
+                },
+              ],
+            },
+          ],
         },
         fragment: {
           module: shaderModule,
@@ -135,17 +145,17 @@ export class RenderBundleBuilder {
                 color: {
                   srcFactor: 'src-alpha',
                   dstFactor: 'one-minus-src-alpha',
-                  operation: 'add'
+                  operation: 'add',
                 },
                 alpha: {
                   srcFactor: 'one',
                   dstFactor: 'one-minus-src-alpha',
-                  operation: 'add'
-                }
-              }
-            }
-          ]
-        }
+                  operation: 'add',
+                },
+              },
+            },
+          ],
+        },
       });
     };
 
@@ -200,9 +210,11 @@ export class RenderBundleBuilder {
       'fragmentScrollBarBody',
       {
         constants: {
-          scrollBarRadius: canvasElementContext.scrollBar?.radius || SCROLLBAR_RADIUS,
-          scrollBarMargin: canvasElementContext.scrollBar?.margin || SCROLLBAR_MARGIN
-        }
+          scrollBarRadius:
+            canvasElementContext.scrollBar?.radius || SCROLLBAR_RADIUS,
+          scrollBarMargin:
+            canvasElementContext.scrollBar?.margin || SCROLLBAR_MARGIN,
+        },
       }
     );
 
@@ -223,7 +235,7 @@ export class RenderBundleBuilder {
     this.drawIndirectBuffer = device.createBuffer({
       label: 'DrawIndirect',
       size: DRAW_INDIRECT_BUFFER_SOURCE.length * U32LEN,
-      usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST
+      usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
     });
 
     this.updateDrawIndirectBuffer(1, 1, numViewports);
@@ -245,9 +257,7 @@ export class RenderBundleBuilder {
       numViewports
     );
 
-    const numCells =
-      Math.max(gridSize.numColumns, gridSize.numRows) *
-      F32LEN;
+    const numCells = Math.max(gridSize.numColumns, gridSize.numRows) * F32LEN;
     this.focusedStateStorage = createStorageBuffer(
       'FocusedStateBuffer',
       device,
@@ -261,7 +271,9 @@ export class RenderBundleBuilder {
     this.gridDataBufferStorage = createStorageBuffer(
       'GridDataBuffer',
       device,
-      gridSize.numColumns * gridSize.numRows * (mode === GridShaderMode.RGBA ? U32LEN : F32LEN )
+      gridSize.numColumns *
+        gridSize.numRows *
+        (mode === GridShaderMode.RGBA ? U32LEN : F32LEN)
     );
 
     this.bindGroup = this.createBindGroup(
@@ -275,19 +287,30 @@ export class RenderBundleBuilder {
       this.gridDataBufferStorage
     );
 
-    this.columnFocusRenderBundle = this.createColumnFocusRenderBundle(columnFocusSelectPipeline);
-    this.rowFocusRenderBundle = this.createRowFocusRenderBundle(rowFocusSelectPipeline);
+    this.columnFocusRenderBundle = this.createColumnFocusRenderBundle(
+      columnFocusSelectPipeline
+    );
+    this.rowFocusRenderBundle = this.createRowFocusRenderBundle(
+      rowFocusSelectPipeline
+    );
     this.bodyRenderBundle = this.createBodyRenderBundle(bodyPipeline);
-    this.viewportShadowRenderBundle = this.createViewportShadowRenderBundle(viewportShadowPipeline);
-    this.topHeaderRenderBundle = this.createTopHeaderRenderBundle(topHeaderPipeline);
-    this.leftHeaderRenderBundle = this.createLeftHeaderRenderBundle(leftHeaderPipeline);
-    this.scrollBarBodyRenderBundle = this.createScrollBarBodyRenderBundle(scrollBarBodyPipeline);
-    this.scrollBarBackgroundRenderBundle = this.createScrollBarBackgroundRenderBundle(scrollBarBackgroundPipeline);
+    this.viewportShadowRenderBundle = this.createViewportShadowRenderBundle(
+      viewportShadowPipeline
+    );
+    this.topHeaderRenderBundle =
+      this.createTopHeaderRenderBundle(topHeaderPipeline);
+    this.leftHeaderRenderBundle =
+      this.createLeftHeaderRenderBundle(leftHeaderPipeline);
+    this.scrollBarBodyRenderBundle = this.createScrollBarBodyRenderBundle(
+      scrollBarBodyPipeline
+    );
+    this.scrollBarBackgroundRenderBundle =
+      this.createScrollBarBackgroundRenderBundle(scrollBarBackgroundPipeline);
   }
 
   public updateF32UniformBuffer(
     gridContext: GridContextProps,
-    overscroll: { x: number; y: number },
+    overscroll: { x: number; y: number }
   ) {
     updateBuffer(
       this.device,
@@ -301,14 +324,8 @@ export class RenderBundleBuilder {
     );
   }
 
-  public updateViewportStateStorage(
-    viewportStates: Float32Array,
-  ){
-    updateBuffer(
-      this.device,
-      this.viewportStateStorage,
-      viewportStates
-    );
+  public updateViewportStateStorage(viewportStates: Float32Array) {
+    updateBuffer(this.device, this.viewportStateStorage, viewportStates);
   }
 
   public updateU32UniformBuffer(
@@ -320,28 +337,26 @@ export class RenderBundleBuilder {
     updateBuffer(
       this.device,
       this.u32UniformBuffer,
-      createUint32BufferSource(this.u32UniformBufferSource, gridContext, numCellsToShow, scrollBarState, index)
+      createUint32BufferSource(
+        this.u32UniformBufferSource,
+        gridContext,
+        numCellsToShow,
+        scrollBarState,
+        index
+      )
     );
   }
 
-  public updateDataBufferStorage(data: Float32Array|Uint32Array) {
+  public updateDataBufferStorage(data: Float32Array | Uint32Array) {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
   }
 
   public updateFocusedStateStorage(focusedState: Uint32Array) {
-    updateBuffer(
-      this.device,
-      this.focusedStateStorage,
-      focusedState
-    );
+    updateBuffer(this.device, this.focusedStateStorage, focusedState);
   }
 
   public updateSelectedStateStorage(selectedState: Uint32Array) {
-    updateBuffer(
-      this.device,
-      this.selectedStateStorage,
-      selectedState
-    );
+    updateBuffer(this.device, this.selectedStateStorage, selectedState);
   }
 
   private createBindGroup(
@@ -360,29 +375,29 @@ export class RenderBundleBuilder {
       entries: [
         {
           binding: 0,
-          resource: { buffer: f32UniformBuffer }
+          resource: { buffer: f32UniformBuffer },
         },
         {
           binding: 1,
-          resource: { buffer: u32UniformBuffer }
+          resource: { buffer: u32UniformBuffer },
         },
         {
           binding: 2,
-          resource: { buffer: viewportBuffer }
+          resource: { buffer: viewportBuffer },
         },
         {
           binding: 3,
-          resource: { buffer: focusedStateStorage }
+          resource: { buffer: focusedStateStorage },
         },
         {
           binding: 4,
-          resource: { buffer: selectedStateStorage }
+          resource: { buffer: selectedStateStorage },
         },
         {
           binding: 5,
-          resource: { buffer: gridDataBufferStorage }
-        }
-      ]
+          resource: { buffer: gridDataBufferStorage },
+        },
+      ],
     });
   }
 
@@ -393,7 +408,7 @@ export class RenderBundleBuilder {
   ) {
     const encoder = this.device.createRenderBundleEncoder({
       label,
-      colorFormats: [this.canvasFormat]
+      colorFormats: [this.canvasFormat],
     });
     encoder.setPipeline(pipeline);
     encoder.setVertexBuffer(0, this.vertexBuffer);
@@ -490,14 +505,14 @@ export class RenderBundleBuilder {
     const texture =
       multisample !== undefined
         ? this.device.createTexture({
-          size: [
-            this.canvasElementContext.canvasSize.width,
-            this.canvasElementContext.canvasSize.height
-          ],
-          sampleCount: multisample,
-          format: this.canvasFormat,
-          usage: GPUTextureUsage.RENDER_ATTACHMENT
-        })
+            size: [
+              this.canvasElementContext.canvasSize.width,
+              this.canvasElementContext.canvasSize.height,
+            ],
+            sampleCount: multisample,
+            format: this.canvasFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+          })
         : this.canvasContext.getCurrentTexture();
 
     const resolveTarget =
@@ -510,9 +525,9 @@ export class RenderBundleBuilder {
           ...resolveTarget,
           clearValue: { r: 0, g: 0, b: 0, a: 0 }, // 0.5->0.0
           loadOp: 'clear',
-          storeOp: multisample !== undefined ? 'discard' : 'store'
-        }
-      ]
+          storeOp: multisample !== undefined ? 'discard' : 'store',
+        },
+      ],
     });
 
     const renderBundles: GPURenderBundle[] = [
@@ -523,7 +538,7 @@ export class RenderBundleBuilder {
       this.topHeaderRenderBundle,
       this.leftHeaderRenderBundle,
       this.scrollBarBackgroundRenderBundle,
-      this.scrollBarBodyRenderBundle
+      this.scrollBarBodyRenderBundle,
     ];
     passEncoder.executeBundles(renderBundles);
     passEncoder.end();
@@ -531,8 +546,6 @@ export class RenderBundleBuilder {
   }
 
   public execute() {
-    this.device.queue.submit([
-      this.createCommandBuffer()
-    ]);
+    this.device.queue.submit([this.createCommandBuffer()]);
   }
 }

@@ -12,7 +12,7 @@ type RGBAImageGridExampleProps = {
   headerOffset: {
     top: number;
     left: number;
-  }
+  };
 };
 
 export const RGBAImageGridExample = (props: RGBAImageGridExampleProps) => {
@@ -41,7 +41,10 @@ export const RGBAImageGridExample = (props: RGBAImageGridExampleProps) => {
       const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
       const viewportStates: Float32Array = new Float32Array([
         //0.0,0.0,1074.0,706.0,//
-        0,0,gridSize.numColumns,gridSize.numRows,//// // viewport index 0: left, top, right, bottom
+        0,
+        0,
+        gridSize.numColumns,
+        gridSize.numRows, //// // viewport index 0: left, top, right, bottom
         55.0,
         55.0,
         90.0,

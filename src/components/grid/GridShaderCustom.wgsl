@@ -1,11 +1,12 @@
+override Inf: u32 = 999999;
 struct VertexOutput {
   @builtin(position) position: vec4f,
   @location(0) @interpolate(flat) isFocused: u32,
   @location(1) @interpolate(flat) isSelected: u32,
-  @location(2) @interpolate(flat) cellValue: f32,
+  @location(2) @interpolate(flat) cellValue: u32,
 };
 
-@group(0) @binding(5) var<storage, read> gridData: array<f32>;
+@group(0) @binding(5) var<storage, read> gridData: array<u32>;
 
 @vertex
 fn vertexBody(
@@ -34,11 +35,10 @@ fn vertexBody(
 fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
   let s = select(1, 0.5, isTrue(input.isFocused));
   let v = select(1, 0.5, isTrue(input.isSelected));
-  let isInfinity = select(FALSE, TRUE, checkInfinity(input.cellValue));
-  if(isInfinity == TRUE){
+  if(input.cellValue == Inf){
       let rgb = hsvToRgb(1.0, 0.0, 1.0);
       return vec4f(rgb, 1.0);
   }
-  let rgb = hsvToRgb(input.cellValue, 0.9, 0.9);
+  let rgb = hsvToRgb(f32(input.cellValue) / 255, 0.9, 0.9);
   return vec4f(rgb, 1.0);
 }

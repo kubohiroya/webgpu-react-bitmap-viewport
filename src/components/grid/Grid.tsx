@@ -20,18 +20,34 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
     refreshData: (sourceIndex: number) => {
       gridUIRef.current?.refreshData(sourceIndex);
     },
-    refreshFocusedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
+    refreshFocusedState: (
+      sourceIndex: number,
+      columnIndex: number,
+      rowIndex: number
+    ) => {
+      gridUIRef.current?.refreshFocusedState(
+        sourceIndex,
+        columnIndex,
+        rowIndex
+      );
     },
-    refreshSelectedState: (sourceIndex: number, columnIndex: number, rowIndex: number) => {
-      gridUIRef.current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
+    refreshSelectedState: (
+      sourceIndex: number,
+      columnIndex: number,
+      rowIndex: number
+    ) => {
+      gridUIRef.current?.refreshSelectedState(
+        sourceIndex,
+        columnIndex,
+        rowIndex
+      );
     },
     refreshViewportState: (sourceIndex: number) => {
       gridUIRef.current?.refreshViewportState(sourceIndex);
-    }
+    },
   }));
 
-  const canvasId = "webgpu-react-grid-"+props.viewportIndex;
+  const canvasId = 'webgpu-react-grid-' + props.viewportIndex;
 
   return (
     <CanvasElementContextProvider
@@ -41,7 +57,11 @@ export const Grid = forwardRef<GridHandles, GridProps>((props, ref) => {
       scrollBar={props.scrollBar}
       // multisample={4}
     >
-      <GridContextProvider mode={props.mode} gridSize={props.gridSize} data={props.data}>
+      <GridContextProvider
+        mode={props.mode}
+        gridSize={props.gridSize}
+        data={props.data}
+      >
         <ViewportContextProvider
           viewportIndex={props.viewportIndex}
           numViewports={props.numViewports}
