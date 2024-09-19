@@ -39,10 +39,6 @@ export const GridExample = () => {
           ))}
         </div>
       </div>
-    </>
-  );
-};
-/*
       <div>
         <h2>RGBAImageGrid</h2>
         <RGBAImageGridExample
@@ -86,6 +82,10 @@ export const GridExample = () => {
           }
         />
       </div>
+    </>
+  );
+};
+/*
       <div>
         <h2>RGBARandomGrid</h2>
         <RGBARandomGridExample
