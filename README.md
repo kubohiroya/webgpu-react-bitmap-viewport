@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/webgpu-react-grid.svg)](https://badge.fury.io/js/webgpu-react-grid)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/kubohiroya/webgpu-react-grid/blob/main/LICENSE)
 
-![animation](https://kubohiroya.github.io/webgpu-react-grid/examples/demo_movie.gif)
+![animation](https://kubohiroya.github.io/webgpu-react-grid/demo_movie.gif)
 
 - A React component displaying grid of pixel data as viewport contents with use of WebGPU API, without dependencies other than React.
 - Dynamic synchronization of GPUBuffers from JavaScript image data (e.g., Uint32Array of RGBA color values).
