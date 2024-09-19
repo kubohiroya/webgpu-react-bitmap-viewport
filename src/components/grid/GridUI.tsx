@@ -1018,7 +1018,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       height: bottom - top,
     };
 
-    const scale = event.deltaY > 0 ? 1.1 : 0.9;
+    const scale = event.deltaY > 0 ? 1.025 : 0.975;
     const rect = canvasElementContext.canvasRef.current.getBoundingClientRect();
     const dx =
       event.clientX - rect.left - canvasElementContext.headerOffset.left;

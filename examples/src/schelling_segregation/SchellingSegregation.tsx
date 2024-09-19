@@ -8,8 +8,16 @@ import { useEffect, useRef } from 'react';
 import SchellingModelGPURunner from './SchellingModelGPURunner';
 import { SchellingModelCPURunner } from './SchellingModelCPURunner';
 
+export enum SchellingSegregationModes {
+  'CPU' = 'CPU',
+  'GPU' = 'GPU',
+  'GPU_PARALLEL' = 'GPU_PARALLEL',
+}
+
+const ITERATIONS_DEFAULT = 10000;
+
 type SchellingSegregationModelProps = {
-  mode: 'CPU' | 'GPU' | 'GPU-parallel';
+  mode: SchellingSegregationModes;
   canvasSize: {
     width: number;
     height: number;
@@ -26,6 +34,7 @@ type SchellingSegregationModelProps = {
   shares: number[];
   values: number[];
   tolerance: number;
+  iterations?: number;
 };
 
 type SchellingSegregationModel = {
@@ -138,7 +147,7 @@ export default function SchellingSegregation(
         gridHeight: props.gridSize.numRows,
         gridData: state.current.gridData,
         tolerance: props.tolerance,
-        parallel: props.mode === 'GPU-parallel',
+        parallel: props.mode === SchellingSegregationModes.GPU_PARALLEL,
       });
 
       engine.current.cpu = await SchellingModelCPURunner(
@@ -153,21 +162,32 @@ export default function SchellingSegregation(
 
       let count = 0;
 
-      const update = async () => {
-        count % 100 === 0 && console.log(props.mode, new Date());
+      const update = async (): Promise<boolean> => {
+        /*
+        count % 100 === 0 &&
+          console.log(
+            props.mode === SchellingSegregationModes.CPU
+              ? '@'
+              : props.mode === SchellingSegregationModes.GPU
+              ? '#'
+              : '##',
+            props.mode,
+            new Date()
+          );
+         */
 
-        if (engine.current.cpu && props.mode === 'CPU') {
+        if (
+          engine.current.cpu &&
+          props.mode === SchellingSegregationModes.CPU
+        ) {
           state.current.gridData.set(await engine.current.cpu());
           // console.log('<1>', state.current.gridData);
         } else if (
           engine.current.gpu &&
-          (props.mode === 'GPU' || props.mode === 'GPU-parallel')
+          (props.mode === SchellingSegregationModes.GPU ||
+            props.mode === SchellingSegregationModes.GPU_PARALLEL)
         ) {
-          // console.log('[1]', state.current.gridData);
           state.current.gridData.set(await engine.current.gpu());
-          // console.log('[2]', state.current.gridData);
-          state.current.gridData.set(await engine.current.gpu());
-          // console.log('[3]', state.current.gridData);
         } else {
           // console.log('else', engine.current.cpu, engine.current.gpu);
         }
@@ -177,11 +197,15 @@ export default function SchellingSegregation(
         gridHandlesRefs?.forEach((ref, index) => {
           ref.current?.refreshData(index);
         });
+
+        return count < (props.iterations || ITERATIONS_DEFAULT);
       };
 
       const loop = async () => {
-        await update();
-        frameRef.current = requestAnimationFrame(loop);
+        const isContinued = await update();
+        if (isContinued) {
+          frameRef.current = requestAnimationFrame(loop);
+        }
       };
 
       frameRef.current = requestAnimationFrame(loop);

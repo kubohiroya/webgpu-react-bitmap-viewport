@@ -3,16 +3,15 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "dist/examples",
-    "types": ["node", "@webgpu/types", "vite/client","webgpu-react-grid"],
+    "types": ["node", "@webgpu/types", "vite/client", "webgpu-react-grid"],
     "paths": {
-      "webgpu-react-grid": ["dist/types/src/index.d.ts"],
+      "webgpu-react-grid": ["dist/types/src/index.d.ts"]
     }
   },
   "include": [
-    "examples/src/**/*.ts", "examples/src/**/*.tsx",
-    "dist/types/src",
+    "examples/src/**/*.ts",
+    "examples/src/**/*.tsx",
+    "dist/types/src"
   ],
-  "files": [
-    "dist/types/src/index.d.ts"
-  ]
+  "files": ["dist/types/src/index.d.ts"]
 }

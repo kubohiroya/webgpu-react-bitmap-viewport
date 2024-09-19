@@ -1,5 +1,6 @@
 import SCHELLING_COMPUTE_SHADER from './SchellingModelShader.wgsl?raw';
 import SCHELLING_PARALLEL_COMPUTE_SHADER from './SchellingParallelModelShader.wgsl?raw';
+//import SCHELLING_PARALLEL_COMPUTE_SHADER from './SchellingModelShader.wgsl?raw';
 import { EMPTY_VALUE } from 'webgpu-react-grid';
 
 export type SchellingModelRunnerProps = {
@@ -11,7 +12,13 @@ export type SchellingModelRunnerProps = {
   parallel?: boolean;
 };
 
+const WORKGROUP_SIZE = [8, 8];
+//const WORKGROUP_SIZE = [1, 1];
+//const WORKGROUP_SIZE = [2, 2];
+
 export const SchellingModelGPURunner = (props: SchellingModelRunnerProps) => {
+  const gridSize = props.gridWidth * props.gridHeight;
+
   const _emptyGridIndices: number[] = [];
   for (let i = 0; i < props.gridData.length; i++) {
     if (props.gridData[i] === EMPTY_VALUE) {
@@ -19,12 +26,11 @@ export const SchellingModelGPURunner = (props: SchellingModelRunnerProps) => {
     }
   }
   const emptyGridIndices = new Uint32Array(_emptyGridIndices);
-  const gridSize = props.gridWidth * props.gridHeight;
 
   // 空き地インデックスのGPUバッファを作成
   const emptyGridIndicesBuffer = props.device.createBuffer({
     label: 'S:EmptyCellsBuffer',
-    size: gridSize * 4, // Uint32Arrayは4バイトなので、バッファのサイズを指定
+    size: emptyGridIndices.length * 4, // Uint32Arrayは4バイトなので、バッファのサイズを指定
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
   props.device.queue.writeBuffer(emptyGridIndicesBuffer, 0, emptyGridIndices);
@@ -39,6 +45,16 @@ export const SchellingModelGPURunner = (props: SchellingModelRunnerProps) => {
       GPUBufferUsage.COPY_SRC,
   });
   props.device.queue.writeBuffer(gridBuffer, 0, props.gridData.buffer);
+
+  const nextGridBuffer = props.device.createBuffer({
+    label: 'S:NextGridBuffer',
+    size: props.gridData.byteLength,
+    usage:
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.COPY_DST |
+      GPUBufferUsage.COPY_SRC,
+  });
+  props.device.queue.writeBuffer(nextGridBuffer, 0, props.gridData.buffer);
 
   const paramBuffer = props.device.createBuffer({
     label: 'S:ParamBuffer',
@@ -63,10 +79,24 @@ export const SchellingModelGPURunner = (props: SchellingModelRunnerProps) => {
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
 
+  const randomTable = new Float32Array(gridSize); // ステップごとに1つの乱数を使用する仮定
+
+  const locksBuffer = props.device.createBuffer({
+    label: 'S:LocksBuffer',
+    size: (emptyGridIndices.length + gridSize) * 4,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
+  props.device.queue.writeBuffer(
+    locksBuffer,
+    0,
+    new Uint32Array(emptyGridIndices.length + gridSize)
+  );
+
   const readerGridBuffer = props.device.createBuffer({
     label: 'S:RetGridBuffer',
     size: props.gridData.byteLength,
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    mappedAtCreation: false,
   });
 
   const computePipeline = props.device.createComputePipeline({
@@ -74,13 +104,20 @@ export const SchellingModelGPURunner = (props: SchellingModelRunnerProps) => {
     layout: 'auto',
     compute: {
       module: props.device.createShaderModule({
+        label: 'SchellingModelShader',
         code: props.parallel
           ? SCHELLING_PARALLEL_COMPUTE_SHADER
           : SCHELLING_COMPUTE_SHADER,
       }),
-      constants: {
-        EMPTY_VALUE: EMPTY_VALUE,
-      },
+      constants: props.parallel
+        ? {
+            EMPTY_VALUE: EMPTY_VALUE,
+            workgroupSizeX: WORKGROUP_SIZE[0],
+            workgroupSizeY: WORKGROUP_SIZE[1],
+          }
+        : {
+            EMPTY_VALUE: EMPTY_VALUE,
+          },
       entryPoint: 'main',
     },
   });
@@ -93,11 +130,12 @@ export const SchellingModelGPURunner = (props: SchellingModelRunnerProps) => {
       { binding: 7, resource: { buffer: paramBuffer } },
       { binding: 8, resource: { buffer: randomTableBuffer } }, // 乱数表のバッファ
       { binding: 9, resource: { buffer: emptyGridIndicesBuffer } }, // 空き地インデックスのバッファ
-    ],
+    ].concat(
+      props.parallel ? [{ binding: 10, resource: { buffer: locksBuffer } }] : []
+    ),
   });
 
   const writeRandomTableBuffer = (randomTableBuffer: GPUBuffer) => {
-    const randomTable = new Float32Array(gridSize); // ステップごとに1つの乱数を使用する仮定
     for (let i = 0; i < gridSize; i++) {
       randomTable[i] = Math.random();
     }
@@ -119,10 +157,9 @@ export const SchellingModelGPURunner = (props: SchellingModelRunnerProps) => {
     passEncoder.setBindGroup(0, bindGroup);
 
     if (props.parallel) {
-      const workgroupSize = 8;
       passEncoder.dispatchWorkgroups(
-        Math.ceil(props.gridWidth / workgroupSize),
-        Math.ceil(props.gridHeight / workgroupSize)
+        Math.ceil(props.gridWidth / WORKGROUP_SIZE[0]),
+        Math.ceil(props.gridHeight / WORKGROUP_SIZE[1])
       );
     } else {
       passEncoder.dispatchWorkgroups(1);

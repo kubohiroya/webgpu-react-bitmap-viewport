@@ -45,13 +45,13 @@ export const RGBAImageGridExample = (props: RGBAImageGridExampleProps) => {
         0,
         gridSize.numColumns,
         gridSize.numRows, //// // viewport index 0: left, top, right, bottom
-        55.0,
-        55.0,
-        90.0,
-        90.0, // viewport index 1: left, top, right, bottom
+        0,
+        0,
+        gridSize.numColumns / 2,
+        gridSize.numRows / 2, // viewport index 1: left, top, right, bottom
         0.0,
         20.0,
-        420.0,
+        220.0,
         220.0, // viewport index 2: left, top, right, bottom
       ]);
 

@@ -1,4 +1,4 @@
-override Inf: u32 = 999999;
+override Inf: u32 = 99999;
 struct VertexOutput {
   @builtin(position) position: vec4f,
   @location(0) @interpolate(flat) isFocused: u32,

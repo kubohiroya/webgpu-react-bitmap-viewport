@@ -57,15 +57,16 @@ export const SchellingModelCPURunner =
         const neighborCount = surroundingAgentTypes.filter(
           (value) => value !== EMPTY_VALUE
         ).length;
-        const similarityRatio = similarCount / neighborCount;
-        if (neighborCount > 0 && similarityRatio < tolerance) {
+        if (neighborCount > 0 && similarCount / neighborCount < tolerance) {
           const randomIndex = Math.floor(
             Math.random() * emptyGridIndices.length
           );
           const emptyGridIndex = emptyGridIndices[randomIndex];
-          gridData[emptyGridIndex] = agentType;
-          gridData[currentIndex] = EMPTY_VALUE;
-          emptyGridIndices[randomIndex] = currentIndex;
+          if (gridData[emptyGridIndex] === EMPTY_VALUE) {
+            gridData[emptyGridIndex] = agentType;
+            gridData[currentIndex] = EMPTY_VALUE;
+            emptyGridIndices[randomIndex] = currentIndex;
+          }
         }
       }
     }

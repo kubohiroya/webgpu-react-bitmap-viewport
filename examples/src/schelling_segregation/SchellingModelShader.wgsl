@@ -1,4 +1,4 @@
-override EMPTY_VALUE: u32 = 999999;
+override EMPTY_VALUE: u32 = 99999;
 
 struct Grid {
     values: array<u32>,
@@ -16,64 +16,65 @@ struct Params {
 @group(0) @binding(9) var<storage, read_write> emptyGridIndices: array<u32>;  // 空き地インデックス
 
 // 2次元グリッドの(x, y)座標を1次元配列インデックスに変換
-fn index(x: u32, y: u32, width: u32) -> u32 {
-    return y * width + x;
+fn getIndex(x: u32, y: u32, width: u32) -> u32 {
+  return y * width + x;
 }
 
-fn random_choice(empty_count: u32, step: u32) -> u32 {
-    return u32(floor(randomTable[step] * f32(empty_count)));
+fn getCell(x: u32, y: u32) -> u32 {
+  return grid.values[getIndex(x, y, params.width)];
 }
 
-fn countSimilarNeighbors(x: u32, y: u32, width: u32, height: u32, agentType: u32) -> vec2u {
-    var similar_count: u32 = 0;
-    var neighbor_count: u32 = 0;
-    for (var dy: u32 = 0; dy < 2; dy++) {
-        for (var dx: u32 = 0; dx < 2; dx++) {
-            if (dx == 0 && dy == 0) {
-                continue;
-            }
-            let neighbor_x = (x + dx + width) % width;
-            let neighbor_y = (y + dy + height) % height;
-            let neighbor_index = index(neighbor_x, neighbor_y, width);
-            let current = grid.values[neighbor_index];
-            if (current == agentType) {
-                similar_count += 1;
-            } else if (current != EMPTY_VALUE) {
-                neighbor_count += 1;
-            }
+fn countSimilarNeighbor(x: i32, y: i32, width: i32, height: i32, agentType: u32) -> vec2u {
+  let cell = getCell(u32((x + width) % width), u32((y + height) % height));
+  return vec2u(select(0u, 1u, cell == agentType), select(0u, 1u, cell != EMPTY_VALUE));
+}
+
+fn randomChoice(size: u32, step: u32) -> u32 {
+    return u32(floor(randomTable[step] * f32(size)));
+}
+
+fn countSimilarNeighbors(x: i32, y: i32, width: i32, height: i32, agentType: u32) -> vec2u {
+    return countSimilarNeighbor(x - 1, y - 1, width, height, agentType) +
+          countSimilarNeighbor(x, y - 1, width, height, agentType) +
+          countSimilarNeighbor(x + 1, y - 1, width, height, agentType) +
+          countSimilarNeighbor(x - 1, y, width, height, agentType) +
+          countSimilarNeighbor(x + 1, y, width, height, agentType) +
+          countSimilarNeighbor(x - 1, y + 1, width, height, agentType) +
+          countSimilarNeighbor(x, y + 1, width, height, agentType) +
+          countSimilarNeighbor(x + 1, y + 1, width, height, agentType);
+}
+
+fn computeMain(x: u32, y: u32) {
+    let currentIndex = getIndex(x, y, params.width);
+    let currentValue = grid.values[currentIndex];
+    // エージェントが存在しない場所 (空き地) はスキップ
+    if (currentValue == EMPTY_VALUE) {
+      return;
+    }
+    // 似たエージェントがどれだけいるかカウント
+    let neighbors = countSimilarNeighbors(i32(x), i32(y), i32(params.width), i32(params.height), currentValue);
+    let similarCount = neighbors.x;
+    let neighborCount = neighbors.y;
+
+    // 閾値に基づいて、引越しを決定
+    if (neighborCount > 0u && f32(similarCount) / f32(neighborCount) < params.tolerance) {
+        let randomIndex = randomChoice(arrayLength(&emptyGridIndices), currentIndex);
+        let targetIndex = emptyGridIndices[randomIndex];
+        let targetValue = grid.values[targetIndex];
+        if(targetValue == EMPTY_VALUE) {
+            emptyGridIndices[randomIndex] = currentIndex;
+            grid.values[targetIndex] = currentValue;
+            grid.values[currentIndex] = EMPTY_VALUE;
         }
     }
-    return vec2u(similar_count, neighbor_count);
 }
 
 @compute @workgroup_size(1)
 fn main() {
  for(var y = 0u; y < params.height; y++){
   for(var x = 0u; x < params.width; x++){
-    let currentIndex = index(x, y, params.width);
-    let agentType = grid.values[currentIndex];
-    // エージェントが存在しない場所 (空き地) はスキップ
-    if (agentType == EMPTY_VALUE) {
-        continue;
-    }
-    // 似たエージェントがどれだけいるかカウント
-    let count = countSimilarNeighbors(x, y, params.width, params.height, agentType);
-    let similarCount = count.x;
-    let neighborCount = count.y;
-
-    // 閾値に基づいて、引越しを決定
-    let similarityRatio = f32(similarCount) / f32(neighborCount);
-
-    // 引越しが必要かどうか
-    if (neighborCount > 0u &&  similarityRatio < params.tolerance) {
-        let randomIndex = random_choice(arrayLength(&emptyGridIndices), currentIndex);
-        let emptyIndex = emptyGridIndices[randomIndex];
-        emptyGridIndices[randomIndex] = currentIndex;
-        grid.values[emptyIndex] = agentType;
-        grid.values[currentIndex] = EMPTY_VALUE; // 元の場所は空き地にする
-    }else{
-        grid.values[currentIndex] = agentType;
-    }
+    computeMain(x, y);
    }
   }
 }
+
