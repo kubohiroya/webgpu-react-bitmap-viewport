@@ -16,7 +16,7 @@
 
 # Live demo
 
-[Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewporet/examples/index.html)
+[Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/examples/index.html)
 
 # Download and Installation
 
