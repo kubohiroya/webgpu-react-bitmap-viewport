@@ -3,7 +3,9 @@
 [![npm version](https://badge.fury.io/js/webgpu-react-bitmap-viewport.svg)](https://badge.fury.io/js/webgpu-react-bitmap-viewport)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/demo_movie.gif)
+![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/hokusai_demo_movie.gif)
+
+![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/schelling_demo_movie.gif)
 
 - A React component displaying bitmap data as a set of viewport contents with use of WebGPU API, without dependencies other than React.
 - Dynamic synchronization of GPUBuffers from JavaScript image data (e.g., Uint32Array of RGBA color values).
@@ -17,10 +19,14 @@
 # Live demo
 
 [Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/examples/index.html)
+- Synchronized Viewports of Static Image: "The Grate Wave off Kanagawa" from the series Thirty-six Views of Mount Fuji by Hokusai
+- Synchronized Viewports of Dynamic Image: Randomly generated data
+- Viewport of Multi Agent Simulation: Schelling's model of segregation
+
 
 # Download and Installation
 
-Download the latest version of WebGPU-React-Bitmap-Viewport from the npm repository:
+Download the latest version of webgpu-react-bitmap-viewport from the npm repository:
 
 ```bash
 pnpm install webgpu-react-bitmap-viewport
@@ -69,13 +75,14 @@ export const Index = () => {
         index={0}
         ref={gridRefs[0]}
         numViewports={2}
-        headerOffset={{ left: 28, top: 28 }}
-        canvasSize={{ width: 512, height: 512 }}
+        headerOffset={{ left: 10, top: 10 }}
+        canvasSize={{ width: 138, height: 138 }}
+        numColumns={gridSize.numColumns}
+        numRows={gridSize.numRows}
         scrollBar={{
           radius: 5.0,
           margin: 2.0,
         }}
-        gridSize={gridSize}
         data={data}
         focusedStates={focusedStates}
         selectedStates={selectedStates}
@@ -94,13 +101,14 @@ export const Index = () => {
         index={1}
         ref={gridRefs[1]}
         numViewports={2}
-        headerOffset={{ left: 28, top: 28 }}
-        canvasSize={{ width: 512, height: 512 }}
+        headerOffset={{ left: 10, top: 10 }}
+        canvasSize={{ width: 138, height: 138 }}
+        numColumns={gridSize.numColumns}
+        numRows={gridSize.numRows}
         scrollBar={{
           radius: 5.0,
           margin: 2.0,
         }}
-        gridSize={gridSize}
         data={data}
         focusedStates={focusedStates}
         selectedStates={selectedStates}
@@ -203,7 +211,7 @@ graph TD;
 
 # Licensing
 
-WebGPU-React-Bitmap-Viewport is published under the MIT License (MIT).
+webgpu-react-bitmap-viewport is published under the MIT License (MIT).
 
 (c) 2024 Hiroya Kubo
 
