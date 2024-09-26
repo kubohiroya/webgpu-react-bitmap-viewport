@@ -1,7 +1,4 @@
-import {
-  GridShaderMode,
-  WebGPUDeviceContextProvider,
-} from 'webgpu-react-bitmap-viewport';
+import { GridShaderMode } from 'webgpu-react-bitmap-viewport';
 import { GridGroup } from '../GridGroup';
 
 type RGBARandomGridExampleProps = {

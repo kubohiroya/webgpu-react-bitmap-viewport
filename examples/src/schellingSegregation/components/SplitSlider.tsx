@@ -92,20 +92,4 @@ const SplitSlider = (props: SplitSliderProps) => {
   );
 };
 
-/*
-
-
-
-    </Box>
-      <Box marginBottom={2}>
-        <Typography>Number of Splits:</Typography>
-
-  <Box marginBottom={2}>
-  </Container>
-        <Typography>Adjust Split Positions (Sum = 1.0):</Typography>
-<Typography>
-        Current Split Values:{' '}
-        {splitValues.map((value) => value.toFixed(2)).join(', ')}
-      </Typography>
- */
 export default SplitSlider;

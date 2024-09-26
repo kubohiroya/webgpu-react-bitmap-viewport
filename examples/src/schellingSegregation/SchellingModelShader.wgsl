@@ -7,14 +7,14 @@ struct Grid {
 struct Params {
     width: u32,
     height: u32,
-    emptyGridIndicesSize: u32,
+    numEmptyCells: u32,
     tolerance: f32
 };
 
 @group(0) @binding(6) var<storage, read_write> grid : Grid;
 @group(0) @binding(7) var<uniform> params: Params;
 @group(0) @binding(8) var<storage, read> randomTable: array<f32>;  // 乱数表
-@group(0) @binding(9) var<storage, read_write> emptyGridIndices: array<u32>;  // 空き地インデックス
+@group(0) @binding(9) var<storage, read_write> emptyCellIndices: array<u32>;  // 空き地インデックス
 
 // 2次元グリッドの(x, y)座標を1次元配列インデックスに変換
 fn getIndex(x: u32, y: u32, width: u32) -> u32 {
@@ -59,11 +59,11 @@ fn computeMain(x: u32, y: u32) {
 
     // 閾値に基づいて、引越しを決定
     if (neighborCount > 0u && f32(similarCount) / f32(neighborCount) < params.tolerance) {
-        let randomIndex = randomChoice(params.emptyGridIndicesSize, currentIndex);
-        let targetIndex = emptyGridIndices[randomIndex];
+        let randomIndex = randomChoice(params.numEmptyCells, currentIndex);
+        let targetIndex = emptyCellIndices[randomIndex];
         let targetValue = grid.values[targetIndex];
         if(targetValue == EMPTY_VALUE) {
-            emptyGridIndices[randomIndex] = currentIndex;
+            emptyCellIndices[randomIndex] = currentIndex;
             grid.values[targetIndex] = currentValue;
             grid.values[currentIndex] = EMPTY_VALUE;
         }

@@ -1,5 +1,4 @@
 import { SchellingSegregationModel } from './SchellingSegregationModel';
-import { SchellingSegregationModelHandler } from './SchellingSegregationModelHandler';
 
 export abstract class SchellingSegregationKernel {
   protected model: SchellingSegregationModel;

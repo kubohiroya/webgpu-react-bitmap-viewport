@@ -60,16 +60,14 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
           // console.log('replace ' + tolerance.current + ' ' + currentIndex);
 
           const randomIndex = Math.floor(
-            Math.random() * this.model.emptyGridIndices.length,
+            Math.random() * this.model.emptyCellIndices.length,
           );
-          const emptyGridIndex = this.model.emptyGridIndices[randomIndex];
-          if (this.model.gridData[emptyGridIndex] === EMPTY_VALUE) {
-            this.model.gridData[emptyGridIndex] = agentType;
+          const emptyCellIndex = this.model.emptyCellIndices[randomIndex];
+          if (this.model.gridData[emptyCellIndex] === EMPTY_VALUE) {
+            this.model.gridData[emptyCellIndex] = agentType;
             this.model.gridData[currentIndex] = EMPTY_VALUE;
-            this.model.emptyGridIndices[randomIndex] = currentIndex;
+            this.model.emptyCellIndices[randomIndex] = currentIndex;
           }
-        } else {
-          // console.log('.', tolerance.current);
         }
       }
     }

@@ -1,11 +1,4 @@
-import {
-  forwardRef,
-  useContext,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useRef,
-} from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { CanvasRefContext, useCanvasRefContext } from './CanvasRefContext';
 import { useViewportContext } from './ViewportContext';
 import { useGridContext } from './GridContext';
@@ -1048,81 +1041,6 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       viewportContext.viewportStates
     );
     update();
-
-    /*
-    const horizontalUnderflow = -1 * left;
-    const verticalUnderflow = -1 * top;
-    const horizontalOverflow = right - gridContext.numColumns;
-    const verticalOverflow = bottom - gridContext.numRows;
-    if ((horizontalUnderflow > 0 && horizontalOverflow > 0) && (verticalUnderflow > 0 && verticalOverflow > 0)) {
-      if(gridContext.numColumns <= gridContext.numColumns){
-        left = 0;
-        right = gridContext.numColumns;
-        gridContext.numRows * gridContext.numColumns
-        top = 0;
-        bottom = gridContext.numRows;
-      }else{
-
-      }
-    }
-    if ((horizontalUnderflow > 0 && horizontalOverflow > 0) && (verticalUnderflow > 0 || verticalOverflow > 0)) {
-      left = 0;
-      right = gridContext.numColumns;
-      if(top <= 0) {
-        top = 0;
-        bottom = gridContext.numRows;
-      }
-    }
-    if ((left <= 0 || gridContext.numColumns <= right ) && (top <= 0 && gridContext.numRows <= bottom)) {
-      // FIXME , please re-think the condition
-    }
-
-    if (horizontalUnderflow > 0 && horizontalOverflow > 0) {
-      left = 0;
-      right = getViewportRight();
-    } else if (horizontalUnderflow) {
-      left = 0;
-      right += horizontalUnderflow;
-    } else if (horizontalOverflow) {
-      right = gridContext.numColumns;
-      left -= horizontalOverflow;
-    }
-
-    if (verticalUnderflow && verticalOverflow) {
-      top = 0;
-      bottom = getViewportBottom();
-    } else if (verticalUnderflow) {
-      top = 0;
-      bottom += verticalUnderflow;
-    } else if (verticalOverflow) {
-      bottom = gridContext.numRows;
-      top -= verticalOverflow;
-    }
-     */
-
-    /*
-    regulateViewport(
-      {
-        width: newViewport.right - newViewport.left,
-        height: newViewport.bottom - newViewport.top,
-      },
-      {
-        width:
-          (canvasElementContext.canvasSize.width - canvasElementContext.headerOffset.left) /
-          newViewport.right -
-          newViewport.left,
-        height:
-          (canvasElementContext.canvasSize.height - canvasElementContext.headerOffset.top) /
-          newViewport.bottom -
-          newViewport.top,
-      },
-      viewport
-      ,
-      newViewport
-    );
-     */
-
-    //startInertia();
   };
 
   const onGlobalMouseMove = (event: MouseEvent) => {

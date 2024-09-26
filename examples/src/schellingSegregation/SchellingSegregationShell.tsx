@@ -4,7 +4,6 @@ import React, {
   SyntheticEvent,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -26,7 +25,7 @@ import {
   PlayControllerState,
 } from './components/PlayController';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { findEmptyGridIndices, shuffleGridData } from './gridUtils';
+import { findEmptyCells, shuffleGridData } from './gridUtils';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -245,7 +244,7 @@ export function SchellingSegregationShell(
   const onPlayOrStep = () => {
     if (frameCount === 0) {
       shuffleGridData(kernelRef.current.getModel().gridData);
-      kernelRef.current.getModel().emptyGridIndices = findEmptyGridIndices(
+      kernelRef.current.getModel().emptyCellIndices = findEmptyCells(
         kernelRef.current.getModel().gridData,
       );
 
@@ -278,7 +277,7 @@ export function SchellingSegregationShell(
   const getOnFocusedStateChange = useCallback(() => {
     return (sourceIndex: number, columnIndex: number, rowIndex: number) => {
       gridHandlesRefs
-        .filter((ref, index) => index !== 0)
+        .filter((_, index) => index !== 0)
         .forEach((ref) =>
           ref.current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex),
         );
@@ -288,7 +287,7 @@ export function SchellingSegregationShell(
   const getOnSelectedStateChange = useCallback(
     () => (sourceIndex: number, columnIndex: number, rowIndex: number) => {
       gridHandlesRefs
-        .filter((ref, index) => index !== 0)
+        .filter((_, index) => index !== 0)
         .forEach((ref) =>
           ref.current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex),
         );
@@ -299,7 +298,7 @@ export function SchellingSegregationShell(
   const getOnViewportStateChange = useCallback(
     () => (sourceIndex: number) => {
       gridHandlesRefs
-        .filter((ref, index) => index !== 0)
+        .filter((_, index) => index !== 0)
         .forEach((ref) => ref.current?.refreshViewportState(sourceIndex));
     },
     [],

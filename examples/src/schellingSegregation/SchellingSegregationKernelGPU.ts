@@ -14,7 +14,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
 
   randomTable!: Float32Array;
   gridBuffer!: GPUBuffer;
-  emptyGridIndicesBuffer!: GPUBuffer;
+  emptyCellIndicesBuffer!: GPUBuffer;
   randomTableBuffer!: GPUBuffer;
   readerGridBuffer!: GPUBuffer;
 
@@ -24,7 +24,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
   constructor(
     model: SchellingSegregationModel,
     device: GPUDevice,
-    numEmptyGrids: number,
+    numemptyCells: number,
     parallel: boolean,
   ) {
     super(model);
@@ -41,7 +41,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     device.queue.writeBuffer(
       this.paramBuffer,
       0,
-      new Uint32Array([gridSize, gridSize, numEmptyGrids]),
+      new Uint32Array([gridSize, gridSize, numemptyCells]),
     );
     device.queue.writeBuffer(
       this.paramBuffer,
@@ -51,7 +51,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
 
     this.prepareBuffers(0, gridSize);
     this.writeGridDataBuffer();
-    this.writeEmptyGridIndicesBuffer();
+    this.writeemptyCellIndicesBuffer();
 
     this.computePipeline = this.device.createComputePipeline({
       label: 'S:SchellingComputePipeline:' + gridSize,
@@ -87,7 +87,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
         { binding: 6, resource: { buffer: this.gridBuffer } },
         { binding: 7, resource: { buffer: this.paramBuffer } },
         { binding: 8, resource: { buffer: this.randomTableBuffer } }, // 乱数表のバッファ
-        { binding: 9, resource: { buffer: this.emptyGridIndicesBuffer } }, // 空き地インデックスのバッファ
+        { binding: 9, resource: { buffer: this.emptyCellIndicesBuffer } }, // 空き地インデックスのバッファ
       ],
     });
   }
@@ -96,20 +96,20 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     agentTypeShares: number[],
     agentTypeCumulativeShares: number[],
   ) {
-    const numEmptyGrids = this.model.updateInitialStateGridData(
+    const numemptyCells = this.model.updateInitialStateGridData(
       agentTypeShares,
       agentTypeCumulativeShares,
     );
     this.device.queue.writeBuffer(
       this.paramBuffer,
       8,
-      new Uint32Array([numEmptyGrids]),
+      new Uint32Array([numemptyCells]),
     );
   }
 
   private destroyBuffers() {
     this.gridBuffer?.destroy();
-    this.emptyGridIndicesBuffer?.destroy();
+    this.emptyCellIndicesBuffer?.destroy();
     this.randomTableBuffer?.destroy();
     this.readerGridBuffer?.destroy();
   }
@@ -126,7 +126,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     this.randomTable = new Float32Array(numCells); // ステップごとに1つの乱数を使用する仮定
 
     // 空き地インデックスのGPUバッファを作成
-    this.emptyGridIndicesBuffer = device.createBuffer({
+    this.emptyCellIndicesBuffer = device.createBuffer({
       label: 'S:EmptyCellsBuffer:' + gridSize,
       size: numCells * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -141,18 +141,6 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
         GPUBufferUsage.COPY_DST |
         GPUBufferUsage.COPY_SRC,
     });
-
-    /*
-    const nextGridBuffer = device.createBuffer({
-      label: 'S:NextGridBuffer',
-      size: modelRef.current.gridData.byteLength,
-      usage:
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_DST |
-        GPUBufferUsage.COPY_SRC,
-    });
-    device.queue.writeBuffer(nextGridBuffer, 0, modelRef.current.gridData.buffer);
-     */
 
     // 乱数表のGPUバッファを作成
     this.randomTableBuffer = device.createBuffer({
@@ -182,11 +170,11 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
       this.model.gridData.buffer,
     );
   }
-  private writeEmptyGridIndicesBuffer() {
+  private writeemptyCellIndicesBuffer() {
     this.device.queue.writeBuffer(
-      this.emptyGridIndicesBuffer,
+      this.emptyCellIndicesBuffer,
       0,
-      this.model.emptyGridIndices,
+      this.model.emptyCellIndices,
     );
   }
 
@@ -195,13 +183,13 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     this.model.setGridSize(gridSize);
     this.prepareBuffers(prevGridSize, gridSize);
     this.writeGridDataBuffer();
-    this.writeEmptyGridIndicesBuffer();
+    this.writeemptyCellIndicesBuffer();
     this.prepareBindGroup();
   }
 
   sync() {
     this.writeGridDataBuffer();
-    this.writeEmptyGridIndicesBuffer();
+    this.writeemptyCellIndicesBuffer();
   }
 
   setTolerance(newTolerance: number) {
@@ -211,15 +199,6 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
       new Float32Array([newTolerance]),
     );
   }
-
-  /*
-  const setGridData = (gridData: Uint32Array) => {
-    if (!device) {
-      throw new Error();
-    }
-    device.queue.writeBuffer(gridBuffer, 0, gridData.buffer);
-  };
-   */
 
   private writeRandomTableBuffer() {
     for (let i = 0; i < this.model.gridSize * this.model.gridSize; i++) {

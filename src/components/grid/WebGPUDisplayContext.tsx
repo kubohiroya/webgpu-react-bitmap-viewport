@@ -21,7 +21,6 @@ export const WebGPUDisplayContextProvider = ({
   const canvasContext = useCanvasContext();
   const canvas = useContext(CanvasRefContext);
 
-  //const displayContext = useContext(WebGPUDisplayContext);
   const [displayContextValue, setDisplayContextValue] =
     React.useState<WebGPUDisplayContextType | null>(null);
 
@@ -58,7 +57,6 @@ export const WebGPUDisplayContextProvider = ({
     });
 
     return () => {
-      //gpuCanvasContext?.unconfigure();
       texture?.destroy();
     };
   }, [device, canvasContext, canvas]);

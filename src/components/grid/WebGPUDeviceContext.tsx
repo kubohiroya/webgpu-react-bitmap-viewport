@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import React, { ReactNode, useLayoutEffect, useState } from 'react';
 
 export type WebGPUDeviceContextType = GPUDevice | null;
 

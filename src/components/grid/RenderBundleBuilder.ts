@@ -37,7 +37,6 @@ export class RenderBundleBuilder {
   private canvasContext: CanvasContextType;
 
   private device: GPUDevice;
-  private texture: GPUTexture;
   private textureFormat: GPUTextureFormat;
   private gpuCanvasContext: GPUCanvasContext;
 
@@ -79,7 +78,6 @@ export class RenderBundleBuilder {
     this.textureFormat = textureFormat;
     this.gpuCanvasContext = gpuCanvasContext;
     this.canvasContext = canvasContext;
-    this.texture = texture;
 
     const shaderModule = device.createShaderModule({
       label: 'Grid shader',
@@ -503,33 +501,12 @@ export class RenderBundleBuilder {
 
   public createCommandBuffer() {
     const commandEncoder = this.device.createCommandEncoder();
-    //const multisample = this.canvasElementContext.multisample;
-    /*
-    const texture = this.device.createTexture({
-      size: [
-        this.canvasElementContext.canvasSize.width,
-        this.canvasElementContext.canvasSize.height,
-        //1,
-      ],
-      // sampleCount: multisample,
-      format: this.textureFormat,
-      usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-     */
-    //const view = texture.createView();
-    //this.gpuCanvasContext.configure();
     const view = this.gpuCanvasContext.getCurrentTexture().createView();
-    /*
-    const resolveTarget =
-      multisample !== undefined ? { resolveTarget: view } : {};
-     */
 
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
           view,
-          //view: texture.createView(),
-          //...resolveTarget,
           clearValue: { r: 0, g: 0, b: 0, a: 0 }, // 0.5->0.0
           loadOp: 'clear',
           //storeOp: multisample !== undefined ? 'discard' : 'store',

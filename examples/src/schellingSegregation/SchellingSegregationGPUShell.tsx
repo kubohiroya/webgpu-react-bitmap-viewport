@@ -14,7 +14,7 @@ export function SchellingSegregationGPUShell(
   const kernel = new SchellingSegregationKernelGPU(
     props.model,
     device,
-    props.model.numEmptyGrids,
+    props.model.numEmptyCells,
     false,
   );
   if (kernel === null) {

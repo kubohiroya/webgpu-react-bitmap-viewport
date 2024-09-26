@@ -8,16 +8,16 @@ export function shuffleGridData(gridData: Uint32Array): void {
   }
 }
 
-export function findEmptyGridIndices(inputArray: Uint32Array): Uint32Array {
+export function findEmptyCells(inputArray: Uint32Array): Uint32Array {
   // 0の値を持つインデックスを一時的に保存するための配列
-  const emptyGridIndices: number[] = [];
+  const emptyCellIndices: number[] = [];
 
   // 配列をループし、EMPTY_VALUEの要素のインデックスを収集
   for (let i = 0; i < inputArray.length; i++) {
     if (inputArray[i] === EMPTY_VALUE) {
-      emptyGridIndices.push(i);
+      emptyCellIndices.push(i);
     }
   }
   // Uint32Arrayに変換して返す
-  return new Uint32Array(emptyGridIndices);
+  return new Uint32Array(emptyCellIndices);
 }

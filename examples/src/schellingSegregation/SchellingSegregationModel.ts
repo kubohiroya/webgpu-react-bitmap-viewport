@@ -9,8 +9,8 @@ export class SchellingSegregationModel
   gridSize!: number;
   gridData!: Uint32Array;
   tolerance!: number;
-  numEmptyGrids!: number;
-  emptyGridIndices!: Uint32Array;
+  numEmptyCells!: number;
+  emptyCellIndices!: Uint32Array;
   focusedStates!: Uint32Array;
   selectedStates!: Uint32Array;
   viewportStates!: Float32Array;
@@ -28,7 +28,7 @@ export class SchellingSegregationModel
     const numCells = gridSize * gridSize;
     this.gridSize = gridSize;
     this.gridData = new Uint32Array(numCells);
-    this.emptyGridIndices = new Uint32Array(numCells);
+    this.emptyCellIndices = new Uint32Array(numCells);
     this.focusedStates = new Uint32Array(gridSize);
     this.selectedStates = new Uint32Array(gridSize);
     this.viewportStates = new Float32Array([0, 0, gridSize, gridSize]);
@@ -47,14 +47,14 @@ export class SchellingSegregationModel
     const _agentTypeCounts = agentTypeShares.map((share) =>
       Math.floor(numGrids * share),
     );
-    const numEmptyGrid = numGrids - _agentTypeCounts.reduce((a, b) => a + b, 0);
-    if (numEmptyGrid < 0) {
+    const numemptyCell = numGrids - _agentTypeCounts.reduce((a, b) => a + b, 0);
+    if (numemptyCell < 0) {
       console.error(this.gridSize, agentTypeShares);
       throw new Error('The sum of agentTypeShares is over 1.0');
     }
     const agentTypeCounts =
-      numEmptyGrid > 0
-        ? _agentTypeCounts.concat(numEmptyGrid)
+      numemptyCell > 0
+        ? _agentTypeCounts.concat(numemptyCell)
         : _agentTypeCounts;
 
     let start = 0; // 各valueに対応する個数を挿入
@@ -64,16 +64,18 @@ export class SchellingSegregationModel
       start += length;
     });
 
-    for (let i = 0; i < numEmptyGrid; i++) {
-      this.emptyGridIndices[i] = numGrids - numEmptyGrid + i;
+    for (let i = 0; i < numemptyCell; i++) {
+      this.emptyCellIndices[i] = numGrids - numemptyCell + i;
     }
-    this.numEmptyGrids = numEmptyGrid;
-    return numEmptyGrid;
+    this.numEmptyCells = numemptyCell;
+    return numemptyCell;
   }
 
   setTolerance(tolerance: number): void {
     this.tolerance = tolerance;
   }
 
-  sync() {}
+  sync() {
+    // Do nothing
+  }
 }

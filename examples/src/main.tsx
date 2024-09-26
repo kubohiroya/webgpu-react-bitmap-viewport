@@ -1,10 +1,7 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom/client';
 import { Index } from './index';
+import { createRoot } from 'react-dom/client';
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement,
-);
+const root = createRoot(document.getElementById('root') as HTMLElement);
 
 const render = () => {
   root.render(<Index />);
