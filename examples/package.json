@@ -1,0 +1,33 @@
+{
+  "name": "webgpu-react-bitmap-viewport-examples",
+  "version": "2.0.0",
+  "description": "",
+  "main": "src/main.tsx",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite dev"
+  },
+  "keywords": [],
+  "author": "hiroya@cuc.ac.jp",
+  "license": "MIT",
+  "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/icons-material": "^6.1.1",
+    "@mui/lab": "6.0.0-beta.10",
+    "@mui/material": "^6.1.1",
+    "@mui/styled-engine": "^6.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "@types/react": "^18.3.9",
+    "@types/react-dom": "^18.3.0",
+    "@webgpu/types": "^0.1.46",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.7",
+    "vite-plugin-glsl": "^1.3.0"
+  }
+}
