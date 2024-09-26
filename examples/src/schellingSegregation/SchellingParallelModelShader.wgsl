@@ -1,12 +1,15 @@
-override EMPTY_VALUE: u32 = 99999;
+override EMPTY_VALUE: u32 = 99999u;
+override workgroupSizeX: u32 = 8;
+override workgroupSizeY: u32 = 8;
 
 struct Grid {
-    values: array<u32>,
+    values: array<u32>
 };
 
 struct Params {
     width: u32,
     height: u32,
+    emptyGridIndicesSize: u32,
     tolerance: f32
 };
 
@@ -35,22 +38,25 @@ fn randomChoice(size: u32, step: u32) -> u32 {
 
 fn countSimilarNeighbors(x: i32, y: i32, width: i32, height: i32, agentType: u32) -> vec2u {
     return countSimilarNeighbor(x - 1, y - 1, width, height, agentType) +
-          countSimilarNeighbor(x, y - 1, width, height, agentType) +
-          countSimilarNeighbor(x + 1, y - 1, width, height, agentType) +
-          countSimilarNeighbor(x - 1, y, width, height, agentType) +
-          countSimilarNeighbor(x + 1, y, width, height, agentType) +
-          countSimilarNeighbor(x - 1, y + 1, width, height, agentType) +
-          countSimilarNeighbor(x, y + 1, width, height, agentType) +
-          countSimilarNeighbor(x + 1, y + 1, width, height, agentType);
+              countSimilarNeighbor(x, y - 1, width, height, agentType) +
+              countSimilarNeighbor(x + 1, y - 1, width, height, agentType) +
+              countSimilarNeighbor(x - 1, y, width, height, agentType) +
+              countSimilarNeighbor(x + 1, y, width, height, agentType) +
+              countSimilarNeighbor(x - 1, y + 1, width, height, agentType) +
+              countSimilarNeighbor(x, y + 1, width, height, agentType) +
+              countSimilarNeighbor(x + 1, y + 1, width, height, agentType);
 }
 
-fn computeMain(x: u32, y: u32) {
+fn run(x: u32, y: u32) {
     let currentIndex = getIndex(x, y, params.width);
+
     let currentValue = grid.values[currentIndex];
+
     // エージェントが存在しない場所 (空き地) はスキップ
-    if (currentValue == EMPTY_VALUE) {
+    if(currentValue == EMPTY_VALUE){
       return;
     }
+
     // 似たエージェントがどれだけいるかカウント
     let neighbors = countSimilarNeighbors(i32(x), i32(y), i32(params.width), i32(params.height), currentValue);
     let similarCount = neighbors.x;
@@ -58,8 +64,12 @@ fn computeMain(x: u32, y: u32) {
 
     // 閾値に基づいて、引越しを決定
     if (neighborCount > 0u && f32(similarCount) / f32(neighborCount) < params.tolerance) {
-        let randomIndex = randomChoice(arrayLength(&emptyGridIndices), currentIndex);
+
+        let numEmptyGrid = params.emptyGridIndicesSize;
+        let randomIndex = randomChoice(numEmptyGrid, currentIndex);
+
         let targetIndex = emptyGridIndices[randomIndex];
+
         let targetValue = grid.values[targetIndex];
         if(targetValue == EMPTY_VALUE) {
             emptyGridIndices[randomIndex] = currentIndex;
@@ -69,12 +79,12 @@ fn computeMain(x: u32, y: u32) {
     }
 }
 
-@compute @workgroup_size(1)
-fn main() {
- for(var y = 0u; y < params.height; y++){
-  for(var x = 0u; x < params.width; x++){
-    computeMain(x, y);
-   }
-  }
+@compute @workgroup_size(workgroupSizeX, workgroupSizeY)
+fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    let x = global_id.x;
+    let y = global_id.y;
+    if (x >= params.width || y >= params.height) {
+        return;
+    }
+    run(x, y);
 }
-

@@ -1,5 +1,8 @@
-import { GridShaderMode } from 'webgpu-react-grid';
-import { GridGroup } from './GridGroup';
+import {
+  GridShaderMode,
+  WebGPUDeviceContextProvider,
+} from 'webgpu-react-bitmap-viewport';
+import { GridGroup } from '../GridGroup';
 
 type RGBARandomGridExampleProps = {
   canvasSizes: {
@@ -10,10 +13,10 @@ type RGBARandomGridExampleProps = {
     top: number;
     left: number;
   };
-  gridSize: {
-    numColumns: number;
-    numRows: number;
-  };
+
+  numColumns: number;
+  numRows: number;
+
   viewportStates: Float32Array;
 };
 
@@ -21,7 +24,7 @@ export const RGBARandomGridExample = (props: RGBARandomGridExampleProps) => {
   function createRGBARandomGridData(
     numRows: number,
     numColumns: number,
-    noiseFactor: number = 0.1
+    noiseFactor: number = 0.1,
   ) {
     const data = new Uint32Array(numRows * numColumns);
     for (let i = 0; i < data.length; i++) {
@@ -46,15 +49,17 @@ export const RGBARandomGridExample = (props: RGBARandomGridExampleProps) => {
   const data: Uint32Array = createRGBARandomGridData(
     gridSize.numRows,
     gridSize.numColumns,
-    0.1
+    0.1,
   );
   const focusedStates: Uint32Array = new Uint32Array(gridSizeMax);
   const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
 
   return (
     <GridGroup
+      id={'random'}
       mode={GridShaderMode.RGBA}
-      gridSize={props.gridSize}
+      numColumns={props.numColumns}
+      numRows={props.numRows}
       headerOffset={props.headerOffset}
       scrollBar={{
         radius: 5.0,

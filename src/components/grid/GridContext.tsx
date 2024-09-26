@@ -4,10 +4,9 @@ import { GridShaderMode } from './GridShaderMode';
 export type GridContextProps = {
   mode: GridShaderMode;
   data: Float32Array | Uint32Array;
-  gridSize: { numColumns: number; numRows: number };
+  numColumns: number;
+  numRows: number;
 };
-
-export type GridContextValue = GridContextProps;
 
 export const GridContext = React.createContext<GridContextProps | null>(null);
 

@@ -3,9 +3,14 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "dist/examples",
-    "types": ["node", "@webgpu/types", "vite/client", "webgpu-react-grid"],
+    "types": [
+      "node",
+      "@webgpu/types",
+      "vite/client",
+      "webgpu-react-bitmap-viewport"
+    ],
     "paths": {
-      "webgpu-react-grid": ["dist/types/src/index.d.ts"]
+      "webgpu-react-bitmap-viewport": ["dist/types/src/index.d.ts"]
     }
   },
   "include": [

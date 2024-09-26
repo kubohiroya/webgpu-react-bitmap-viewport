@@ -14,7 +14,6 @@ import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
 import GRID_SHADER_HUE_CODE from './GridShaderHue.wgsl?raw';
 import GRID_SHADER_CUSTOM_CODE from './GridShaderCustom.wgsl?raw';
 
-import { CanvasElementContextType } from './CanvasElementContext';
 import { vertices, VERTICES_BYTE_LENGTH } from './Vertices';
 import { F32LEN, U32LEN } from './Constants';
 import {
@@ -32,12 +31,15 @@ import {
 } from './WebGPUBufferFactories';
 import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridParamsDefault';
 import { GridShaderMode } from './GridShaderMode';
+import { CanvasContextType } from './CanvasContext';
 
 export class RenderBundleBuilder {
+  private canvasContext: CanvasContextType;
+
   private device: GPUDevice;
-  private canvasFormat: GPUTextureFormat;
-  private canvasContext: GPUCanvasContext;
-  private canvasElementContext: CanvasElementContextType;
+  private texture: GPUTexture;
+  private textureFormat: GPUTextureFormat;
+  private gpuCanvasContext: GPUCanvasContext;
 
   private bindGroup: GPUBindGroup;
 
@@ -66,16 +68,18 @@ export class RenderBundleBuilder {
   public constructor(
     mode: GridShaderMode,
     device: GPUDevice,
-    canvasFormat: GPUTextureFormat,
-    canvasContext: GPUCanvasContext,
-    canvasElementContext: CanvasElementContextType,
+    textureFormat: GPUTextureFormat,
+    gpuCanvasContext: GPUCanvasContext,
+    canvasContext: CanvasContextType,
+    texture: GPUTexture,
     gridSize: { numColumns: number; numRows: number },
     numViewports: number
   ) {
     this.device = device;
-    this.canvasFormat = canvasFormat;
+    this.textureFormat = textureFormat;
+    this.gpuCanvasContext = gpuCanvasContext;
     this.canvasContext = canvasContext;
-    this.canvasElementContext = canvasElementContext;
+    this.texture = texture;
 
     const shaderModule = device.createShaderModule({
       label: 'Grid shader',
@@ -106,10 +110,10 @@ export class RenderBundleBuilder {
       fragmentEntryPoint: string,
       options?: { constants?: Record<string, number> }
     ) => {
-      const multisample = canvasElementContext.multisample
+      const multisample = canvasContext.multisample
         ? {
             multisample: {
-              count: canvasElementContext.multisample,
+              count: canvasContext.multisample,
             },
           }
         : {};
@@ -140,7 +144,7 @@ export class RenderBundleBuilder {
           entryPoint: fragmentEntryPoint,
           targets: [
             {
-              format: canvasFormat,
+              format: textureFormat,
               blend: {
                 color: {
                   srcFactor: 'src-alpha',
@@ -210,10 +214,8 @@ export class RenderBundleBuilder {
       'fragmentScrollBarBody',
       {
         constants: {
-          scrollBarRadius:
-            canvasElementContext.scrollBar?.radius || SCROLLBAR_RADIUS,
-          scrollBarMargin:
-            canvasElementContext.scrollBar?.margin || SCROLLBAR_MARGIN,
+          scrollBarRadius: canvasContext.scrollBar?.radius || SCROLLBAR_RADIUS,
+          scrollBarMargin: canvasContext.scrollBar?.margin || SCROLLBAR_MARGIN,
         },
       }
     );
@@ -317,7 +319,7 @@ export class RenderBundleBuilder {
       this.f32UniformBuffer,
       createF32UniformBufferSource(
         this.f32UniformBufferSource,
-        this.canvasElementContext,
+        this.canvasContext,
         gridContext,
         overscroll
       )
@@ -408,7 +410,7 @@ export class RenderBundleBuilder {
   ) {
     const encoder = this.device.createRenderBundleEncoder({
       label,
-      colorFormats: [this.canvasFormat],
+      colorFormats: [this.textureFormat],
     });
     encoder.setPipeline(pipeline);
     encoder.setVertexBuffer(0, this.vertexBuffer);
@@ -424,8 +426,8 @@ export class RenderBundleBuilder {
   ) {
     updateDrawIndirectBufferSource(
       this.drawIndirectBufferSource,
-      this.canvasElementContext.canvasSize,
-      this.canvasElementContext.headerOffset,
+      this.canvasContext.canvasSize,
+      this.canvasContext.headerOffset,
       numColumnsToShow,
       numRowsToShow,
       numViewports
@@ -501,31 +503,37 @@ export class RenderBundleBuilder {
 
   public createCommandBuffer() {
     const commandEncoder = this.device.createCommandEncoder();
-    const multisample = this.canvasElementContext.multisample;
-    const texture =
-      multisample !== undefined
-        ? this.device.createTexture({
-            size: [
-              this.canvasElementContext.canvasSize.width,
-              this.canvasElementContext.canvasSize.height,
-            ],
-            sampleCount: multisample,
-            format: this.canvasFormat,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-          })
-        : this.canvasContext.getCurrentTexture();
-
+    //const multisample = this.canvasElementContext.multisample;
+    /*
+    const texture = this.device.createTexture({
+      size: [
+        this.canvasElementContext.canvasSize.width,
+        this.canvasElementContext.canvasSize.height,
+        //1,
+      ],
+      // sampleCount: multisample,
+      format: this.textureFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+     */
+    //const view = texture.createView();
+    //this.gpuCanvasContext.configure();
+    const view = this.gpuCanvasContext.getCurrentTexture().createView();
+    /*
     const resolveTarget =
-      multisample !== undefined ? { resolveTarget: texture.createView() } : {};
+      multisample !== undefined ? { resolveTarget: view } : {};
+     */
 
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: texture.createView(),
-          ...resolveTarget,
+          view,
+          //view: texture.createView(),
+          //...resolveTarget,
           clearValue: { r: 0, g: 0, b: 0, a: 0 }, // 0.5->0.0
           loadOp: 'clear',
-          storeOp: multisample !== undefined ? 'discard' : 'store',
+          //storeOp: multisample !== undefined ? 'discard' : 'store',
+          storeOp: 'store',
         },
       ],
     });

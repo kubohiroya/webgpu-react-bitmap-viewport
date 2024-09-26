@@ -31,13 +31,10 @@ export type GridProps = {
 
   numViewports: number;
 
-  /** The size of the grid. */
-  gridSize: {
-    /** The number of columns in the grid. */
-    numColumns: number;
-    /** The number of rows in the grid. */
-    numRows: number;
-  };
+  /** The number of columns in the grid. */
+  numColumns: number;
+  /** The number of rows in the grid. */
+  numRows: number;
 
   /** The data to be displayed in the grid, stored in a Float32Array for SingleValueGrid or Uint32Array for RGBAGrid. */
   data: Float32Array | Uint32Array;

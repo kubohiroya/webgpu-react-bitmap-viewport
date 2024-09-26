@@ -1,12 +1,15 @@
-import { Grid, GridHandles, GridShaderMode } from 'webgpu-react-grid';
+import {
+  Grid,
+  GridHandles,
+  GridShaderMode,
+} from 'webgpu-react-bitmap-viewport';
 import { useRef } from 'react';
 
 type GridGroupProps = {
+  id: string;
   mode: GridShaderMode;
-  gridSize: {
-    numColumns: number;
-    numRows: number;
-  };
+  numColumns: number;
+  numRows: number;
   headerOffset: {
     top: number;
     left: number;
@@ -42,7 +45,8 @@ export const GridGroup = (props: GridGroupProps) => {
       canvasSize={props.canvasSizes[_index]}
       headerOffset={props.headerOffset}
       scrollBar={props.scrollBar}
-      gridSize={props.gridSize}
+      numColumns={props.numColumns}
+      numRows={props.numRows}
       data={props.data}
       focusedStates={props.focusedStates}
       selectedStates={props.selectedStates}
@@ -50,18 +54,22 @@ export const GridGroup = (props: GridGroupProps) => {
       onFocusedStateChange={(
         sourceIndex: number,
         columnIndex: number,
-        rowIndex: number
+        rowIndex: number,
       ) => {
         gridRefs
           .filter((ref, index) => index !== _index)
           .forEach((ref) =>
-            ref.current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex)
+            ref.current?.refreshFocusedState(
+              sourceIndex,
+              columnIndex,
+              rowIndex,
+            ),
           );
       }}
       onSelectedStateChange={(
         sourceIndex: number,
         columnIndex: number,
-        rowIndex: number
+        rowIndex: number,
       ) => {
         gridRefs
           .filter((ref, index) => index !== _index)
@@ -69,8 +77,8 @@ export const GridGroup = (props: GridGroupProps) => {
             ref.current?.refreshSelectedState(
               sourceIndex,
               columnIndex,
-              rowIndex
-            )
+              rowIndex,
+            ),
           );
       }}
       onViewportStateChange={(sourceIndex: number) => {

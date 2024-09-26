@@ -1,5 +1,6 @@
-import { EMPTY_VALUE, GridShaderMode } from 'webgpu-react-grid';
-import { GridGroup } from './GridGroup';
+import { EMPTY_VALUE, GridShaderMode } from 'webgpu-react-bitmap-viewport';
+import { GridGroup } from '../GridGroup';
+import React from 'react';
 
 type HueGridExampleProps = {
   canvasSizes: {
@@ -10,10 +11,10 @@ type HueGridExampleProps = {
     top: number;
     left: number;
   };
-  gridSize: {
-    numColumns: number;
-    numRows: number;
-  };
+
+  numColumns: number;
+  numRows: number;
+
   viewportStates: Float32Array;
 };
 
@@ -21,7 +22,7 @@ export const HueGridExample = (props: HueGridExampleProps) => {
   function createHueRandomGridData(
     numRows: number,
     numColumns: number,
-    noiseFactor: number = 0
+    noiseFactor: number = 0,
   ) {
     const data = new Float32Array(numRows * numColumns);
     for (let i = 0; i < data.length; i++) {
@@ -34,22 +35,21 @@ export const HueGridExample = (props: HueGridExampleProps) => {
     return data;
   }
 
-  const gridSizeMax: number = Math.max(
-    props.gridSize.numColumns,
-    props.gridSize.numRows
-  );
+  const gridSizeMax: number = Math.max(props.numColumns, props.numRows);
   const data: Float32Array = createHueRandomGridData(
-    props.gridSize.numRows,
-    props.gridSize.numColumns,
-    0.1
+    props.numRows,
+    props.numColumns,
+    0.1,
   );
   const focusedStates: Uint32Array = new Uint32Array(gridSizeMax);
   const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
 
   return (
     <GridGroup
+      id={'hue-grid'}
       mode={GridShaderMode.HUE}
-      gridSize={props.gridSize}
+      numColumns={props.numColumns}
+      numRows={props.numRows}
       scrollBar={{
         radius: 5.0,
         margin: 2.0,

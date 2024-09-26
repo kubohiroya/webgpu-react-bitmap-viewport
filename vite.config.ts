@@ -16,8 +16,8 @@ const libConfig = defineConfig({
     },
     lib: {
       entry: resolve(__dirname, './src/index.ts'),
-      name: 'WebGPU-React-Grid',
-      fileName: (format) => `webgpu-react-grid.${format}.js`
+      name: 'WebGPU-React-Bitmap=Viewport',
+      fileName: (format) => `webgpu-react-bitmap-viewport.${format}.js`
     },
     rollupOptions: {
       external: ['react', 'react-dom', 'jsx-runtime', '@webgpu/types'],
@@ -49,17 +49,17 @@ const examplesConfig = defineConfig({
 
   publicDir: './examples/public',
 
-  base: '/webgpu-react-grid',
+  base: '/webgpu-react-bitmap-viewport',
 
   resolve:{
     alias:{
-      'webgpu-react-grid': resolve(__dirname, 'src/index.ts'),
+      'webgpu-react-bitmap-viewport': resolve(__dirname, 'src/index.ts'),
     }
   },
 
   plugins: [react()],
   build: {
-    outDir: 'dist/webgpu-react-grid',
+    outDir: 'dist/webgpu-react-bitmap-viewport',
     rollupOptions: {
       external: ['@webgpu/types'],
       output: {

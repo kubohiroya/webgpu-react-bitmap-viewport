@@ -1,39 +1,39 @@
-# WebGPU-React-Grid - a React component that uses WebGPU to render a grid of pixel data within a viewport
-[![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
-[![npm version](https://badge.fury.io/js/webgpu-react-grid.svg)](https://badge.fury.io/js/webgpu-react-grid)
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/kubohiroya/webgpu-react-grid/blob/main/LICENSE)
+# WebGPU-React-Bitmap-Viewport - a React component that uses WebGPU to render bitmap data within a set of viewports synchronously
 
-![animation](https://kubohiroya.github.io/webgpu-react-grid/demo_movie.gif)
+[![npm version](https://badge.fury.io/js/webgpu-react-bitmap-viewport.svg)](https://badge.fury.io/js/webgpu-react-bitmap-viewport)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- A React component displaying grid of pixel data as viewport contents with use of WebGPU API, without dependencies other than React.
+![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/demo_movie.gif)
+
+- A React component displaying bitmap data as a set of viewport contents with use of WebGPU API, without dependencies other than React.
 - Dynamic synchronization of GPUBuffers from JavaScript image data (e.g., Uint32Array of RGBA color values).
 - Dynamic extraction and rendering a set of (one or more) viewport contents from GPUBuffers.
 - Interactive viewport navigation via mouse drag and scrollbar handling, as well as zoom in and out via the mouse wheel.
-- Customizable for grid size, viewport display size, canvas size, header area size, and scrollbar size through React component props.
+- Customizable for bitmap image size, viewport display size, canvas size, header area size, and scrollbar size through React component props.
 - Highlights the column and row under the current mouse pointer.
 - Allows toggling the selected state of each column and row, and highlight the selected ones
-- Supports many-to-many relationships between viewports and grid data sources.
+- Supports many-to-many relationships between viewports and bitmap data sources.
 
 # Live demo
 
-[Live demo](https://kubohiroya.github.io/webgpu-react-grid/examples/index.html)
+[Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewporet/examples/index.html)
 
 # Download and Installation
 
-Download the latest version of WebGPU-React-Grid from the npm repository:
+Download the latest version of WebGPU-React-Bitmap-Viewport from the npm repository:
 
 ```bash
-pnpm install webgpu-react-grid
+pnpm install webgpu-react-bitmap-viewport
 ```
 
 # API
 
-[doc](https://kubohiroya.github.io/webgpu-react-grid/modules.html)
+[doc](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/modules.html)
 
 # Usage
 
 ```tsx
-import { Grid, GridHandles } from "webgpu-react-grid";
+import { Grid, GridHandles } from "webgpu-react-bitmap-viewport";
 import { useRef } from "react";
 
 const gridSize = { numColumns: 128, numRows: 128 };
@@ -56,7 +56,7 @@ const viewportStates = new Float32Array([
   8.0, 8.0, 24.0, 24.0, // viewport index 1: left, top, right, bottom
 ]);
 
-export const GridExample = () => {
+export const Index = () => {
   const gridRefs =
     [
       useRef<GridHandles>(null),
@@ -203,7 +203,7 @@ graph TD;
 
 # Licensing
 
-WebGPU-React-Grid is published under the MIT License (MIT).
+WebGPU-React-Bitmap-Viewport is published under the MIT License (MIT).
 
 (c) 2024 Hiroya Kubo
 

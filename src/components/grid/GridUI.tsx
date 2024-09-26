@@ -1,8 +1,16 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { useCanvasElementContext } from './CanvasElementContext';
+import {
+  forwardRef,
+  useContext,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+} from 'react';
+import { CanvasRefContext, useCanvasRefContext } from './CanvasRefContext';
 import { useViewportContext } from './ViewportContext';
 import { useGridContext } from './GridContext';
-import { useWebGPUContext } from './WebGPUContext';
+import { useWebGPUDeviceContext } from './WebGPUDeviceContext';
+import { useWebGPUDisplayContext } from './WebGPUDisplayContext';
 import { GridHandles } from './GridHandles';
 import { RenderBundleBuilder } from './RenderBundleBuilder';
 import {
@@ -20,6 +28,7 @@ import {
 } from './GridConstatns';
 import { ScrollBarStateValues } from './ScrollBarStateValues';
 import { SelectedStateValues } from './SelectedStateValues';
+import { useCanvasContext } from './CanvasContext';
 
 type GridUIProps = {
   focusedStates: Uint32Array;
@@ -156,10 +165,12 @@ function regulateRectangleTranslate(
 
 export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const { focusedStates, selectedStates } = props;
-  const webGpuContext = useWebGPUContext();
+  const webGpuDeviceContext = useWebGPUDeviceContext();
   const viewportContext = useViewportContext();
   const gridContext = useGridContext();
-  const canvasElementContext = useCanvasElementContext();
+  const webGpuDisplayContext = useWebGPUDisplayContext();
+  const canvasContext = useCanvasContext();
+  const canvas = useCanvasRefContext();
   const tickerRef = useRef<NodeJS.Timeout>();
 
   const prevFocusedColumnIndex = useRef<number>(-1);
@@ -239,10 +250,9 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     newViewport: Rectangle
   ) => {
     const horizontalUnderflow = newViewport.left < 0;
-    const horizontalOverflow =
-      newViewport.right > gridContext.gridSize.numColumns;
+    const horizontalOverflow = newViewport.right > gridContext.numColumns;
     const verticalUnderflow = newViewport.top < 0;
-    const verticalOverflow = newViewport.bottom > gridContext.gridSize.numRows;
+    const verticalOverflow = newViewport.bottom > gridContext.numRows;
     const enableOverscroll =
       scrollBarState.current === ScrollBarStateValues.NotFocused;
 
@@ -251,7 +261,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       if (horizontalOverflow) {
         setViewport({
           left: 0,
-          right: gridContext.gridSize.numColumns,
+          right: gridContext.numColumns,
         });
         if (enableOverscroll) {
           overscroll.current.x = 0;
@@ -265,13 +275,12 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     } else if (horizontalOverflow) {
       velocity.current.y = 0;
       setViewport({
-        left: gridContext.gridSize.numColumns - startViewportSize.width,
+        left: gridContext.numColumns - startViewportSize.width,
       });
-      setViewport({ right: gridContext.gridSize.numColumns });
+      setViewport({ right: gridContext.numColumns });
       if (enableOverscroll) {
         overscroll.current.x =
-          (newViewport.right - gridContext.gridSize.numColumns) *
-          startCellSize.width;
+          (newViewport.right - gridContext.numColumns) * startCellSize.width;
       }
     } else if (!verticalOverflow && !verticalUnderflow) {
       setViewport({ left: newViewport.left, right: newViewport.right });
@@ -283,7 +292,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     if (verticalUnderflow) {
       velocity.current.y = 0;
       if (verticalOverflow) {
-        setViewport({ top: 0, bottom: gridContext.gridSize.numRows });
+        setViewport({ top: 0, bottom: gridContext.numRows });
         if (enableOverscroll) {
           overscroll.current.y = 0;
         }
@@ -296,13 +305,12 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     } else if (verticalOverflow) {
       velocity.current.y = 0;
       setViewport({
-        top: gridContext.gridSize.numRows - startViewportSize.height,
-        bottom: gridContext.gridSize.numRows,
+        top: gridContext.numRows - startViewportSize.height,
+        bottom: gridContext.numRows,
       });
       if (enableOverscroll) {
         overscroll.current.y =
-          (newViewport.bottom - gridContext.gridSize.numRows) *
-          startCellSize.height;
+          (newViewport.bottom - gridContext.numRows) * startCellSize.height;
       }
     } else if (!horizontalOverflow && !horizontalUnderflow) {
       setViewport({ top: newViewport.top, bottom: newViewport.bottom });
@@ -330,28 +338,25 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       const [dx, dy] =
         scrollBarState.current === ScrollBarStateValues.HorizontalFocused
           ? [
-              (-1 *
-                (gridContext.gridSize.numColumns *
-                  pointerState.current.delta.x)) /
-                (canvasElementContext.canvasSize.width -
-                  canvasElementContext.headerOffset.left),
+              (-1 * (gridContext.numColumns * pointerState.current.delta.x)) /
+                (canvasContext.canvasSize.width -
+                  canvasContext.headerOffset.left),
               0,
             ]
           : scrollBarState.current === ScrollBarStateValues.VerticalFocused
           ? [
               0,
-              (-1 *
-                (gridContext.gridSize.numRows * pointerState.current.delta.y)) /
-                (canvasElementContext.canvasSize.height -
-                  canvasElementContext.headerOffset.top),
+              (-1 * (gridContext.numRows * pointerState.current.delta.y)) /
+                (canvasContext.canvasSize.height -
+                  canvasContext.headerOffset.top),
             ]
           : [
               (viewportWidth * pointerState.current.delta.x) /
-                (canvasElementContext.canvasSize.width -
-                  canvasElementContext.headerOffset.left),
+                (canvasContext.canvasSize.width -
+                  canvasContext.headerOffset.left),
               (viewportHeight * pointerState.current.delta.y) /
-                (canvasElementContext.canvasSize.height -
-                  canvasElementContext.headerOffset.top),
+                (canvasContext.canvasSize.height -
+                  canvasContext.headerOffset.top),
             ];
 
       const viewport: Rectangle = {
@@ -391,12 +396,10 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         startViewportSize,
         {
           width:
-            (canvasElementContext.canvasSize.width -
-              canvasElementContext.headerOffset.left) /
+            (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
             startViewportSize.width,
           height:
-            (canvasElementContext.canvasSize.height -
-              canvasElementContext.headerOffset.top) /
+            (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
             startViewportSize.height,
         },
         scrollBarState.current === ScrollBarStateValues.HorizontalFocused ||
@@ -524,11 +527,11 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     const { left, top, right, bottom } = getViewport();
     const numColumnsToShow = Math.min(
       Math.ceil(right) - Math.floor(left),
-      gridContext.gridSize.numColumns
+      gridContext.numColumns
     );
     const numRowsToShow = Math.min(
       Math.ceil(bottom) - Math.floor(top),
-      gridContext.gridSize.numRows
+      gridContext.numRows
     );
     numCellsToShow.current = { numColumnsToShow, numRowsToShow };
   };
@@ -581,57 +584,53 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
 
   const calculateCellPosition = (clientX: number, clientY: number) => {
     const { left, top, right, bottom } = getViewport();
-    const rect =
-      canvasElementContext.canvasRef.current!.getBoundingClientRect();
+    const rect = canvas?.getBoundingClientRect();
+    if (!rect) {
+      throw new Error('canvasRefContext?.current? is null');
+    }
     const x = clientX - rect.left;
     const y = clientY - rect.top;
 
     const columnWidth =
-      (canvasElementContext.canvasSize.width -
-        canvasElementContext.headerOffset.left) /
+      (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
       (right - left);
     const rowHeight =
-      (canvasElementContext.canvasSize.height -
-        canvasElementContext.headerOffset.top) /
+      (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
       (bottom - top);
 
     const columnIndex =
-      (x - overscroll.current.x - canvasElementContext.headerOffset.left) /
+      (x - overscroll.current.x - canvasContext.headerOffset.left) /
       columnWidth;
     const rowIndex =
-      (y - overscroll.current.y - canvasElementContext.headerOffset.top) /
-      rowHeight;
+      (y - overscroll.current.y - canvasContext.headerOffset.top) / rowHeight;
 
     const isInsideHorizontalBody =
-      columnIndex >= 0 && columnIndex + left < gridContext.gridSize.numColumns;
+      columnIndex >= 0 && columnIndex + left < gridContext.numColumns;
     const isInsideVerticalBody =
-      rowIndex >= 0 && rowIndex + top < gridContext.gridSize.numRows;
+      rowIndex >= 0 && rowIndex + top < gridContext.numRows;
     if (isInsideHorizontalBody) {
       if (isInsideVerticalBody) {
-        const margin = canvasElementContext.scrollBar
-          ? canvasElementContext.scrollBar.margin
+        const margin = canvasContext.scrollBar
+          ? canvasContext.scrollBar.margin
           : SCROLLBAR_MARGIN;
-        const radius = canvasElementContext.scrollBar
-          ? canvasElementContext.scrollBar.radius
+        const radius = canvasContext.scrollBar
+          ? canvasContext.scrollBar.radius
           : SCROLLBAR_RADIUS;
         if (
-          canvasElementContext.canvasSize.width - margin - radius * 2 <= x &&
-          x <= canvasElementContext.canvasSize.width - margin
+          canvasContext.canvasSize.width - margin - radius * 2 <= x &&
+          x <= canvasContext.canvasSize.width - margin
         ) {
-          const header =
-            overscroll.current.y + canvasElementContext.headerOffset.top;
+          const header = overscroll.current.y + canvasContext.headerOffset.top;
           const topEdge =
             header -
             radius +
-            ((canvasElementContext.canvasSize.height - header - radius * 2) *
-              top) /
-              gridContext.gridSize.numRows;
+            ((canvasContext.canvasSize.height - header - radius * 2) * top) /
+              gridContext.numRows;
           const bottomEdge =
             header +
             radius * 2 +
-            ((canvasElementContext.canvasSize.height - header - radius * 2) *
-              bottom) /
-              gridContext.gridSize.numRows;
+            ((canvasContext.canvasSize.height - header - radius * 2) * bottom) /
+              gridContext.numRows;
 
           if (header <= y && y < topEdge) {
             return {
@@ -651,34 +650,29 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
           }
         }
         const scrollbarMargin =
-          canvasElementContext.scrollBar?.margin || SCROLLBAR_MARGIN;
+          canvasContext.scrollBar?.margin || SCROLLBAR_MARGIN;
         const scrollbarRadius =
-          canvasElementContext.scrollBar?.radius || SCROLLBAR_RADIUS;
+          canvasContext.scrollBar?.radius || SCROLLBAR_RADIUS;
         if (
-          canvasElementContext.canvasSize.height -
+          canvasContext.canvasSize.height -
             scrollbarMargin -
             scrollbarRadius * 2 <=
             y &&
-          y <= canvasElementContext.canvasSize.height - scrollbarMargin
+          y <= canvasContext.canvasSize.height - scrollbarMargin
         ) {
-          const header =
-            overscroll.current.x + canvasElementContext.headerOffset.left;
+          const header = overscroll.current.x + canvasContext.headerOffset.left;
           const leftEdge =
             header -
             scrollbarRadius +
-            ((canvasElementContext.canvasSize.width -
-              header -
-              scrollbarRadius * 2) *
+            ((canvasContext.canvasSize.width - header - scrollbarRadius * 2) *
               left) /
-              gridContext.gridSize.numColumns;
+              gridContext.numColumns;
           const rightEdge =
             header +
             scrollbarRadius * 2 +
-            ((canvasElementContext.canvasSize.width -
-              header -
-              scrollbarRadius * 2) *
+            ((canvasContext.canvasSize.width - header - scrollbarRadius * 2) *
               right) /
-              gridContext.gridSize.numColumns;
+              gridContext.numColumns;
 
           if (header <= x && x <= leftEdge) {
             return {
@@ -723,7 +717,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const onDown = (x: number, y: number) => {
-    if (!canvasElementContext.canvasRef.current) {
+    if (!canvas || !canvas) {
       throw new Error();
     }
 
@@ -734,7 +728,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       cellPosition.columnIndex === POINTER_CONTEXT_HEADER ||
       cellPosition.rowIndex === POINTER_CONTEXT_HEADER
     ) {
-      canvasElementContext.canvasRef.current.style.cursor = 'grab';
+      canvas.style.cursor = 'grab';
       refreshSelectedState(
         viewportContext.viewportIndex,
         cellPosition.columnIndex,
@@ -749,7 +743,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE ||
       cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE
     ) {
-      canvasElementContext.canvasRef.current.style.cursor = 'grab';
+      canvas.style.cursor = 'grab';
       pointerState.current = {
         start: {
           x,
@@ -765,12 +759,10 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         },
         startCellSize: {
           width:
-            (canvasElementContext.canvasSize.width -
-              canvasElementContext.headerOffset.left) /
+            (canvasContext.canvasSize.width - canvasContext.headerOffset.left) /
             (right - left),
           height:
-            (canvasElementContext.canvasSize.height -
-              canvasElementContext.headerOffset.top) /
+            (canvasContext.canvasSize.height - canvasContext.headerOffset.top) /
             (bottom - top),
         },
         startViewport: {
@@ -811,27 +803,27 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         });
       }
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
-      if (right * 2 - left < gridContext.gridSize.numColumns) {
+      if (right * 2 - left < gridContext.numColumns) {
         setViewport({
           left: right,
           right: right * 2 - left,
         });
       } else {
         setViewport({
-          left: gridContext.gridSize.numColumns - (right - left),
-          right: gridContext.gridSize.numColumns,
+          left: gridContext.numColumns - (right - left),
+          right: gridContext.numColumns,
         });
       }
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
-      if (bottom * 2 - top < gridContext.gridSize.numRows) {
+      if (bottom * 2 - top < gridContext.numRows) {
         setViewport({
           top: bottom,
           bottom: bottom * 2 - top,
         });
       } else {
         setViewport({
-          top: gridContext.gridSize.numRows - (bottom - top),
-          bottom: gridContext.gridSize.numRows,
+          top: gridContext.numRows - (bottom - top),
+          bottom: gridContext.numRows,
         });
       }
     }
@@ -848,7 +840,10 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const onUp = () => {
-    canvasElementContext.canvasRef.current!.style.cursor = 'default';
+    if (!canvas) {
+      return;
+    }
+    canvas.style.cursor = 'default';
     pointerState.current = null;
     refreshFocusedState(viewportContext.viewportIndex, -1, -1);
   };
@@ -862,8 +857,11 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const onMouseOut = (event: MouseEvent) => {
+    if (!canvas) {
+      return;
+    }
     if (event.buttons === 0) {
-      canvasElementContext.canvasRef.current!.style.cursor = 'default';
+      canvas.style.cursor = 'default';
       scrollBarState.current = ScrollBarStateValues.OutOfFrame;
       if (pointerState.current) {
         pointerState.current.isMouseOut = true;
@@ -894,7 +892,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     movementX: number,
     movementY: number
   ) => {
-    if (!canvasElementContext.canvasRef.current || !pointerState.current) {
+    if (!canvas || !pointerState.current) {
       throw new Error();
     }
 
@@ -905,45 +903,48 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     velocity.current = {
       x:
         (-movementX * pointerState.current.startViewportSize.width) /
-        canvasElementContext.canvasSize.width,
+        canvasContext.canvasSize.width,
       y:
         (-movementY * pointerState.current.startViewportSize.height) /
-        canvasElementContext.canvasSize.height,
+        canvasContext.canvasSize.height,
     };
 
     startInertia();
   };
 
   const onHover = (clientX: number, clientY: number) => {
+    if (!canvas) {
+      return;
+    }
     const cellPosition = calculateCellPosition(clientX, clientY);
     if (
       cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE &&
       cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE
     ) {
-      canvasElementContext.canvasRef.current!.style.cursor = 'pointer';
+      canvas.style.cursor = 'pointer';
       scrollBarState.current =
         ScrollBarStateValues.HorizontalFocused |
         ScrollBarStateValues.VerticalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
-      canvasElementContext.canvasRef.current!.style.cursor = 'pointer';
+      canvas.style.cursor = 'pointer';
       scrollBarState.current = ScrollBarStateValues.HorizontalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
-      canvasElementContext.canvasRef.current!.style.cursor = 'pointer';
+      canvas.style.cursor = 'pointer';
       scrollBarState.current = ScrollBarStateValues.VerticalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
-      canvasElementContext.canvasRef.current!.style.cursor = 'w-resize';
+      canvas.style.cursor = 'w-resize';
       scrollBarState.current = ScrollBarStateValues.HorizontalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
-      canvasElementContext.canvasRef.current!.style.cursor = 'e-resize';
+      canvas.style.cursor = 'e-resize';
       scrollBarState.current = ScrollBarStateValues.HorizontalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
-      canvasElementContext.canvasRef.current!.style.cursor = 'n-resize';
+      canvas.style.cursor = 'n-resize';
       scrollBarState.current = ScrollBarStateValues.VerticalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
-      canvasElementContext.canvasRef.current!.style.cursor = 's-resize';
+      canvas.style.cursor = 's-resize';
       scrollBarState.current = ScrollBarStateValues.VerticalFocused;
     } else {
-      canvasElementContext.canvasRef.current!.style.cursor = 'cell';
+      canvas.style.cursor = 'cell';
       scrollBarState.current = ScrollBarStateValues.NotFocused;
     }
 
@@ -962,24 +963,24 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const onMouseMove = (event: MouseEvent) => {
-    if (!canvasElementContext.canvasRef.current) {
+    if (!canvas) {
       throw new Error();
     }
     if (pointerState.current) {
-      canvasElementContext.canvasRef.current.style.cursor = 'grabbing';
+      canvas.style.cursor = 'grabbing';
       onDrag(event.clientX, event.clientY, event.movementX, event.movementY);
     } else {
-      canvasElementContext.canvasRef.current.style.cursor = 'default';
+      canvas.style.cursor = 'default';
       onHover(event.clientX, event.clientY);
     }
   };
 
   const onTouchMove = (event: TouchEvent) => {
-    if (!canvasElementContext.canvasRef.current) {
+    if (!canvas) {
       throw new Error();
     }
     if (event.touches.length >= 2 && pointerState.current) {
-      canvasElementContext.canvasRef.current.style.cursor = 'grabbing';
+      canvas.style.cursor = 'grabbing';
       onDrag(
         event.touches[0].clientX,
         event.touches[0].clientY,
@@ -991,24 +992,20 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         y: event.touches[0].clientY,
       };
     } else {
-      canvasElementContext.canvasRef.current.style.cursor = 'default';
+      canvas.style.cursor = 'default';
       onHover(event.touches[0].clientX, event.touches[0].clientY);
     }
   };
 
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
-    if (event.deltaY === 0 || !canvasElementContext.canvasRef.current) {
+    if (event.deltaY === 0 || !canvas) {
       return;
     }
 
     const marginedCanvasSize = {
-      width:
-        canvasElementContext.canvasSize.width -
-        canvasElementContext.headerOffset.left,
-      height:
-        canvasElementContext.canvasSize.height -
-        canvasElementContext.headerOffset.top,
+      width: canvasContext.canvasSize.width - canvasContext.headerOffset.left,
+      height: canvasContext.canvasSize.height - canvasContext.headerOffset.top,
     };
 
     const viewport = getViewport();
@@ -1019,10 +1016,9 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     };
 
     const scale = event.deltaY > 0 ? 1.025 : 0.975;
-    const rect = canvasElementContext.canvasRef.current.getBoundingClientRect();
-    const dx =
-      event.clientX - rect.left - canvasElementContext.headerOffset.left;
-    const dy = event.clientY - rect.top - canvasElementContext.headerOffset.top;
+    const rect = canvas.getBoundingClientRect();
+    const dx = event.clientX - rect.left - canvasContext.headerOffset.left;
+    const dy = event.clientY - rect.top - canvasContext.headerOffset.top;
 
     const cx = (viewportSize.width * dx) / marginedCanvasSize.width + left;
     const cy = (viewportSize.height * dy) / marginedCanvasSize.height + top;
@@ -1040,7 +1036,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     };
 
     const newViewport = regulateRectangleTranslate(
-      gridContext.gridSize,
+      gridContext,
       viewportSize,
       marginedCanvasSize,
       viewport,
@@ -1056,28 +1052,28 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     /*
     const horizontalUnderflow = -1 * left;
     const verticalUnderflow = -1 * top;
-    const horizontalOverflow = right - gridContext.gridSize.numColumns;
-    const verticalOverflow = bottom - gridContext.gridSize.numRows;
+    const horizontalOverflow = right - gridContext.numColumns;
+    const verticalOverflow = bottom - gridContext.numRows;
     if ((horizontalUnderflow > 0 && horizontalOverflow > 0) && (verticalUnderflow > 0 && verticalOverflow > 0)) {
-      if(gridContext.gridSize.numColumns <= gridContext.gridSize.numColumns){
+      if(gridContext.numColumns <= gridContext.numColumns){
         left = 0;
-        right = gridContext.gridSize.numColumns;
-        gridContext.gridSize.numRows * gridContext.gridSize.numColumns
+        right = gridContext.numColumns;
+        gridContext.numRows * gridContext.numColumns
         top = 0;
-        bottom = gridContext.gridSize.numRows;
+        bottom = gridContext.numRows;
       }else{
 
       }
     }
     if ((horizontalUnderflow > 0 && horizontalOverflow > 0) && (verticalUnderflow > 0 || verticalOverflow > 0)) {
       left = 0;
-      right = gridContext.gridSize.numColumns;
+      right = gridContext.numColumns;
       if(top <= 0) {
         top = 0;
-        bottom = gridContext.gridSize.numRows;
+        bottom = gridContext.numRows;
       }
     }
-    if ((left <= 0 || gridContext.gridSize.numColumns <= right ) && (top <= 0 && gridContext.gridSize.numRows <= bottom)) {
+    if ((left <= 0 || gridContext.numColumns <= right ) && (top <= 0 && gridContext.numRows <= bottom)) {
       // FIXME , please re-think the condition
     }
 
@@ -1088,7 +1084,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       left = 0;
       right += horizontalUnderflow;
     } else if (horizontalOverflow) {
-      right = gridContext.gridSize.numColumns;
+      right = gridContext.numColumns;
       left -= horizontalOverflow;
     }
 
@@ -1099,7 +1095,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       top = 0;
       bottom += verticalUnderflow;
     } else if (verticalOverflow) {
-      bottom = gridContext.gridSize.numRows;
+      bottom = gridContext.numRows;
       top -= verticalOverflow;
     }
      */
@@ -1190,27 +1186,17 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   useEffect(() => {
-    if (
-      !webGpuContext ||
-      !webGpuContext.device ||
-      !webGpuContext.canvasFormat ||
-      !webGpuContext.canvasContext ||
-      !canvasElementContext.canvasRef.current
-    ) {
-      return;
-    }
-
     renderBundleBuilder.current = new RenderBundleBuilder(
       gridContext.mode,
-      webGpuContext.device,
-      webGpuContext.canvasFormat,
-      webGpuContext.canvasContext,
-      canvasElementContext,
-      gridContext.gridSize,
+      webGpuDeviceContext,
+      webGpuDisplayContext.textureFormat,
+      webGpuDisplayContext.gpuCanvasContext,
+      canvasContext,
+      webGpuDisplayContext.texture,
+      gridContext,
       viewportContext.numViewports
     );
 
-    const canvas = canvasElementContext.canvasRef.current;
     canvas.addEventListener('mousedown', onMouseDown, { passive: true });
     canvas.addEventListener('mousemove', onMouseMove, { passive: true });
     canvas.addEventListener('mouseup', onMouseUp, { passive: true });
@@ -1251,11 +1237,12 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       }
     };
   }, [
-    webGpuContext?.device,
-    webGpuContext?.canvasFormat,
-    webGpuContext?.canvasContext,
-    canvasElementContext,
-    gridContext.gridSize,
+    webGpuDeviceContext,
+    webGpuDisplayContext.textureFormat,
+    webGpuDisplayContext.gpuCanvasContext,
+    webGpuDisplayContext.texture,
+    canvasContext,
+    gridContext,
     eventHandlersInitialized.current,
     onMouseDown,
     onMouseMove,

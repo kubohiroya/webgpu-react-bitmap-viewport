@@ -1,19 +1,19 @@
 import { GridContextProps } from './GridContext';
-import { CanvasElementContextProps } from './CanvasElementContext';
 import { F32LEN, U32LEN } from './Constants';
 import { createStorageBuffer } from './WebGPUBufferFactories';
+import { CanvasContextType } from './CanvasContext';
 
 export const F32UNIFORMS_LENGTH = 8;
 export const F32UNIFORMS_BYTE_LENGTH = F32UNIFORMS_LENGTH * F32LEN;
 
 export const createF32UniformBufferSource = (
   source: Float32Array,
-  canvasContext: CanvasElementContextProps,
+  canvasContext: CanvasContextType,
   gridContext: GridContextProps,
   overscroll: { x: number; y: number }
 ) => {
-  source[0] = gridContext.gridSize.numColumns;
-  source[1] = gridContext.gridSize.numRows;
+  source[0] = gridContext.numColumns;
+  source[1] = gridContext.numRows;
   source[2] = canvasContext.canvasSize.width;
   source[3] = canvasContext.canvasSize.height;
   source[4] = canvasContext.headerOffset.left;
@@ -32,8 +32,8 @@ export const createUint32BufferSource = (
   scrollBarState: number,
   index: number
 ) => {
-  source[0] = gridContext.gridSize.numColumns;
-  source[1] = gridContext.gridSize.numRows;
+  source[0] = gridContext.numColumns;
+  source[1] = gridContext.numRows;
   source[2] = numCellsToShow.numColumnsToShow;
   source[3] = numCellsToShow.numRowsToShow;
   source[4] = scrollBarState;
@@ -48,4 +48,3 @@ export const createViewportBuffer = (
 ) => {
   return createStorageBuffer(label, device, numViewports * 4 * F32LEN);
 };
-
