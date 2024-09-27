@@ -1,7 +1,6 @@
 export enum SchellingSegregationModes {
   'CPU' = 'CPU',
   'GPU' = 'GPU',
-  'GPU_PARALLEL' = 'GPU_PARALLEL',
 }
 
 export type SchellingSegregationShellProps = {

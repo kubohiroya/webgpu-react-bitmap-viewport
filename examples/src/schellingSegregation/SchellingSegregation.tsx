@@ -15,12 +15,9 @@ export default function SchellingSegregation(
     ...props,
   });
 
-  if (props.mode === SchellingSegregationModes.CPU) {
+  if (props.mode === SchellingSegregationModes.CPU || props.gridSize < 16) {
     return <SchellingSegregationCPUShell {...props} model={model} />;
-  } else if (
-    props.mode === SchellingSegregationModes.GPU ||
-    props.mode === SchellingSegregationModes.GPU_PARALLEL
-  ) {
+  } else if (props.mode === SchellingSegregationModes.GPU) {
     return <SchellingSegregationGPUShell {...props} model={model} />;
   }
 }

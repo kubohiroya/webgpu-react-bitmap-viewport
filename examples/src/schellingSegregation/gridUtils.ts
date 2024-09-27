@@ -1,6 +1,6 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 
-export function shuffleGridData(gridData: Uint32Array): void {
+export function shuffle(gridData: Uint32Array): void {
   // シャッフル関数 (Fisher–Yates shuffle)
   for (let i = gridData.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

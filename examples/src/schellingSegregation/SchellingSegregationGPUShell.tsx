@@ -15,7 +15,6 @@ export function SchellingSegregationGPUShell(
     props.model,
     device,
     props.model.numEmptyCells,
-    false,
   );
   if (kernel === null) {
     return null;

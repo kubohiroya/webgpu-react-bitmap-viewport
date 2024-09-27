@@ -1,20 +1,20 @@
-import SCHELLING_COMPUTE_SHADER from './SchellingModelShader.wgsl?raw';
-import SCHELLING_PARALLEL_COMPUTE_SHADER from './SchellingParallelModelShader.wgsl?raw';
+import SCHELLING_PARALLEL_COMPUTE_SHADER from './SchellingSegregationShader.wgsl?raw';
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationModel } from './SchellingSegregationModel';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
+import { shuffle } from './gridUtils';
 
 const WORKGROUP_SIZE = { x: 8, y: 8 };
 
 export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
   device: GPUDevice;
-  parallel: boolean;
 
   paramBuffer: GPUBuffer;
 
   randomTable!: Float32Array;
   gridBuffer!: GPUBuffer;
   emptyCellIndicesBuffer!: GPUBuffer;
+  randomSegmentIndicesBuffer!: GPUBuffer;
   randomTableBuffer!: GPUBuffer;
   readerGridBuffer!: GPUBuffer;
 
@@ -24,28 +24,32 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
   constructor(
     model: SchellingSegregationModel,
     device: GPUDevice,
-    numemptyCells: number,
-    parallel: boolean,
+    numEmptyCells: number,
   ) {
     super(model);
     this.device = device;
-    this.parallel = parallel;
 
     const gridSize = model.gridSize;
 
     this.paramBuffer = device.createBuffer({
       label: 'S:ParamBuffer:' + gridSize,
-      size: 16,
+      size: 12,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
+    this.randomSegmentIndicesBuffer = device.createBuffer({
+      label: 'S:RandomSegmentIndicesBuffer:' + gridSize,
+      size: 16 * 16 * 4,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    });
+
     device.queue.writeBuffer(
       this.paramBuffer,
       0,
-      new Uint32Array([gridSize, gridSize, numemptyCells]),
+      new Uint32Array([gridSize, gridSize]),
     );
     device.queue.writeBuffer(
       this.paramBuffer,
-      12,
+      8,
       new Float32Array([model.tolerance]),
     );
 
@@ -59,19 +63,13 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
       compute: {
         module: this.device.createShaderModule({
           label: 'SchellingModelShader',
-          code: this.parallel
-            ? SCHELLING_PARALLEL_COMPUTE_SHADER
-            : SCHELLING_COMPUTE_SHADER,
+          code: SCHELLING_PARALLEL_COMPUTE_SHADER,
         }),
-        constants: this.parallel
-          ? {
-              EMPTY_VALUE: EMPTY_VALUE,
-              workgroupSizeX: WORKGROUP_SIZE.x,
-              workgroupSizeY: WORKGROUP_SIZE.y,
-            }
-          : {
-              EMPTY_VALUE: EMPTY_VALUE,
-            },
+        constants: {
+          EMPTY_VALUE: EMPTY_VALUE,
+          workgroupSizeX: WORKGROUP_SIZE.x,
+          workgroupSizeY: WORKGROUP_SIZE.y,
+        },
         entryPoint: 'main',
       },
     });
@@ -86,8 +84,9 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
       entries: [
         { binding: 6, resource: { buffer: this.gridBuffer } },
         { binding: 7, resource: { buffer: this.paramBuffer } },
-        { binding: 8, resource: { buffer: this.randomTableBuffer } }, // 乱数表のバッファ
+        { binding: 8, resource: { buffer: this.randomSegmentIndicesBuffer } },
         { binding: 9, resource: { buffer: this.emptyCellIndicesBuffer } }, // 空き地インデックスのバッファ
+        { binding: 10, resource: { buffer: this.randomTableBuffer } }, // 乱数表のバッファ
       ],
     });
   }
@@ -195,8 +194,21 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
   setTolerance(newTolerance: number) {
     this.device.queue.writeBuffer(
       this.paramBuffer,
-      12,
+      8,
       new Float32Array([newTolerance]),
+    );
+  }
+
+  private writeRandomSegmentIndicesBuffer() {
+    const randomSegmentIndices = new Uint32Array(256);
+    for (let i = 0; i < randomSegmentIndices.length; i++) {
+      randomSegmentIndices[i] = i;
+    }
+    shuffle(randomSegmentIndices);
+    this.device.queue.writeBuffer(
+      this.randomSegmentIndicesBuffer,
+      0,
+      randomSegmentIndices,
     );
   }
 
@@ -222,20 +234,13 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     const passEncoder = commandEncoder.beginComputePass();
     passEncoder.setPipeline(pipeline);
     passEncoder.setBindGroup(0, bindGroup);
-
-    if (this.parallel) {
-      passEncoder.dispatchWorkgroups(
-        Math.ceil(this.model.gridSize / WORKGROUP_SIZE.x),
-        Math.ceil(this.model.gridSize / WORKGROUP_SIZE.y),
-      );
-    } else {
-      passEncoder.dispatchWorkgroups(1);
-    }
+    passEncoder.dispatchWorkgroups(8, 8);
     passEncoder.end();
     return commandEncoder.finish();
   }
 
   async updateGridData(): Promise<Uint32Array> {
+    this.writeRandomSegmentIndicesBuffer();
     this.writeRandomTableBuffer();
     const commandBuffer = this.createCommandBuffer(
       this.computePipeline,

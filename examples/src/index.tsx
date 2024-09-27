@@ -124,8 +124,7 @@ export const Index = () => {
               <div style={{ display: 'flex', columnGap: '16px' }}>
                 {[
                   SchellingSegregationModes.CPU,
-                  //SchellingSegregationModes.GPU,
-                  //nSchellingSegregationModes.GPU_PARALLEL,
+                  SchellingSegregationModes.GPU,
                 ].map((mode: SchellingSegregationModes, index: number) => (
                   <div key={index}>
                     <Typography>{mode}</Typography>

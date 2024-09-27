@@ -25,7 +25,7 @@ import {
   PlayControllerState,
 } from './components/PlayController';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { findEmptyCells, shuffleGridData } from './gridUtils';
+import { findEmptyCells, shuffle } from './gridUtils';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -243,7 +243,7 @@ export function SchellingSegregationShell(
 
   const onPlayOrStep = () => {
     if (frameCount === 0) {
-      shuffleGridData(kernelRef.current.getModel().gridData);
+      shuffle(kernelRef.current.getModel().gridData);
       kernelRef.current.getModel().emptyCellIndices = findEmptyCells(
         kernelRef.current.getModel().gridData,
       );
