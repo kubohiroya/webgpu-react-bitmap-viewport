@@ -131,11 +131,13 @@ export const Index = () => {
                     <SchellingSegregation
                       id={`schelling-${mode}-${index}`}
                       mode={mode}
-                      tolerance={0.5}
+                      gridSize={256}
                       agentTypeShares={[0.5, 0.3, 0.1]}
+                      speed={1.0}
+                      tolerance={0.5}
                       canvasSize={{ width: 512, height: 512 }}
                       headerOffset={{ left: 0, top: 0 }}
-                      gridSize={8}
+                      autoStart={true}
                     />
                   </div>
                 ))}

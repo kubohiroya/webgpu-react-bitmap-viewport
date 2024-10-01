@@ -65,6 +65,7 @@ const SplitSlider = (props: SplitSliderProps) => {
     >
       <FormControl size="small">
         <StyledSelect
+          name={'splitCount'}
           value={splitCount}
           onChange={handleSplitCountChange}
           variant="outlined"

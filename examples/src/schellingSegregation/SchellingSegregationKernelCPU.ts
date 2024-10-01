@@ -60,17 +60,18 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
           // console.log('replace ' + tolerance.current + ' ' + currentIndex);
 
           const randomIndex = Math.floor(
-            Math.random() * this.model.emptyCellIndices.length,
+            Math.random() * this.model.cellIndices.length,
           );
-          const emptyCellIndex = this.model.emptyCellIndices[randomIndex];
+          const emptyCellIndex = this.model.cellIndices[randomIndex];
           if (this.model.gridData[emptyCellIndex] === EMPTY_VALUE) {
             this.model.gridData[emptyCellIndex] = agentType;
             this.model.gridData[currentIndex] = EMPTY_VALUE;
-            this.model.emptyCellIndices[randomIndex] = currentIndex;
+            this.model.cellIndices[randomIndex] = currentIndex;
           }
         }
       }
     }
+
     return this.model.gridData;
   };
 }

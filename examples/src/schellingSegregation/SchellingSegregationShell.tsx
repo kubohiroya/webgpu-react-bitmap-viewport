@@ -8,11 +8,12 @@ import React, {
   useState,
 } from 'react';
 import {
+  EMPTY_VALUE,
   Grid,
   GridHandles,
   GridShaderMode,
 } from 'webgpu-react-bitmap-viewport';
-import { cumulativeSum, reverseCumulativeSum } from '../utils/arrayUtils';
+import { cumulativeSum } from '../utils/arrayUtils';
 import { Box, CircularProgress, Slider } from '@mui/material';
 import {
   GridOn,
@@ -25,7 +26,7 @@ import {
   PlayControllerState,
 } from './components/PlayController';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { findEmptyCells, shuffle } from './gridUtils';
+import { createHistogram, findIndices, shuffle } from './arrayUtils';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -42,7 +43,7 @@ export function SchellingSegregationShell(
   const gridHandlesRefs = [useRef<GridHandles>(null)];
   const kernelRef = useRef<SchellingSegregationKernel>(props.kernel);
 
-  const [speed, setSpeed] = useState<number>(0.5);
+  const [speed, setSpeed] = useState<number>(props.speed);
   const [frameCount, setFrameCount] = useState<number>(0);
 
   const [playControllerState, setPlayControllerState] =
@@ -58,88 +59,78 @@ export function SchellingSegregationShell(
     number[]
   >(cumulativeSum(props.agentTypeShares));
 
-  const updateInitialStateGridData = useCallback(() => {
-    setFrameCount(() => 0);
-    // kernelRef.current.setGridSize(gridSize);
-    kernelRef.current.updateInitialStateGridData(
-      reverseCumulativeSum(agentTypeCumulativeShares),
-      agentTypeCumulativeShares,
-    );
-  }, []);
-
-  const updateGridSize = useCallback((gridSize: number) => {
-    kernelRef.current.setGridSize(gridSize);
-    updateInitialStateGridData();
-
-    gridHandlesRefs.forEach((ref) => {
-      ref.current?.refreshData(0);
-      ref.current?.refreshViewportState(0);
-    });
-  }, []);
-
-  const updateAgentTypeShares = useCallback(
-    (agentTypeShares: number[], agentTypeCumulativeShares: number[]) => {
+  const updateGridSize = useCallback(
+    (gridSize: number) => {
+      // console.log(`updateGridSize: ${gridSize} ${agentTypeCumulativeShares}`);
       kernelRef.current.updateInitialStateGridData(
-        agentTypeShares,
+        gridSize,
         agentTypeCumulativeShares,
       );
-      setFrameCount(() => 0);
-
       gridHandlesRefs.forEach((ref) => {
         ref.current?.refreshData(0);
         ref.current?.refreshViewportState(0);
       });
     },
-    [],
+    [agentTypeCumulativeShares],
+  );
+
+  const updateAgentTypeShares = useCallback(
+    (agentTypeCumulativeShares: number[]) => {
+      kernelRef.current.updateInitialStateGridData(
+        gridSize,
+        agentTypeCumulativeShares,
+      );
+      gridHandlesRefs.forEach((ref) => {
+        ref.current?.refreshData(0);
+        ref.current?.refreshViewportState(0);
+      });
+    },
+    [gridSize],
   );
 
   const updateTolerance = useCallback((value: number) => {
     kernelRef.current.setTolerance(value);
   }, []);
 
-  const onGridSizeChange = useCallback(
-    (_: Event | SyntheticEvent, newValue: number | number[]) => {
-      const newGridSize = newValue as number;
-      setGridSize(() => newGridSize);
-      setIsPlayed(() => false);
-      updateGridSize(newGridSize);
-    },
-    [agentTypeCumulativeShares, tolerance],
-  );
-
   const onGridSizeChangeTransient = useCallback(
     (event: Event | SyntheticEvent, newValue: number | number[]) => {
-      setPlayControllerState(() => PlayControllerState.INITIALIZING);
-      onGridSizeChange(event, newValue);
+      setPlayControllerState(PlayControllerState.INITIALIZING);
+      const newGridSize = newValue as number;
+      setGridSize(newGridSize);
     },
-    [agentTypeCumulativeShares, tolerance],
+    [],
   );
 
   const onGridSizeChangeCommit = useCallback(
     (event: Event | SyntheticEvent, newValue: number | number[]) => {
       setPlayControllerState(PlayControllerState.INITIALIZED);
-      onGridSizeChange(event, newValue);
+      const newGridSize = newValue as number;
+      setGridSize(newGridSize);
+      setFrameCount(0);
+      setIsPlayed(false);
+      updateGridSize(newGridSize);
     },
-    [agentTypeCumulativeShares, tolerance],
+    [updateGridSize],
   );
 
   const onAgentTypeCumulativeSharesChange = useCallback(
     (values: number[]) => {
-      setAgentTypeCumulativeShares(() => values);
-      setIsPlayed(() => false);
       setPlayControllerState(PlayControllerState.INITIALIZED);
-      updateAgentTypeShares(reverseCumulativeSum(values), values);
+      setAgentTypeCumulativeShares(values);
+      setFrameCount(0);
+      setIsPlayed(false);
+      updateAgentTypeShares(values);
     },
-    [gridSize, tolerance],
+    [updateAgentTypeShares],
   );
 
   const onToleranceChange = useCallback(
     (_: Event, newValue: number | number[]) => {
       const value = newValue as number;
-      setTolerance(() => value);
+      setTolerance(value);
       updateTolerance(value);
     },
-    [],
+    [updateTolerance],
   );
 
   const _updateFrame = async (): Promise<boolean> => {
@@ -219,6 +210,10 @@ export function SchellingSegregationShell(
      */
   ]);
 
+  useEffect(() => {
+    props.autoStart && onPlay();
+  }, []);
+
   const onSpeedChange = (value: number) => {
     setSpeed(value);
   };
@@ -244,8 +239,9 @@ export function SchellingSegregationShell(
   const onPlayOrStep = () => {
     if (frameCount === 0) {
       shuffle(kernelRef.current.getModel().gridData);
-      kernelRef.current.getModel().emptyCellIndices = findEmptyCells(
+      kernelRef.current.getModel().cellIndices = findIndices(
         kernelRef.current.getModel().gridData,
+        EMPTY_VALUE,
       );
 
       kernelRef.current.sync();
@@ -355,8 +351,24 @@ export function SchellingSegregationShell(
                 label: '128',
               },
               {
+                value: 192,
+                label: '192',
+              },
+              {
                 value: 256,
                 label: '256',
+              },
+              {
+                value: 320,
+                label: '320',
+              },
+              {
+                value: 384,
+                label: '384',
+              },
+              {
+                value: 448,
+                label: '438',
               },
               {
                 value: 512,
@@ -393,7 +405,7 @@ export function SchellingSegregationShell(
         }}
       >
         <PlayController
-          speed={0.5}
+          speed={speed}
           isResettable={isResettable}
           isPaused={isPaused}
           isStepped={isStepped}
@@ -423,9 +435,7 @@ export function SchellingSegregationShell(
           valueLabelDisplay="auto"
         />
       </Box>
-
-      {!kernelRef.current ||
-      playControllerState === PlayControllerState.INITIALIZING ? (
+      <Box>
         <Box
           style={{
             background: 'rgba(255, 255, 255, 0.1)',
@@ -434,35 +444,36 @@ export function SchellingSegregationShell(
             height: props.canvasSize.height + 'px',
           }}
         >
-          <CircularProgress
-            size="64px"
-            style={{
-              margin: 'auto',
-            }}
-          />
+          {!kernelRef.current ||
+          playControllerState === PlayControllerState.INITIALIZING ? (
+            <CircularProgress
+              size="64px"
+              style={{
+                margin: 'auto',
+              }}
+            />
+          ) : (
+            <Grid
+              ref={gridHandlesRefs[0]}
+              numViewports={1}
+              viewportIndex={0}
+              mode={GridShaderMode.CUSTOM}
+              numColumns={gridSize}
+              numRows={gridSize}
+              headerOffset={props.headerOffset}
+              scrollBar={SCROLLBAR}
+              canvasSize={props.canvasSize}
+              data={kernelRef.current.getModel().gridData}
+              focusedStates={kernelRef.current.getModel().focusedStates}
+              selectedStates={kernelRef.current.getModel().selectedStates}
+              viewportStates={kernelRef.current.getModel().viewportStates}
+              onFocusedStateChange={getOnFocusedStateChange}
+              onSelectedStateChange={getOnSelectedStateChange}
+              onViewportStateChange={getOnViewportStateChange}
+            />
+          )}
         </Box>
-      ) : (
-        <>
-          <Grid
-            ref={gridHandlesRefs[0]}
-            numViewports={1}
-            viewportIndex={0}
-            mode={GridShaderMode.CUSTOM}
-            numColumns={gridSize}
-            numRows={gridSize}
-            headerOffset={props.headerOffset}
-            scrollBar={SCROLLBAR}
-            canvasSize={props.canvasSize}
-            data={kernelRef.current.getModel().gridData}
-            focusedStates={kernelRef.current.getModel().focusedStates}
-            selectedStates={kernelRef.current.getModel().selectedStates}
-            viewportStates={kernelRef.current.getModel().viewportStates}
-            onFocusedStateChange={getOnFocusedStateChange}
-            onSelectedStateChange={getOnSelectedStateChange}
-            onViewportStateChange={getOnViewportStateChange}
-          />
-        </>
-      )}
+      </Box>
     </>
   );
 }

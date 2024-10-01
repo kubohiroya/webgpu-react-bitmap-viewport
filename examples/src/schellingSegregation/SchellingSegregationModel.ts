@@ -1,7 +1,7 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationModelHandler } from './SchellingSegregationModelHandler';
 import { SchellingSegregationModelProps } from './SchellingSegregationModelProps';
-import { cumulativeSum } from '../utils/arrayUtils';
+import { cumulativeSum, reverseCumulativeSum } from '../utils/arrayUtils';
 
 export class SchellingSegregationModel
   implements SchellingSegregationModelHandler
@@ -10,51 +10,49 @@ export class SchellingSegregationModel
   gridData!: Uint32Array;
   tolerance!: number;
   numEmptyCells!: number;
-  emptyCellIndices!: Uint32Array;
+  cellIndices!: Uint32Array;
   focusedStates!: Uint32Array;
   selectedStates!: Uint32Array;
   viewportStates!: Float32Array;
 
   constructor(props: SchellingSegregationModelProps) {
-    this.setGridSize(props.gridSize);
     this.updateInitialStateGridData(
-      props.agentTypeShares,
+      props.gridSize,
       cumulativeSum(props.agentTypeShares),
     );
     this.setTolerance(props.tolerance);
-  }
-
-  setGridSize(gridSize: number): void {
-    const numCells = gridSize * gridSize;
-    this.gridSize = gridSize;
-    this.gridData = new Uint32Array(numCells);
-    this.emptyCellIndices = new Uint32Array(numCells);
-    this.focusedStates = new Uint32Array(gridSize);
-    this.selectedStates = new Uint32Array(gridSize);
-    this.viewportStates = new Float32Array([0, 0, gridSize, gridSize]);
+    this.setFrameCount(0);
   }
 
   updateInitialStateGridData(
-    agentTypeShares: number[],
+    gridSize: number,
     agentTypeCumulativeShares: number[],
-  ): number {
+  ) {
+    const numCells = gridSize * gridSize;
+    if (this.gridSize != gridSize) {
+      this.gridSize = gridSize;
+      this.gridData = new Uint32Array(numCells);
+      this.cellIndices = new Uint32Array(numCells);
+      this.focusedStates = new Uint32Array(gridSize);
+      this.selectedStates = new Uint32Array(gridSize);
+      this.viewportStates = new Float32Array([0, 0, gridSize, gridSize]);
+    }
+
     const agentTypeValues = agentTypeCumulativeShares
       .map((share: number) => Math.floor(255 * share))
       .concat(EMPTY_VALUE);
 
-    const numGrids = this.gridSize * this.gridSize;
-
-    const _agentTypeCounts = agentTypeShares.map((share) =>
-      Math.floor(numGrids * share),
-    );
-    const numemptyCell = numGrids - _agentTypeCounts.reduce((a, b) => a + b, 0);
-    if (numemptyCell < 0) {
-      console.error(this.gridSize, agentTypeShares);
+    const _agentTypeCounts = reverseCumulativeSum(
+      agentTypeCumulativeShares,
+    ).map((share) => Math.floor(numCells * share));
+    const numEmptyCell = numCells - _agentTypeCounts.reduce((a, b) => a + b, 0);
+    if (numEmptyCell < 0) {
+      console.error(this.gridSize, agentTypeCumulativeShares);
       throw new Error('The sum of agentTypeShares is over 1.0');
     }
     const agentTypeCounts =
-      numemptyCell > 0
-        ? _agentTypeCounts.concat(numemptyCell)
+      numEmptyCell > 0
+        ? _agentTypeCounts.concat(numEmptyCell)
         : _agentTypeCounts;
 
     let start = 0; // 各valueに対応する個数を挿入
@@ -64,11 +62,14 @@ export class SchellingSegregationModel
       start += length;
     });
 
-    for (let i = 0; i < numemptyCell; i++) {
-      this.emptyCellIndices[i] = numGrids - numemptyCell + i;
+    for (let i = 0; i < numEmptyCell; i++) {
+      this.cellIndices[i] = numCells - numEmptyCell + i;
     }
-    this.numEmptyCells = numemptyCell;
-    return numemptyCell;
+    this.numEmptyCells = numEmptyCell;
+  }
+
+  setFrameCount(frameCount: number): void {
+    // Do nothing
   }
 
   setTolerance(tolerance: number): void {

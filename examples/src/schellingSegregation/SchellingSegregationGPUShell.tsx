@@ -11,11 +11,7 @@ export function SchellingSegregationGPUShell(
     SchellingSegregationShellProps & { model: SchellingSegregationModel },
 ) {
   const device = useWebGPUDeviceContext();
-  const kernel = new SchellingSegregationKernelGPU(
-    props.model,
-    device,
-    props.model.numEmptyCells,
-  );
+  const kernel = new SchellingSegregationKernelGPU(props.model, device);
   if (kernel === null) {
     return null;
   }

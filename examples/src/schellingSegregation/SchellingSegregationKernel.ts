@@ -11,26 +11,19 @@ export abstract class SchellingSegregationKernel {
     return this.model;
   }
 
-  setGridSize(gridSize: number) {
-    this.model.setGridSize(gridSize);
+  setTolerance(newTolerance: number) {
+    this.model.setTolerance(newTolerance);
   }
 
   updateInitialStateGridData(
-    agentTypeShares: number[],
+    gridSize: number,
     agentTypeCumulativeShares: number[],
   ) {
-    this.model.updateInitialStateGridData(
-      agentTypeShares,
-      agentTypeCumulativeShares,
-    );
+    this.model.updateInitialStateGridData(gridSize, agentTypeCumulativeShares);
   }
 
   sync() {
     this.model.sync();
-  }
-
-  setTolerance(newTolerance: number) {
-    this.model.setTolerance(newTolerance);
   }
 
   abstract updateGridData(): Promise<Uint32Array>;
