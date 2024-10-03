@@ -1,5 +1,6 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
+import { findIndices, shuffle } from './arrayUtils';
 
 export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
   updateGridData = async () => {

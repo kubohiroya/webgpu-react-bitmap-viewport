@@ -7,7 +7,9 @@ import { createHistogram, shuffle } from './arrayUtils';
 const WORKGROUP_SIZE = 64;
 const SEGMENT_SIZE_FOR_WORKGROUP = 4;
 const SEGMENT_SIZE = WORKGROUP_SIZE * SEGMENT_SIZE_FOR_WORKGROUP;
+
 const DEBUG = false;
+
 export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
   device: GPUDevice;
 
@@ -32,7 +34,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
 
     this.paramsBuffer = device.createBuffer({
       label: `S:ParamsBuffer(gridSize=${gridSize})`,
-      size: 4,
+      size: 8,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.randomSegmentIndicesBuffer = device.createBuffer({
@@ -41,15 +43,23 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
+    device.queue.writeBuffer(this.paramsBuffer, 0, new Uint32Array([0]));
     device.queue.writeBuffer(
       this.paramsBuffer,
-      0,
+      4,
       new Float32Array([model.tolerance]),
     );
 
     this.prepareBuffers(0, gridSize);
     this.writeGridDataBuffer();
     this.prepareBindGroup(gridSize);
+  }
+
+  isParallel(gridSize?: number) {
+    if (gridSize === undefined) {
+      gridSize = this.model.gridSize;
+    }
+    return WORKGROUP_SIZE < (gridSize * gridSize) / 16;
   }
 
   createComputePipeline(gridSize: number) {
@@ -62,10 +72,9 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
       }, str);
     }
 
-    const workgroupSize = gridSize * gridSize <= 64 ? 1 : WORKGROUP_SIZE;
-    const segmentSize =
-      gridSize * gridSize <= 64 ? gridSize * gridSize : SEGMENT_SIZE;
-    const segmentsPerGroup = gridSize * gridSize <= 64 ? 1 : 4;
+    const workgroupSize = this.isParallel() ? WORKGROUP_SIZE : 1;
+    const segmentSize = this.isParallel() ? SEGMENT_SIZE : gridSize * gridSize;
+    const segmentsPerGroup = this.isParallel() ? 4 : 1;
     const cellsPerSegment = Math.ceil((gridSize * gridSize) / workgroupSize);
     const cellsPerGroup = cellsPerSegment * segmentsPerGroup;
 
@@ -89,6 +98,8 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
           EMPTY_VALUE,
           WIDTH: gridSize,
           HEIGHT: gridSize,
+          width: gridSize,
+          height: gridSize,
         },
         entryPoint: 'main',
       },
@@ -175,16 +186,17 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
       0,
       this.model.gridData.buffer,
     );
+    // console.log('writeGridData', this.model.gridData);
   }
 
-  sync() {
+  writeDataToBuffer() {
     this.writeGridDataBuffer();
   }
 
   setTolerance(newTolerance: number) {
     this.device.queue.writeBuffer(
       this.paramsBuffer,
-      0,
+      4,
       new Float32Array([newTolerance]),
     );
   }
@@ -209,42 +221,64 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     this.device?.queue.writeBuffer(this.randomTableBuffer, 0, this.randomTable);
   }
 
-  private async copyBufferToArray(
-    buffer: GPUBuffer,
-    readerBuffer: GPUBuffer,
-    array: Uint32Array,
-  ) {
-    const copyEncoder = this.device.createCommandEncoder();
-    copyEncoder.copyBufferToBuffer(
-      buffer,
+  writeMode() {
+    this.device.queue.writeBuffer(
+      this.paramsBuffer,
       0,
-      readerBuffer,
-      0,
-      array.byteLength,
+      new Uint32Array([this.model.frameCount % 2]),
     );
-    this.device.queue.submit([copyEncoder.finish()]);
-    await readerBuffer.mapAsync(GPUMapMode.READ);
-    array.set(new Uint32Array(readerBuffer.getMappedRange()));
-    readerBuffer.unmap();
   }
 
-  private async dumpBuffer(buffer: GPUBuffer, size: number) {
-    const array = new Uint32Array(size);
+  private async copyBufferToArray1(
+    sourceBuffer: GPUBuffer,
+    targetBuffer: GPUBuffer,
+    array: Uint32Array,
+  ) {
+    console.log('------------1');
     const copyEncoder = this.device.createCommandEncoder();
     copyEncoder.copyBufferToBuffer(
-      buffer,
+      sourceBuffer,
       0,
-      this.readerBuffer,
+      targetBuffer,
       0,
       array.byteLength,
     );
     this.device.queue.submit([copyEncoder.finish()]);
-    await this.readerBuffer.mapAsync(GPUMapMode.READ);
-    array.set(
-      new Uint32Array(this.readerBuffer.getMappedRange(0, array.byteLength)),
+    await this.device.queue.onSubmittedWorkDone();
+    console.log('------------2');
+    await targetBuffer.mapAsync(GPUMapMode.READ);
+    console.log('------------3');
+    await this.device.queue.onSubmittedWorkDone();
+    array.set(new Uint32Array(targetBuffer.getMappedRange()));
+    targetBuffer.unmap();
+  }
+
+  private async copyBufferToArray(sourceBuffer: GPUBuffer, array: Uint32Array) {
+    //console.log('----1');
+    const targetBuffer: GPUBuffer = this.device.createBuffer({
+      label: `S:ReaderBuffer(gridSize=${this.model.gridSize})`,
+      size: array.byteLength,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+
+    const copyEncoder = this.device.createCommandEncoder();
+    copyEncoder.copyBufferToBuffer(
+      sourceBuffer,
+      0,
+      targetBuffer,
+      0,
+      array.byteLength,
     );
-    this.readerBuffer.unmap();
-    console.debug(array);
+    this.device.queue.submit([copyEncoder.finish()]);
+    //console.log('----2');
+    await this.device.queue.onSubmittedWorkDone();
+    //console.log('----3');
+    await targetBuffer.mapAsync(GPUMapMode.READ);
+    //console.log('----4');
+    await this.device.queue.onSubmittedWorkDone();
+    array.set(new Uint32Array(targetBuffer.getMappedRange()));
+    targetBuffer.unmap();
+    targetBuffer.destroy();
   }
 
   private createCommandBuffer(
@@ -258,17 +292,18 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     passEncoder.setPipeline(pipeline);
     passEncoder.setBindGroup(0, bindGroup);
     passEncoder.dispatchWorkgroups(
-      64, //64, //Math.ceil((this.model.gridSize * this.model.gridSize) / 64),
+      this.isParallel() ? 64 : 1,
+      //Math.ceil((this.model.gridSize * this.model.gridSize) / 64),
     );
     passEncoder.end();
     return commandEncoder.finish();
   }
 
-  updateInitialStateGridData(
+  updatePrimaryStateGridData(
     gridSize: number,
     agentTypeCumulativeShares: number[],
   ) {
-    this.model.updateInitialStateGridData(gridSize, agentTypeCumulativeShares);
+    this.model.updatePrimaryStateGridData(gridSize, agentTypeCumulativeShares);
     this.prepareBuffers(this.model.gridSize, gridSize);
     this.prepareBindGroup(gridSize);
   }
@@ -276,22 +311,31 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
   async updateGridData(): Promise<Uint32Array> {
     this.writeRandomSegmentIndicesBuffer(SEGMENT_SIZE);
     this.writeRandomTableBuffer();
+    this.writeMode();
+
+    // console.log('----A');
     const commandBuffer = this.createCommandBuffer(
       this.computePipeline,
       this.bindGroup,
     );
-    this.device.queue.submit([commandBuffer]);
 
-    DEBUG && (await this.dumpBuffer(this.debugBuffer, 12));
+    this.device.queue.submit([commandBuffer]);
+    await this.device.queue.onSubmittedWorkDone();
+    // console.log('----B');
+    if (DEBUG) {
+      const debug = new Uint32Array(this.model.gridSize * this.model.gridSize);
+      await this.copyBufferToArray(this.debugBuffer, debug);
+      console.debug(debug);
+    }
 
     await this.copyBufferToArray(
       this.gridBuffer,
-      this.readerBuffer,
+      // this.readerBuffer,
       this.model.gridData,
     );
-
+    // console.log('----C');
     // console.log(createHistogram(this.model.gridData));
-    // console.log(this.model.gridData);
+    //console.log(this.model.gridData);
 
     return this.model.gridData;
   }

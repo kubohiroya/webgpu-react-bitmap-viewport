@@ -16,8 +16,8 @@ const libConfig = defineConfig({
     },
     lib: {
       entry: resolve(__dirname, './src/index.ts'),
-      name: 'WebGPU-React-Bitmap=Viewport',
-      fileName: (format) => `webgpu-react-bitmap-viewport.${format}.js`
+      name: 'webgpu-react-bitmap-viewport',
+      fileName: (format) => `webgpu-react-bitmap-viewport.${format}.js`,
     },
     rollupOptions: {
       external: ['react', 'react-dom', 'jsx-runtime', '@webgpu/types'],
@@ -25,12 +25,11 @@ const libConfig = defineConfig({
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
-        }
+        },
       },
     },
     sourcemap: true,
   },
-
 });
 
 const examplesConfig = defineConfig({
@@ -51,10 +50,10 @@ const examplesConfig = defineConfig({
 
   base: '/webgpu-react-bitmap-viewport',
 
-  resolve:{
-    alias:{
+  resolve: {
+    alias: {
       'webgpu-react-bitmap-viewport': resolve(__dirname, 'src/index.ts'),
-    }
+    },
   },
 
   plugins: [react()],
@@ -66,7 +65,7 @@ const examplesConfig = defineConfig({
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
-        }
+        },
       },
       input: {
         main: resolve(__dirname, 'examples/index.html'),
@@ -82,4 +81,3 @@ export default defineConfig(({ command, mode }) => {
     return examplesConfig;
   }
 });
-

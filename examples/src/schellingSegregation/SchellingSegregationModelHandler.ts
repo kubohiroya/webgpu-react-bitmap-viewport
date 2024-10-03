@@ -1,8 +1,10 @@
 export type SchellingSegregationModelHandler = {
-  updateInitialStateGridData: (
+  updatePrimaryStateGridData: (
     gridSize: number,
     agentTypeCumulativeShares: number[],
   ) => void;
+
+  updateSecondaryStateGridData: () => void;
+
   setTolerance: (tolerance: number) => void;
-  sync(): void;
 };

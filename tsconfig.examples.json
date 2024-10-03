@@ -13,10 +13,5 @@
       "webgpu-react-bitmap-viewport": ["dist/types/src/index.d.ts"]
     }
   },
-  "include": [
-    "examples/src/**/*.ts",
-    "examples/src/**/*.tsx",
-    "dist/types/src"
-  ],
-  "files": ["dist/types/src/index.d.ts"]
+  "include": ["examples/src/**/*.ts", "examples/src/**/*.tsx"]
 }

@@ -15,15 +15,21 @@ export abstract class SchellingSegregationKernel {
     this.model.setTolerance(newTolerance);
   }
 
-  updateInitialStateGridData(
+  updatePrimaryStateGridData(
     gridSize: number,
     agentTypeCumulativeShares: number[],
   ) {
-    this.model.updateInitialStateGridData(gridSize, agentTypeCumulativeShares);
+    this.model.updatePrimaryStateGridData(gridSize, agentTypeCumulativeShares);
+    this.writeDataToBuffer();
   }
 
-  sync() {
-    this.model.sync();
+  updateSecondaryStateGridData() {
+    this.model.updateSecondaryStateGridData();
+    this.writeDataToBuffer();
+  }
+
+  writeDataToBuffer() {
+    // do nothing
   }
 
   abstract updateGridData(): Promise<Uint32Array>;

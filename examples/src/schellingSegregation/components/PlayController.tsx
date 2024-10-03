@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Button, ButtonGroup, Slider, Typography } from '@mui/material';
 import { Pause, PlayCircle, RestartAlt, SkipNext } from '@mui/icons-material';
 import styled from '@emotion/styled';
@@ -12,17 +12,14 @@ export enum PlayControllerState {
 }
 
 export type PlayControllerProps = {
-  isResettable: boolean;
-  isPaused: boolean;
-  isStepped: boolean;
-  isPlayed: boolean;
+  state: PlayControllerState;
   speed: number;
-  onPlay?: () => void;
-  onPause?: () => void;
-  onStep?: () => void;
-  onReset?: () => void;
-  onSpeedChange: (value: number) => void;
-  frameCount: number;
+  onPlay: () => void;
+  onPause: () => void;
+  onStep: () => void;
+  onReset: () => void;
+  tick: () => void;
+  updateFrameCount(frameCount: number): void;
 };
 const StyledButtonGroup = styled(ButtonGroup)`
   margin: 4px;
@@ -42,9 +39,72 @@ const SubPlayButton = styled(PlayButton)`
 `;
 const MainPlayButton = styled(PlayButton)``;
 export const PlayController = (props: PlayControllerProps) => {
-  const onSpeedChange = (event: Event, value: number[] | number) => {
-    props.onSpeedChange(value as number);
+  const [speed, setSpeed] = useState<number>(props.speed);
+  const [frameCount, setFrameCount] = useState<number>(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateFrameCount = (frameCount: number) => {
+    setFrameCount(frameCount);
+    props.updateFrameCount(frameCount);
   };
+
+  const onSpeedChange = useCallback(
+    (_: Event, value: number[] | number) => {
+      setSpeed(value as number);
+    },
+    [setSpeed],
+  );
+
+  const stopTimer = useCallback(() => {
+    timerRef.current && clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  const startTimer = useCallback(() => {
+    const delay = Math.pow(1.0 - speed, 2) * 1000 + 1;
+    timerRef.current = setTimeout(() => {
+      props.tick();
+      updateFrameCount(frameCount + 1);
+      startTimer();
+    }, delay);
+  }, [speed, props.tick, frameCount]);
+
+  const restartTimer = () => {
+    stopTimer();
+    startTimer();
+  };
+
+  useEffect(() => {
+    switch (props.state) {
+      case PlayControllerState.INITIALIZING:
+      case PlayControllerState.INITIALIZED:
+        stopTimer();
+        updateFrameCount(0);
+        break;
+      case PlayControllerState.RUNNING:
+        if (timerRef.current) {
+          restartTimer();
+        } else {
+          startTimer();
+        }
+        break;
+      case PlayControllerState.STEP_RUNNING:
+        props.tick();
+        updateFrameCount(frameCount + 1);
+        break;
+      case PlayControllerState.PAUSED:
+        stopTimer();
+        break;
+      default:
+        break;
+    }
+  }, [props.state, props.tick, frameCount]);
+
+  useEffect(() => {
+    if (props.speed !== speed) {
+      restartTimer();
+    }
+  }, [speed]);
 
   return (
     <>
@@ -53,7 +113,12 @@ export const PlayController = (props: PlayControllerProps) => {
           variant="contained"
           size="small"
           onClick={props.onReset && props.onReset}
-          disabled={!props.isResettable}
+          disabled={
+            props.state === PlayControllerState.INITIALIZING ||
+            props.state === PlayControllerState.INITIALIZED ||
+            props.state === PlayControllerState.RUNNING ||
+            props.state === PlayControllerState.STEP_RUNNING
+          }
         >
           <RestartAlt />
           Reset
@@ -62,7 +127,12 @@ export const PlayController = (props: PlayControllerProps) => {
           variant="contained"
           size="small"
           onClick={props.onPause && props.onPause}
-          disabled={props.isPaused}
+          disabled={
+            props.state === PlayControllerState.INITIALIZING ||
+            props.state === PlayControllerState.INITIALIZED ||
+            props.state === PlayControllerState.STEP_RUNNING ||
+            props.state === PlayControllerState.PAUSED
+          }
         >
           <Pause />
           Pause
@@ -71,7 +141,11 @@ export const PlayController = (props: PlayControllerProps) => {
           variant="contained"
           size="small"
           onClick={props.onStep && props.onStep}
-          disabled={!props.isStepped}
+          disabled={
+            props.state === PlayControllerState.INITIALIZING ||
+            props.state === PlayControllerState.RUNNING ||
+            props.state === PlayControllerState.STEP_RUNNING
+          }
         >
           <SkipNext />
           Step
@@ -79,7 +153,11 @@ export const PlayController = (props: PlayControllerProps) => {
         <MainPlayButton
           variant="contained"
           onClick={props.onPlay && props.onPlay}
-          disabled={props.isPlayed}
+          disabled={
+            props.state === PlayControllerState.INITIALIZING ||
+            props.state === PlayControllerState.RUNNING ||
+            props.state === PlayControllerState.STEP_RUNNING
+          }
         >
           <PlayCircle />
           Play
@@ -107,7 +185,7 @@ export const PlayController = (props: PlayControllerProps) => {
         >
           🐢
           <Slider
-            defaultValue={props.speed}
+            value={speed}
             aria-label="custom thumb label"
             valueLabelDisplay="auto"
             step={0.01}
@@ -126,7 +204,7 @@ export const PlayController = (props: PlayControllerProps) => {
             width: '10%',
           }}
         >
-          {props.frameCount}
+          {frameCount}
         </Typography>
       </Box>
     </>

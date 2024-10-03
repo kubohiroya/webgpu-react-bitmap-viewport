@@ -1,8 +1,12 @@
 override EMPTY_VALUE: u32 = 99999u;
 
+const VERTICAL_MODE: u32 = 0u;
+const HORIZONTAL_MODE: u32 = 1u;
+
 override WIDTH: u32 = 32;
 override HEIGHT: u32 = 32;
-// cells = 1024
+override height: i32 = 32;
+override width: i32 = 32;
 
 const WORKGROUP_SIZE: u32 = 64; // ワークグループの総数(並列度) 通常は64
 const SEGMENTS_PER_GROUP: u32 = 4; // 1つのワークグループが処理するセグメントの数、通常は4
@@ -13,6 +17,7 @@ const CELLS_PER_SEGMENT: u32 = 4; // WIDTH * HEIGHT / SEGMENT_SIZE; // 1つの�
 const CELLS_PER_GROUP: u32 = 4; // CELLS_PER_SEGMENT * SEGMENTS_PER_GROUP; // 1つのワークグループが処理するセルの数
 
 struct Params {
+    mode: u32,
     tolerance: f32,
 };
 
@@ -37,18 +42,16 @@ fn shuffle(startIndex: u32, length: u32, cellIndices: ptr<function, array<u32, C
     }
 }
 
-fn getIndex(x: u32, y: u32, width: u32) -> u32 {
-  return y * width + x;
+fn getIndex(x: i32, y: i32) -> u32 {
+  return u32(y) * WIDTH + u32(x);
 }
 
-fn getCell(x: u32, y: u32) -> u32 {
-  return grid[getIndex(x, y, WIDTH)];
+fn getCell(x: i32, y: i32) -> u32 {
+  return grid[getIndex(x, y)];
 }
 
-fn countSimilarNeighbor(x: u32, y: u32, dx: i32, dy: i32, agentType: u32) -> vec2u {
-  let height = i32(HEIGHT);
-  let width = i32(WIDTH);
-  let cell = getCell(u32((i32(x) + dx + width) % width), u32((i32(y) + dy + height) % height));
+fn countSimilarNeighbor(x: i32, y: i32, agentType: u32) -> vec2u {
+  let cell = getCell((x + width) % width, (y + height) % height);
   return vec2u(select(0u, 1u, cell == agentType), select(0u, 1u, cell != EMPTY_VALUE));
 }
 
@@ -56,44 +59,45 @@ fn randomChoice(index: u32, size: u32) -> u32 {
     return u32(floor(randomTable[index] * f32(size)));
 }
 
-fn countSimilarNeighbors(x: u32, y: u32, agentType: u32) -> vec2u {
-    return countSimilarNeighbor(x, y, -1, -1, agentType) +
-           countSimilarNeighbor(x, y, 0, -1, agentType) +
-           countSimilarNeighbor(x, y, 1, -1, agentType) +
+fn countSimilarNeighbors(x: i32, y: i32, agentType: u32) -> vec2u {
+    return countSimilarNeighbor(x - 1, y - 1, agentType) +
+           countSimilarNeighbor(x,    y - 1, agentType) +
+           countSimilarNeighbor(x + 1, y - 1, agentType) +
 
-           countSimilarNeighbor(x, y, -1, 0, agentType) +
-           countSimilarNeighbor(x, y, 1, 0, agentType) +
+           countSimilarNeighbor(x - 1, y, agentType) +
+           countSimilarNeighbor(x + 1, y, agentType) +
 
-           countSimilarNeighbor(x, y, -1, 1, agentType) +
-           countSimilarNeighbor(x, y, 0, 1, agentType) +
-           countSimilarNeighbor(x, y, 1, 1, agentType);
+           countSimilarNeighbor(x - 1, y + 1, agentType) +
+           countSimilarNeighbor(x,    y + 1, agentType) +
+           countSimilarNeighbor(x + 1, y + 1, agentType);
 }
 
 // 指定されたセグメント内の空き地情報・移動予定エージェントを更新する関数
+
 fn updateCellIndices(workGroupSegmentIndex: u32, segmentIndex: u32,
-   cellIndices: ptr<function, array<u32, CELLS_PER_GROUP>>,
-   movingAgentsCounter: ptr<function, array<u32, SEGMENTS_PER_GROUP>>,
-   emptyCellsCounter: ptr<function, array<u32, SEGMENTS_PER_GROUP>>) {
+    cellIndices: ptr<function, array<u32, CELLS_PER_GROUP>>,
+    movingAgentsCounter: ptr<function, array<u32, SEGMENTS_PER_GROUP>>,
+    emptyCellsCounter: ptr<function, array<u32, SEGMENTS_PER_GROUP>>) {
 
     var emptyCellsCount: u32 = 0u;
     var movingAgentsCount: u32 = 0u;
-    let cellSize = WIDTH * HEIGHT;
+
     let agentIndexBase = segmentIndex * CELLS_PER_SEGMENT;
-    var i = 0u;
     for (var agentIndex = agentIndexBase; agentIndex < agentIndexBase + CELLS_PER_SEGMENT /* && agentIndex < cellSize*/; agentIndex++) {
-        let agent = grid[agentIndex];
+        let x = agentIndex % HEIGHT;
+        let y = agentIndex / HEIGHT;
+        let cellIndex = select(agentIndex, y + x * WIDTH, params.mode == VERTICAL_MODE);
+        let agent = grid[cellIndex];
         if (agent == EMPTY_VALUE) {
             (*cellIndices)[workGroupSegmentIndex * SEGMENT_SIZE + emptyCellsCount] = agentIndex;
             emptyCellsCount++;
         }else{
-            let x = agentIndex % WIDTH;
-            let y = agentIndex / WIDTH;
-            let neighbors = countSimilarNeighbors(x, y, agent);
+            let neighbors = countSimilarNeighbors(i32(x), i32(y), agent);
             let similarCount = neighbors.x;
             let neighborCount = neighbors.y;
             if (neighborCount > 0u && f32(similarCount) / f32(neighborCount) < params.tolerance) {
+                (*cellIndices)[workGroupSegmentIndex * SEGMENT_SIZE + SEGMENT_SIZE - movingAgentsCount - 1] = agentIndex;
                 movingAgentsCount++;
-                (*cellIndices)[workGroupSegmentIndex * SEGMENT_SIZE + SEGMENT_SIZE - movingAgentsCount] = agentIndex;
             }
         }
     }
@@ -110,7 +114,7 @@ fn getEmptyCellObject(targetIndex: u32,
    emptyCellsCounter: ptr<function, array<u32, SEGMENTS_PER_GROUP>>) -> vec2u {
     var accumulatedEmptyCells: u32 = 0;
     for (var workgroupSegmentIndex = 0u; workgroupSegmentIndex < SEGMENTS_PER_GROUP; workgroupSegmentIndex++) {
-        let emptyCellsCount = (*emptyCellsCounter)[(*workgroupSegmentIndices)[workgroupSegmentIndex]];
+        let emptyCellsCount = (*emptyCellsCounter)[workgroupSegmentIndex];
         if (targetIndex < accumulatedEmptyCells + emptyCellsCount) {
             return vec2u(
                 targetIndex - accumulatedEmptyCells,
@@ -122,21 +126,23 @@ fn getEmptyCellObject(targetIndex: u32,
     return vec2u(0, 0); // ここには到達しない
 }
 
-fn moveAgentsInSegment(segmentIndex: u32,
+fn moveAgentsInSegment(
+   workgroupSegmentIndex: u32,
    workgroupSegmentIndices: ptr<function, array<u32,4>>,
    totalEmptyCells: f32,
    cellIndices: ptr<function, array<u32, CELLS_PER_GROUP>>,
    movingAgentsCounter: ptr<function, array<u32, SEGMENTS_PER_GROUP>>,
    emptyCellsCounter: ptr<function, array<u32, SEGMENTS_PER_GROUP>>) {
-    let movingAgentsCount = (*movingAgentsCounter)[segmentIndex];
-    let indexBase = segmentIndex * SEGMENT_SIZE;
+    let movingAgentsCount = (*movingAgentsCounter)[workgroupSegmentIndex];
+    // debug[0] = movingAgentsCount + 1;
+
     for (var i = 0u; i < movingAgentsCount; i++) {
 
-        let movingAgentIndex = (*cellIndices)[indexBase + SEGMENT_SIZE - 1u - i];
+        let agentPointer = workgroupSegmentIndex * SEGMENT_SIZE + SEGMENT_SIZE - i - 1u;
+        let movingAgentIndex = (*cellIndices)[agentPointer];
         let agent = grid[movingAgentIndex];
 
-        let randomFactor = (*cellIndices)[indexBase + i]; // ここの選び方が悪い可能性？
-        let randomValueAsAccumulatedIndex = u32(floor(randomTable[randomFactor] * totalEmptyCells));
+        let randomValueAsAccumulatedIndex = u32(floor(randomTable[movingAgentIndex] * totalEmptyCells));
 
         // どのセグメントに該当するかを決定
         let emptyCellObject = getEmptyCellObject(randomValueAsAccumulatedIndex, workgroupSegmentIndices, emptyCellsCounter);
@@ -151,7 +157,7 @@ fn moveAgentsInSegment(segmentIndex: u32,
             grid[emptyCellIndex] = agent;
             grid[movingAgentIndex] = EMPTY_VALUE;
             (*emptyCellsCounter)[emptyCellSegmentIndex]--;
-            (*emptyCellsCounter)[segmentIndex]++;
+            (*emptyCellsCounter)[workgroupSegmentIndex]++;
         }
     }
 }
@@ -173,7 +179,7 @@ fn main(@builtin(workgroup_id) workgroup_id: vec3<u32>) {
     var movingAgentsCounter: array<u32, SEGMENTS_PER_GROUP>;
     var workgroupSegmentIndices: array<u32, 4>;//SEGMENTS_PER_GROUP
 
-    if(64u < WIDTH * HEIGHT){
+    if(256u < WIDTH * HEIGHT){
         // ワークグループに対応する 4 つのセグメントインデックスを取得
         workgroupSegmentIndices[0] = randomSegmentIndices[workgroupIndex * SEGMENTS_PER_GROUP];
         workgroupSegmentIndices[1] = randomSegmentIndices[workgroupIndex * SEGMENTS_PER_GROUP + 1u];
@@ -185,6 +191,7 @@ fn main(@builtin(workgroup_id) workgroup_id: vec3<u32>) {
         }
 
         workgroupBarrier();
+        // storageBarrier();
 
         var totalEmptyCells = 0.0;
         for(var i = 0u; i < SEGMENTS_PER_GROUP; i++){
@@ -192,7 +199,7 @@ fn main(@builtin(workgroup_id) workgroup_id: vec3<u32>) {
         }
 
         for(var i = 0u; i < SEGMENTS_PER_GROUP; i++){
-            moveAgentsInSegment(workgroupSegmentIndices[i], &workgroupSegmentIndices, totalEmptyCells, &cellIndices, &movingAgentsCounter, &emptyCellsCounter);
+            moveAgentsInSegment(i, &workgroupSegmentIndices, totalEmptyCells, &cellIndices, &movingAgentsCounter, &emptyCellsCounter);
         }
 
     }else if(workgroupIndex == 0){
@@ -201,4 +208,11 @@ fn main(@builtin(workgroup_id) workgroup_id: vec3<u32>) {
         workgroupSegmentIndices[0] = 0;
         moveAgentsInSegment(0, &workgroupSegmentIndices, totalEmptyCells, &cellIndices, &movingAgentsCounter, &emptyCellsCounter);
     }
+
+/*
+    for(var i = 0u; i < CELLS_PER_GROUP; i++){
+        debug[i] = cellIndices[i];
+    }
+*/
+
 }

@@ -10,6 +10,7 @@ import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 
 export const Index = () => {
   const [value, setValue] = React.useState('1');
+  //const [value, setValue] = React.useState('3');
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
@@ -124,7 +125,7 @@ export const Index = () => {
               <div style={{ display: 'flex', columnGap: '16px' }}>
                 {[
                   SchellingSegregationModes.CPU,
-                  SchellingSegregationModes.GPU,
+                  //SchellingSegregationModes.GPU,
                 ].map((mode: SchellingSegregationModes, index: number) => (
                   <div key={index}>
                     <Typography>{mode}</Typography>
@@ -132,7 +133,7 @@ export const Index = () => {
                       id={`schelling-${mode}-${index}`}
                       mode={mode}
                       gridSize={256}
-                      agentTypeShares={[0.5, 0.3, 0.1]}
+                      agentTypeShares={[0.4, 0.2, 0.2]}
                       speed={1.0}
                       tolerance={0.5}
                       canvasSize={{ width: 512, height: 512 }}

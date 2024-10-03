@@ -8,7 +8,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  EMPTY_VALUE,
   Grid,
   GridHandles,
   GridShaderMode,
@@ -26,7 +25,6 @@ import {
   PlayControllerState,
 } from './components/PlayController';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { createHistogram, findIndices, shuffle } from './arrayUtils';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -43,15 +41,8 @@ export function SchellingSegregationShell(
   const gridHandlesRefs = [useRef<GridHandles>(null)];
   const kernelRef = useRef<SchellingSegregationKernel>(props.kernel);
 
-  const [speed, setSpeed] = useState<number>(props.speed);
-  const [frameCount, setFrameCount] = useState<number>(0);
-
   const [playControllerState, setPlayControllerState] =
-    useState<PlayControllerState>(PlayControllerState.INITIALIZED);
-  const [isResettable, setIsResettable] = useState<boolean>(false);
-  const [isPaused, setIsPaused] = useState<boolean>(true);
-  const [isStepped, setIsStepped] = useState<boolean>(true);
-  const [isPlayed, setIsPlayed] = useState<boolean>(false);
+    useState<PlayControllerState>(PlayControllerState.INITIALIZING);
 
   const [gridSize, setGridSize] = useState(props.gridSize);
   const [tolerance, setTolerance] = useState<number>(props.tolerance || 0.5);
@@ -59,33 +50,38 @@ export function SchellingSegregationShell(
     number[]
   >(cumulativeSum(props.agentTypeShares));
 
-  const updateGridSize = useCallback(
-    (gridSize: number) => {
-      // console.log(`updateGridSize: ${gridSize} ${agentTypeCumulativeShares}`);
-      kernelRef.current.updateInitialStateGridData(
-        gridSize,
-        agentTypeCumulativeShares,
-      );
-      gridHandlesRefs.forEach((ref) => {
-        ref.current?.refreshData(0);
-        ref.current?.refreshViewportState(0);
-      });
-    },
-    [agentTypeCumulativeShares],
-  );
+  const updateFrameCount = useCallback((frameCount: number) => {
+    kernelRef.current.getModel().setFrameCount(frameCount);
+  }, []);
 
-  const updateAgentTypeShares = useCallback(
-    (agentTypeCumulativeShares: number[]) => {
-      kernelRef.current.updateInitialStateGridData(
-        gridSize,
-        agentTypeCumulativeShares,
-      );
+  const updateGridData = useCallback(
+    async (
+      playControllerState?: PlayControllerState,
+      _gridSize?: number,
+      _agentTypeCumulativeShares?: number[],
+    ) => {
+      switch (playControllerState) {
+        case PlayControllerState.INITIALIZING:
+          kernelRef.current.updatePrimaryStateGridData(
+            _gridSize || gridSize,
+            _agentTypeCumulativeShares || agentTypeCumulativeShares,
+          );
+          setPlayControllerState(PlayControllerState.INITIALIZED);
+          break;
+        case PlayControllerState.INITIALIZED:
+          kernelRef.current.updateSecondaryStateGridData();
+          break;
+        case PlayControllerState.RUNNING:
+        case PlayControllerState.STEP_RUNNING:
+          await kernelRef.current.updateGridData();
+          break;
+      }
       gridHandlesRefs.forEach((ref) => {
         ref.current?.refreshData(0);
         ref.current?.refreshViewportState(0);
       });
     },
-    [gridSize],
+    [gridSize, agentTypeCumulativeShares],
   );
 
   const updateTolerance = useCallback((value: number) => {
@@ -93,7 +89,7 @@ export function SchellingSegregationShell(
   }, []);
 
   const onGridSizeChangeTransient = useCallback(
-    (event: Event | SyntheticEvent, newValue: number | number[]) => {
+    (_: Event | SyntheticEvent, newValue: number | number[]) => {
       setPlayControllerState(PlayControllerState.INITIALIZING);
       const newGridSize = newValue as number;
       setGridSize(newGridSize);
@@ -102,26 +98,29 @@ export function SchellingSegregationShell(
   );
 
   const onGridSizeChangeCommit = useCallback(
-    (event: Event | SyntheticEvent, newValue: number | number[]) => {
-      setPlayControllerState(PlayControllerState.INITIALIZED);
+    (_: Event | SyntheticEvent, newValue: number | number[]) => {
       const newGridSize = newValue as number;
       setGridSize(newGridSize);
-      setFrameCount(0);
-      setIsPlayed(false);
-      updateGridSize(newGridSize);
+      updateGridData(
+        PlayControllerState.INITIALIZING,
+        newGridSize,
+        agentTypeCumulativeShares,
+      );
     },
-    [updateGridSize],
+    [updateGridData, agentTypeCumulativeShares],
   );
 
   const onAgentTypeCumulativeSharesChange = useCallback(
     (values: number[]) => {
-      setPlayControllerState(PlayControllerState.INITIALIZED);
-      setAgentTypeCumulativeShares(values);
-      setFrameCount(0);
-      setIsPlayed(false);
-      updateAgentTypeShares(values);
+      const newAgentTypeCumulativeShares = values;
+      setAgentTypeCumulativeShares(newAgentTypeCumulativeShares);
+      updateGridData(
+        PlayControllerState.INITIALIZING,
+        gridSize,
+        newAgentTypeCumulativeShares,
+      );
     },
-    [updateAgentTypeShares],
+    [updateGridData, gridSize],
   );
 
   const onToleranceChange = useCallback(
@@ -133,7 +132,7 @@ export function SchellingSegregationShell(
     [updateTolerance],
   );
 
-  const _updateFrame = async (): Promise<boolean> => {
+  const updateFrame = useCallback(async (): Promise<void> => {
     /*
     count % 100 === 0 &&
       console.log(
@@ -146,129 +145,62 @@ export function SchellingSegregationShell(
         new Date()
       );
      */
-    await kernelRef.current.updateGridData();
+    await updateGridData(
+      playControllerState,
+      gridSize,
+      agentTypeCumulativeShares,
+    );
     // count % 500 === 0 && console.log('*', state.current.gridData);
 
     gridHandlesRefs?.forEach((ref, index) => {
       ref.current?.refreshData(index);
     });
+  }, [playControllerState]);
 
-    return props.iterations ? frameCount < props.iterations : true;
-  };
-
-  const updateFrame = async () => {
-    if (
-      playControllerState === PlayControllerState.PAUSED ||
-      playControllerState === PlayControllerState.INITIALIZED
-    ) {
+  const tick = useCallback(() => {
+    if (playControllerState === PlayControllerState.PAUSED) {
       return;
     }
-
-    const isContinued = frameCount == 0 || (await _updateFrame());
-
     if (
-      isContinued &&
-      (playControllerState === PlayControllerState.RUNNING ||
-        playControllerState === PlayControllerState.STEP_RUNNING)
+      playControllerState === PlayControllerState.INITIALIZED ||
+      playControllerState === PlayControllerState.RUNNING ||
+      playControllerState === PlayControllerState.STEP_RUNNING
     ) {
-      setFrameCount(() => frameCount + 1);
+      frameRef.current = requestAnimationFrame(updateFrame);
       if (playControllerState === PlayControllerState.STEP_RUNNING) {
-        setPlayControllerState(PlayControllerState.PAUSED);
+        onPause();
       }
-    } else {
-      onPause();
     }
-  };
+  }, [playControllerState]);
 
-  useEffect(() => {
-    if (
-      !frameRef.current &&
-      (playControllerState === PlayControllerState.RUNNING ||
-        playControllerState === PlayControllerState.STEP_RUNNING)
-    ) {
-      const delay = Math.pow(1.0 - speed, 2) * 1000;
-      setTimeout(
-        () => (frameRef.current = requestAnimationFrame(updateFrame)),
-        delay,
-      );
-      frameRef.current = null;
-    }
+  const onReset = useCallback(() => {
+    updateGridData(
+      PlayControllerState.INITIALIZING,
+      gridSize,
+      agentTypeCumulativeShares,
+    );
+  }, [gridSize, agentTypeCumulativeShares]);
 
-    return () => {
-      frameRef.current && cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    };
-  }, [
-    //gridSize,
-    //agentTypeCumulativeShares,
-    playControllerState,
-    frameCount,
-    /*
-    isPlayed,
-    isStepped,
-    isPaused,
-     */
-  ]);
-
-  useEffect(() => {
-    props.autoStart && onPlay();
+  const onPause = useCallback(() => {
+    setPlayControllerState(PlayControllerState.PAUSED);
   }, []);
 
-  const onSpeedChange = (value: number) => {
-    setSpeed(value);
-  };
-
-  const onReset = () => {
-    setIsResettable(() => false);
-    setIsPaused(() => true);
-    setIsStepped(() => true);
-    setIsPlayed(() => false);
-    updateGridSize(gridSize);
-    // updateInitialStateGridData();
-    setPlayControllerState(() => PlayControllerState.INITIALIZED);
-  };
-
-  const onPause = () => {
-    setIsPlayed(() => false);
-    setIsStepped(() => true);
-    setIsPaused(() => true);
-    setPlayControllerState(PlayControllerState.PAUSED);
-    setIsResettable(() => true);
-  };
-
-  const onPlayOrStep = () => {
-    if (frameCount === 0) {
-      shuffle(kernelRef.current.getModel().gridData);
-      kernelRef.current.getModel().cellIndices = findIndices(
-        kernelRef.current.getModel().gridData,
-        EMPTY_VALUE,
-      );
-
-      kernelRef.current.sync();
-
-      gridHandlesRefs.forEach((ref) => {
-        ref.current?.refreshData(0);
-      });
-    }
-  };
-
-  const onStep = () => {
-    setIsPaused(() => true);
-    setIsStepped(() => true);
-    setIsPlayed(() => false);
+  const onStep = useCallback(() => {
     setPlayControllerState(PlayControllerState.STEP_RUNNING);
-    setIsResettable(() => true);
-    onPlayOrStep();
-  };
+    updateGridData();
+    tick();
+  }, [tick]);
 
-  const onPlay = () => {
-    setIsPaused(() => false);
-    setIsStepped(() => false);
-    setIsPlayed(() => true);
+  const onPlay = useCallback(() => {
+    if (playControllerState == PlayControllerState.INITIALIZED) {
+      updateGridData(
+        PlayControllerState.INITIALIZED,
+        gridSize,
+        agentTypeCumulativeShares,
+      );
+    }
     setPlayControllerState(PlayControllerState.RUNNING);
-    setIsResettable(() => false);
-    onPlayOrStep();
-  };
+  }, [playControllerState]);
 
   const getOnFocusedStateChange = useCallback(() => {
     return (sourceIndex: number, columnIndex: number, rowIndex: number) => {
@@ -299,6 +231,30 @@ export function SchellingSegregationShell(
     },
     [],
   );
+
+  useEffect(() => {
+    if (props.autoStart) {
+      (async () => {
+        await updateGridData(
+          PlayControllerState.INITIALIZING,
+          gridSize,
+          agentTypeCumulativeShares,
+        );
+        await updateGridData(
+          PlayControllerState.INITIALIZED,
+          gridSize,
+          agentTypeCumulativeShares,
+        );
+        setPlayControllerState(PlayControllerState.RUNNING);
+      })();
+    } else {
+      updateGridData(
+        PlayControllerState.INITIALIZING,
+        gridSize,
+        agentTypeCumulativeShares,
+      );
+    }
+  }, []);
 
   return (
     <>
@@ -405,17 +361,14 @@ export function SchellingSegregationShell(
         }}
       >
         <PlayController
-          speed={speed}
-          isResettable={isResettable}
-          isPaused={isPaused}
-          isStepped={isStepped}
-          isPlayed={isPlayed}
+          state={playControllerState}
+          speed={props.speed}
           onReset={onReset}
           onPause={onPause}
           onStep={onStep}
           onPlay={onPlay}
-          onSpeedChange={onSpeedChange}
-          frameCount={frameCount}
+          tick={tick}
+          updateFrameCount={updateFrameCount}
         />
       </Box>
 

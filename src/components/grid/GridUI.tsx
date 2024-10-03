@@ -1079,8 +1079,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
 
         const decreaseVelocity = () => {
           if (
-            Math.abs(velocity.current.x) > 0.01 ||
-            Math.abs(velocity.current.y) > 0.01
+            Math.abs(velocity.current.x) > 0.001 ||
+            Math.abs(velocity.current.y) > 0.001
           ) {
             velocity.current.x *= TRANSLATE_FRICTION;
             velocity.current.y *= TRANSLATE_FRICTION;

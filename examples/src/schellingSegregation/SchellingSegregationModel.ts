@@ -2,12 +2,14 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationModelHandler } from './SchellingSegregationModelHandler';
 import { SchellingSegregationModelProps } from './SchellingSegregationModelProps';
 import { cumulativeSum, reverseCumulativeSum } from '../utils/arrayUtils';
+import { findIndices, shuffle } from './arrayUtils';
 
 export class SchellingSegregationModel
   implements SchellingSegregationModelHandler
 {
   gridSize!: number;
   gridData!: Uint32Array;
+  frameCount: number;
   tolerance!: number;
   numEmptyCells!: number;
   cellIndices!: Uint32Array;
@@ -16,15 +18,15 @@ export class SchellingSegregationModel
   viewportStates!: Float32Array;
 
   constructor(props: SchellingSegregationModelProps) {
-    this.updateInitialStateGridData(
+    this.updatePrimaryStateGridData(
       props.gridSize,
       cumulativeSum(props.agentTypeShares),
     );
     this.setTolerance(props.tolerance);
-    this.setFrameCount(0);
+    this.frameCount = 0;
   }
 
-  updateInitialStateGridData(
+  updatePrimaryStateGridData(
     gridSize: number,
     agentTypeCumulativeShares: number[],
   ) {
@@ -68,15 +70,16 @@ export class SchellingSegregationModel
     this.numEmptyCells = numEmptyCell;
   }
 
+  updateSecondaryStateGridData() {
+    shuffle(this.gridData);
+    this.cellIndices = findIndices(this.gridData, EMPTY_VALUE);
+  }
+
   setFrameCount(frameCount: number): void {
-    // Do nothing
+    this.frameCount = frameCount;
   }
 
   setTolerance(tolerance: number): void {
     this.tolerance = tolerance;
-  }
-
-  sync() {
-    // Do nothing
   }
 }
