@@ -18,7 +18,7 @@ export type PlayControllerProps = {
   onPause: () => void;
   onStep: () => void;
   onReset: () => void;
-  tick: () => void;
+  tick: () => Promise<void>;
   updateFrameCount(frameCount: number): void;
 };
 const StyledButtonGroup = styled(ButtonGroup)`
@@ -63,9 +63,10 @@ export const PlayController = (props: PlayControllerProps) => {
   const startTimer = useCallback(() => {
     const delay = Math.pow(1.0 - speed, 2) * 1000 + 1;
     timerRef.current = setTimeout(() => {
-      props.tick();
-      updateFrameCount(frameCount + 1);
-      startTimer();
+      props.tick().then(() => {
+        updateFrameCount(frameCount + 1);
+        startTimer();
+      });
     }, delay);
   }, [speed, props.tick, frameCount]);
 

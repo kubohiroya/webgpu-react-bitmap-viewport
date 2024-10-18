@@ -57,10 +57,7 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
             (value) => value !== EMPTY_VALUE,
           ).length;
 
-          if (
-            neighborCount > 0 &&
-            similarCount / neighborCount < this.model.tolerance
-          ) {
+          if (similarCount / neighborCount < this.model.tolerance) {
             movingAgents.push(currentIndex);
           }
         }
@@ -72,8 +69,8 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
         ? [emptyCells, movingAgents]
         : [movingAgents, emptyCells];
 
-    shuffle(shorterArray, shorterArray.length);
-    shuffle(longerArray, longerArray.length);
+    shuffle(shorterArray);
+    shuffle(longerArray);
 
     for (let i = 0; i < shorterArray.length; i++) {
       const emptyCellIndex = emptyCells[i];

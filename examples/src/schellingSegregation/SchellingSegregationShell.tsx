@@ -37,7 +37,6 @@ export function SchellingSegregationShell(
       kernel: SchellingSegregationKernel;
     },
 ) {
-  const frameRef = useRef<number | null>(null);
   const gridHandlesRefs = [useRef<GridHandles>(null)];
   const kernelRef = useRef<SchellingSegregationKernel>(props.kernel);
 
@@ -136,34 +135,7 @@ export function SchellingSegregationShell(
     [updateTolerance],
   );
 
-  const updateFrame = useCallback(async (): Promise<void> => {
-    /*
-    count % 100 === 0 &&
-      console.log(
-        props.mode === SchellingSegregationModes.CPU
-          ? '@'
-          : props.mode === SchellingSegregationModes.GPU
-          ? '#'
-          : '##',
-        props.mode,
-        new Date()
-      );
-     */
-
-    await updateGridData(
-      playControllerState,
-      gridSize,
-      agentTypeCumulativeShares,
-    );
-
-    // count % 500 === 0 && console.log('*', state.current.gridData);
-
-    gridHandlesRefs?.forEach((ref, index) => {
-      ref.current?.refreshData(index);
-    });
-  }, [playControllerState]);
-
-  const tick = useCallback(() => {
+  const tick = useCallback(async () => {
     if (playControllerState === PlayControllerState.PAUSED) {
       return;
     }
@@ -172,7 +144,14 @@ export function SchellingSegregationShell(
       playControllerState === PlayControllerState.RUNNING ||
       playControllerState === PlayControllerState.STEP_RUNNING
     ) {
-      frameRef.current = requestAnimationFrame(updateFrame);
+      await updateGridData(
+        playControllerState,
+        gridSize,
+        agentTypeCumulativeShares,
+      );
+      gridHandlesRefs?.forEach((ref, index) => {
+        ref.current?.refreshData(index);
+      });
       if (playControllerState === PlayControllerState.STEP_RUNNING) {
         onPause();
       }
@@ -205,7 +184,7 @@ export function SchellingSegregationShell(
         setPlayControllerState(PlayControllerState.STEP_RUNNING);
         break;
     }
-  }, [tick]);
+  }, [playControllerState]);
 
   const onPlay = useCallback(async () => {
     if (playControllerState == PlayControllerState.INITIALIZED) {
@@ -388,7 +367,7 @@ export function SchellingSegregationShell(
           aria-label="tolerance"
           min={0}
           max={1.0}
-          step={null}
+          step={0.01}
           marks={[0, 1, 2, 3, 4, 5, 6, 7, 8].map((value) => ({
             value: value / 8,
             label: `${value} / 8`,

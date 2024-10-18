@@ -8,8 +8,8 @@ export function shuffleUint32Array(gridData: Uint32Array): void {
   }
 }
 
-export function shuffle(gridData: Array<number>, length: number): void {
-  for (let i = 0; i < length; i++) {
+export function shuffle(gridData: Array<number>): void {
+  for (let i = 0; i < gridData.length; i++) {
     const j = Math.floor(Math.random() * (i + 1));
     [gridData[i], gridData[j]] = [gridData[j], gridData[i]];
   }

@@ -132,10 +132,10 @@ export const Index = () => {
                     <SchellingSegregation
                       id={`schelling-${mode}-${index}`}
                       mode={mode}
-                      gridSize={256}
-                      agentTypeShares={[0.4, 0.2, 0.2]}
+                      gridSize={512}
+                      agentTypeShares={[0.15, 0.15, 0.15, 0.15, 0.15]}
                       speed={1.0}
-                      tolerance={0.5}
+                      tolerance={0.55}
                       canvasSize={{ width: 512, height: 512 }}
                       headerOffset={{ left: 0, top: 0 }}
                       autoStart={true}
