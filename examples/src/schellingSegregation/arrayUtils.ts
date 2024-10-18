@@ -1,8 +1,15 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 
-export function shuffle(gridData: Uint32Array): void {
+export function shuffleUint32Array(gridData: Uint32Array): void {
   // シャッフル関数 (Fisher–Yates shuffle)
   for (let i = gridData.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [gridData[i], gridData[j]] = [gridData[j], gridData[i]];
+  }
+}
+
+export function shuffle(gridData: Array<number>, length: number): void {
+  for (let i = 0; i < length; i++) {
     const j = Math.floor(Math.random() * (i + 1));
     [gridData[i], gridData[j]] = [gridData[j], gridData[i]];
   }

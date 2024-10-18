@@ -2,7 +2,7 @@ import SCHELLING_PARALLEL_COMPUTE_SHADER from './SchellingSegregationShader.wgsl
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationModel } from './SchellingSegregationModel';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { createHistogram, shuffle } from './arrayUtils';
+import { createHistogram, shuffleUint32Array } from './arrayUtils';
 
 const WORKGROUP_SIZE = 64;
 const SEGMENT_SIZE_FOR_WORKGROUP = 4;
@@ -206,7 +206,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     for (let i = 0; i < randomSegmentIndices.length; i++) {
       randomSegmentIndices[i] = i;
     }
-    shuffle(randomSegmentIndices);
+    shuffleUint32Array(randomSegmentIndices);
     this.device.queue.writeBuffer(
       this.randomSegmentIndicesBuffer,
       0,

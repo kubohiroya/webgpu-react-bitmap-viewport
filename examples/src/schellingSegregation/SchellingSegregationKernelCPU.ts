@@ -1,6 +1,6 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { findIndices, shuffle } from './arrayUtils';
+import { findIndices, shuffle, shuffleUint32Array } from './arrayUtils';
 
 export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
   updateGridData = async () => {
@@ -31,45 +31,57 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
       });
     }
 
+    const emptyCells: number[] = [];
+    const movingAgents: number[] = [];
+
     for (let y = 0; y < this.model.gridSize; y++) {
       for (let x = 0; x < this.model.gridSize; x++) {
         const currentIndex = y * this.model.gridSize + x;
         const agentType = this.model.gridData[currentIndex];
         if (agentType === EMPTY_VALUE) {
-          continue;
-        }
-        const surroundingIndices = getSurroundingIndices(
-          x,
-          y,
-          this.model.gridSize,
-          this.model.gridSize,
-        );
-        const surroundingAgentTypes = surroundingIndices.map(
-          (index) => this.model.gridData[index],
-        );
-        const similarCount = surroundingAgentTypes.filter(
-          (value) => value === agentType,
-        ).length;
-        const neighborCount = surroundingAgentTypes.filter(
-          (value) => value !== EMPTY_VALUE,
-        ).length;
-
-        if (
-          neighborCount > 0 &&
-          similarCount / neighborCount < this.model.tolerance
-        ) {
-          // console.log('replace ' + tolerance.current + ' ' + currentIndex);
-
-          const randomIndex = Math.floor(
-            Math.random() * this.model.cellIndices.length,
+          emptyCells.push(currentIndex);
+        } else {
+          const surroundingIndices = getSurroundingIndices(
+            x,
+            y,
+            this.model.gridSize,
+            this.model.gridSize,
           );
-          const emptyCellIndex = this.model.cellIndices[randomIndex];
-          if (this.model.gridData[emptyCellIndex] === EMPTY_VALUE) {
-            this.model.gridData[emptyCellIndex] = agentType;
-            this.model.gridData[currentIndex] = EMPTY_VALUE;
-            this.model.cellIndices[randomIndex] = currentIndex;
+          const surroundingAgentTypes = surroundingIndices.map(
+            (index) => this.model.gridData[index],
+          );
+          const similarCount = surroundingAgentTypes.filter(
+            (value) => value === agentType,
+          ).length;
+          const neighborCount = surroundingAgentTypes.filter(
+            (value) => value !== EMPTY_VALUE,
+          ).length;
+
+          if (
+            neighborCount > 0 &&
+            similarCount / neighborCount < this.model.tolerance
+          ) {
+            movingAgents.push(currentIndex);
           }
         }
+      }
+    }
+
+    const [shorterArray, longerArray] =
+      emptyCells.length < movingAgents.length
+        ? [emptyCells, movingAgents]
+        : [movingAgents, emptyCells];
+
+    shuffle(shorterArray, shorterArray.length);
+    shuffle(longerArray, longerArray.length);
+
+    for (let i = 0; i < shorterArray.length; i++) {
+      const emptyCellIndex = emptyCells[i];
+      const movingAgentIndex = movingAgents[i];
+      if (emptyCellIndex !== movingAgentIndex) {
+        this.model.gridData[emptyCellIndex] =
+          this.model.gridData[movingAgentIndex];
+        this.model.gridData[movingAgentIndex] = EMPTY_VALUE;
       }
     }
 

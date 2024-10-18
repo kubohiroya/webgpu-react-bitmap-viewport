@@ -2,7 +2,7 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationModelHandler } from './SchellingSegregationModelHandler';
 import { SchellingSegregationModelProps } from './SchellingSegregationModelProps';
 import { cumulativeSum, reverseCumulativeSum } from '../utils/arrayUtils';
-import { findIndices, shuffle } from './arrayUtils';
+import { findIndices, shuffleUint32Array } from './arrayUtils';
 
 export class SchellingSegregationModel
   implements SchellingSegregationModelHandler
@@ -71,7 +71,7 @@ export class SchellingSegregationModel
   }
 
   updateSecondaryStateGridData() {
-    shuffle(this.gridData);
+    shuffleUint32Array(this.gridData);
     this.cellIndices = findIndices(this.gridData, EMPTY_VALUE);
   }
 

@@ -56,7 +56,7 @@ export function SchellingSegregationShell(
 
   const updateGridData = useCallback(
     async (
-      playControllerState?: PlayControllerState,
+      playControllerState: PlayControllerState,
       _gridSize?: number,
       _agentTypeCumulativeShares?: number[],
     ) => {
@@ -70,10 +70,14 @@ export function SchellingSegregationShell(
           break;
         case PlayControllerState.INITIALIZED:
           kernelRef.current.updateSecondaryStateGridData();
+          setPlayControllerState(PlayControllerState.PAUSED);
           break;
         case PlayControllerState.RUNNING:
+          await kernelRef.current.updateGridData();
+          break;
         case PlayControllerState.STEP_RUNNING:
           await kernelRef.current.updateGridData();
+          setPlayControllerState(PlayControllerState.PAUSED);
           break;
       }
       gridHandlesRefs.forEach((ref) => {
@@ -81,7 +85,7 @@ export function SchellingSegregationShell(
         ref.current?.refreshViewportState(0);
       });
     },
-    [gridSize, agentTypeCumulativeShares],
+    [playControllerState, gridSize, agentTypeCumulativeShares],
   );
 
   const updateTolerance = useCallback((value: number) => {
@@ -145,11 +149,13 @@ export function SchellingSegregationShell(
         new Date()
       );
      */
+
     await updateGridData(
       playControllerState,
       gridSize,
       agentTypeCumulativeShares,
     );
+
     // count % 500 === 0 && console.log('*', state.current.gridData);
 
     gridHandlesRefs?.forEach((ref, index) => {
@@ -185,15 +191,25 @@ export function SchellingSegregationShell(
     setPlayControllerState(PlayControllerState.PAUSED);
   }, []);
 
-  const onStep = useCallback(() => {
-    setPlayControllerState(PlayControllerState.STEP_RUNNING);
-    updateGridData();
-    tick();
+  const onStep = useCallback(async () => {
+    switch (playControllerState) {
+      case PlayControllerState.INITIALIZED:
+        await updateGridData(
+          PlayControllerState.INITIALIZED,
+          gridSize,
+          agentTypeCumulativeShares,
+        );
+        break;
+      case PlayControllerState.STEP_RUNNING:
+      case PlayControllerState.PAUSED:
+        setPlayControllerState(PlayControllerState.STEP_RUNNING);
+        break;
+    }
   }, [tick]);
 
-  const onPlay = useCallback(() => {
+  const onPlay = useCallback(async () => {
     if (playControllerState == PlayControllerState.INITIALIZED) {
-      updateGridData(
+      await updateGridData(
         PlayControllerState.INITIALIZED,
         gridSize,
         agentTypeCumulativeShares,
@@ -233,27 +249,21 @@ export function SchellingSegregationShell(
   );
 
   useEffect(() => {
-    if (props.autoStart) {
-      (async () => {
-        await updateGridData(
-          PlayControllerState.INITIALIZING,
-          gridSize,
-          agentTypeCumulativeShares,
-        );
+    (async () => {
+      await updateGridData(
+        PlayControllerState.INITIALIZING,
+        gridSize,
+        agentTypeCumulativeShares,
+      );
+      if (props.autoStart) {
         await updateGridData(
           PlayControllerState.INITIALIZED,
           gridSize,
           agentTypeCumulativeShares,
         );
         setPlayControllerState(PlayControllerState.RUNNING);
-      })();
-    } else {
-      updateGridData(
-        PlayControllerState.INITIALIZING,
-        gridSize,
-        agentTypeCumulativeShares,
-      );
-    }
+      }
+    })();
   }, []);
 
   return (
