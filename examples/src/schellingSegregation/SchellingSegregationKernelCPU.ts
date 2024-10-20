@@ -1,6 +1,6 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { findIndices, shuffle, shuffleUint32Array } from './arrayUtils';
+import { shuffle } from './arrayUtils';
 
 export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
   updateGridData = async () => {
@@ -37,7 +37,7 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
     for (let y = 0; y < this.model.gridSize; y++) {
       for (let x = 0; x < this.model.gridSize; x++) {
         const currentIndex = y * this.model.gridSize + x;
-        const agentType = this.model.gridData[currentIndex];
+        const agentType = this.model.grid[currentIndex];
         if (agentType === EMPTY_VALUE) {
           emptyCells.push(currentIndex);
         } else {
@@ -48,7 +48,7 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
             this.model.gridSize,
           );
           const surroundingAgentTypes = surroundingIndices.map(
-            (index) => this.model.gridData[index],
+            (index) => this.model.grid[index],
           );
           const similarCount = surroundingAgentTypes.filter(
             (value) => value === agentType,
@@ -76,12 +76,11 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
       const emptyCellIndex = emptyCells[i];
       const movingAgentIndex = movingAgents[i];
       if (emptyCellIndex !== movingAgentIndex) {
-        this.model.gridData[emptyCellIndex] =
-          this.model.gridData[movingAgentIndex];
-        this.model.gridData[movingAgentIndex] = EMPTY_VALUE;
+        this.model.grid[emptyCellIndex] = this.model.grid[movingAgentIndex];
+        this.model.grid[movingAgentIndex] = EMPTY_VALUE;
       }
     }
 
-    return this.model.gridData;
+    return this.model.grid;
   };
 }

@@ -9,8 +9,8 @@ import { SchellingSegregationModes } from './schellingSegregation/SchellingSegre
 import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 
 export const Index = () => {
-  const [value, setValue] = React.useState('1');
-  //const [value, setValue] = React.useState('3');
+  //const [value, setValue] = React.useState('1');
+  const [value, setValue] = React.useState('3');
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
@@ -124,21 +124,21 @@ export const Index = () => {
               </h2>
               <div style={{ display: 'flex', columnGap: '16px' }}>
                 {[
-                  SchellingSegregationModes.CPU,
-                  //SchellingSegregationModes.GPU,
+                  // SchellingSegregationModes.CPU,
+                  SchellingSegregationModes.GPU,
                 ].map((mode: SchellingSegregationModes, index: number) => (
                   <div key={index}>
                     <Typography>{mode}</Typography>
                     <SchellingSegregation
                       id={`schelling-${mode}-${index}`}
                       mode={mode}
-                      gridSize={512}
+                      gridSize={16}
                       agentTypeShares={[0.15, 0.15, 0.15, 0.15, 0.15]}
                       speed={1.0}
-                      tolerance={0.55}
+                      tolerance={0.5} // 0.55
                       canvasSize={{ width: 512, height: 512 }}
                       headerOffset={{ left: 0, top: 0 }}
-                      autoStart={true}
+                      autoStart={false}
                     />
                   </div>
                 ))}

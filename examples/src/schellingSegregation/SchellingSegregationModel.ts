@@ -8,7 +8,7 @@ export class SchellingSegregationModel
   implements SchellingSegregationModelHandler
 {
   gridSize!: number;
-  gridData!: Uint32Array;
+  grid!: Uint32Array;
   frameCount: number;
   tolerance!: number;
   numEmptyCells!: number;
@@ -33,7 +33,7 @@ export class SchellingSegregationModel
     const numCells = gridSize * gridSize;
     if (this.gridSize != gridSize) {
       this.gridSize = gridSize;
-      this.gridData = new Uint32Array(numCells);
+      this.grid = new Uint32Array(numCells);
       this.cellIndices = new Uint32Array(numCells);
       this.focusedStates = new Uint32Array(gridSize);
       this.selectedStates = new Uint32Array(gridSize);
@@ -60,7 +60,7 @@ export class SchellingSegregationModel
     let start = 0; // 各valueに対応する個数を挿入
     agentTypeValues.forEach((value: number, index: number) => {
       const length = agentTypeCounts[index];
-      this.gridData.fill(value, start, start + length);
+      this.grid.fill(value, start, start + length);
       start += length;
     });
 
@@ -71,8 +71,8 @@ export class SchellingSegregationModel
   }
 
   updateSecondaryStateGridData() {
-    shuffleUint32Array(this.gridData);
-    this.cellIndices = findIndices(this.gridData, EMPTY_VALUE);
+    shuffleUint32Array(this.grid);
+    this.cellIndices = findIndices(this.grid, EMPTY_VALUE);
   }
 
   setFrameCount(frameCount: number): void {

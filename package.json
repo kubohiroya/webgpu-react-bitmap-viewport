@@ -19,7 +19,6 @@
     "name": "Hiroya Kubo",
     "email": "hiroya@cuc.ac.jp"
   },
-  "main": "dist/lib/webgpu-react-bitmap-viewport.umd.js",
   "module": "dist/lib/webgpu-react-bitmap-viewport.es.js",
   "types": "dist/types/src/index.d.ts",
   "files": [

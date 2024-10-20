@@ -3,12 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "dist/examples",
-    "types": [
-      "node",
-      "@webgpu/types",
-      "vite/client",
-      "webgpu-react-bitmap-viewport"
-    ],
+    "types": ["node", "@webgpu/types", "vite/client"],
     "paths": {
       "webgpu-react-bitmap-viewport": ["dist/types/src/index.d.ts"]
     }

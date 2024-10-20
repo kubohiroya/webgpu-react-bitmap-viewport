@@ -44,7 +44,9 @@ export function SchellingSegregationShell(
     useState<PlayControllerState>(PlayControllerState.INITIALIZING);
 
   const [gridSize, setGridSize] = useState(props.gridSize);
-  const [tolerance, setTolerance] = useState<number>(props.tolerance || 0.5);
+  const [tolerance, setTolerance] = useState<number>(
+    props.tolerance !== undefined ? props.tolerance : 0.5,
+  );
   const [agentTypeCumulativeShares, setAgentTypeCumulativeShares] = useState<
     number[]
   >(cumulativeSum(props.agentTypeShares));
@@ -137,7 +139,7 @@ export function SchellingSegregationShell(
 
   const tick = useCallback(async () => {
     if (playControllerState === PlayControllerState.PAUSED) {
-      return;
+      return false;
     }
     if (
       playControllerState === PlayControllerState.INITIALIZED ||
@@ -155,6 +157,9 @@ export function SchellingSegregationShell(
       if (playControllerState === PlayControllerState.STEP_RUNNING) {
         onPause();
       }
+      return true;
+    } else {
+      return false;
     }
   }, [playControllerState]);
 
@@ -272,7 +277,7 @@ export function SchellingSegregationShell(
             aria-label={'grid size'}
             value={gridSize}
             min={8}
-            max={512}
+            max={1024}
             step={null}
             marks={[
               {
@@ -318,6 +323,10 @@ export function SchellingSegregationShell(
               {
                 value: 512,
                 label: '512',
+              },
+              {
+                value: 1024,
+                label: '1024',
               },
             ]}
             onChange={onGridSizeChangeTransient}
@@ -405,7 +414,7 @@ export function SchellingSegregationShell(
               headerOffset={props.headerOffset}
               scrollBar={SCROLLBAR}
               canvasSize={props.canvasSize}
-              data={kernelRef.current.getModel().gridData}
+              data={kernelRef.current.getModel().grid}
               focusedStates={kernelRef.current.getModel().focusedStates}
               selectedStates={kernelRef.current.getModel().selectedStates}
               viewportStates={kernelRef.current.getModel().viewportStates}
