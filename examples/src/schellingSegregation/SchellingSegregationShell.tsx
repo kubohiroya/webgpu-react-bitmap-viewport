@@ -44,6 +44,7 @@ export function SchellingSegregationShell(
     useState<PlayControllerState>(PlayControllerState.INITIALIZING);
 
   const [gridSize, setGridSize] = useState(props.gridSize);
+
   const [tolerance, setTolerance] = useState<number>(
     props.tolerance !== undefined ? props.tolerance : 0.5,
   );
@@ -72,6 +73,7 @@ export function SchellingSegregationShell(
         case PlayControllerState.INITIALIZED:
           kernelRef.current.updateSecondaryStateGridData();
           setPlayControllerState(PlayControllerState.PAUSED);
+          kernelRef.current.updateEmptyCellIndices();
           break;
         case PlayControllerState.RUNNING:
           await kernelRef.current.updateGridData();
@@ -94,21 +96,21 @@ export function SchellingSegregationShell(
   }, []);
 
   const onGridSizeChangeTransient = useCallback(
-    (_: Event | SyntheticEvent, newValue: number | number[]) => {
+    (_: Event | SyntheticEvent, newValueSource: number | number[]) => {
       setPlayControllerState(PlayControllerState.INITIALIZING);
-      const newGridSize = newValue as number;
-      setGridSize(newGridSize);
+      const newGridSizeSource = newValueSource as number;
+      setGridSize(newGridSizeSource);
     },
     [],
   );
 
   const onGridSizeChangeCommit = useCallback(
-    (_: Event | SyntheticEvent, newValue: number | number[]) => {
-      const newGridSize = newValue as number;
-      setGridSize(newGridSize);
+    (_: Event | SyntheticEvent, newValueSource: number | number[]) => {
+      const newGridSizeSource = newValueSource as number;
+      setGridSize(newGridSizeSource);
       updateGridData(
         PlayControllerState.INITIALIZING,
-        newGridSize,
+        newGridSizeSource,
         agentTypeCumulativeShares,
       );
     },
@@ -250,6 +252,11 @@ export function SchellingSegregationShell(
     })();
   }, []);
 
+  /*
+  function calculateValue(value: number) {
+    return 2 ** value;
+  }*/
+
   return (
     <>
       <Box
@@ -276,21 +283,29 @@ export function SchellingSegregationShell(
           <Slider
             aria-label={'grid size'}
             value={gridSize}
-            min={8}
+            min={2}
             max={1024}
-            step={null}
+            step={1}
             marks={[
+              {
+                value: 2,
+                label: '2',
+              },
+              {
+                value: 4,
+                label: '4',
+              },
               {
                 value: 8,
                 label: '8',
               },
               {
                 value: 16,
-                label: '',
+                label: '16',
               },
               {
                 value: 32,
-                label: '',
+                label: '32',
               },
               {
                 value: 64,
@@ -301,24 +316,8 @@ export function SchellingSegregationShell(
                 label: '128',
               },
               {
-                value: 192,
-                label: '192',
-              },
-              {
                 value: 256,
                 label: '256',
-              },
-              {
-                value: 320,
-                label: '320',
-              },
-              {
-                value: 384,
-                label: '384',
-              },
-              {
-                value: 448,
-                label: '438',
               },
               {
                 value: 512,

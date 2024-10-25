@@ -28,6 +28,10 @@ export abstract class SchellingSegregationKernel {
     this.writeDataToBuffer();
   }
 
+  updateEmptyCellIndices() {
+    // do nothing
+  }
+
   writeDataToBuffer() {
     // do nothing
   }
