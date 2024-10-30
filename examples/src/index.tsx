@@ -10,11 +10,12 @@ import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 
 export const Index = () => {
   console.log(document.location.hash);
-  const [value, setValue] = React.useState(document.location.hash || '#1');
+  const [value, setValue] = React.useState(document?.location?.hash || '#1');
   //const [value, setValue] = React.useState('#3');
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
+    document.location.hash = newValue;
   };
 
   return (
@@ -28,12 +29,15 @@ export const Index = () => {
                 aria-label="webgpu-react-bitmap-viewport examples"
                 orientation={'vertical'}
               >
-                <Tab label="Synchronized Viewports of Static Image" value="1" />
+                <Tab
+                  label="Synchronized Viewports of Static Image"
+                  value="#1"
+                />
                 <Tab
                   label="Synchronized Viewports of Dynamic Image"
-                  value="2"
+                  value="#2"
                 />
-                <Tab label="Viewport of Multi Agent Simulation" value="3" />
+                <Tab label="Viewport of Multi Agent Simulation" value="#3" />
               </TabList>
             </Box>
             <TabPanel value="#1">
