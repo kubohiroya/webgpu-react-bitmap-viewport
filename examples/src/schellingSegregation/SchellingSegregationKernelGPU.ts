@@ -297,7 +297,6 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
             
             for(var localX = 0u; localX < blockWidth && workgroupIndex * blockWidth + localX < width; localX++){
 
-              let globalX = blockStartX + localX;
               let ghostZoneX = localX + 1u;
               let currentAgent = rowCache[(localY + 1u) % 3u][ghostZoneX];
               if (currentAgent == EMPTY_VALUE) {
@@ -314,6 +313,7 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
               let satisfactionRatio = f32(similarCount) / f32(totalNeighbors);
               if (satisfactionRatio < tolerance) {
                 // Write the unsatisfied agent's original index
+                let globalX = blockStartX + localX;
                 agentIndices[agentIndexBase + agentCounter] = globalY * width + globalX;
                 agentCounter++;
               }
@@ -389,28 +389,3 @@ export class SchellingSegregationKernelGPU extends SchellingSegregationKernel {
     return grid;
   }
 }
-
-/*
-// Example usage
-(async () => {
-  const gridSize = 1024;
-  const emptyRatio = 0.1;
-  const agentRatios = [0.45, 0.45]; // Example: 2 types of agents, each 45%
-  const workgroupSize = 64;
-  const workitemSize = 64;
-  const tolerance = 0.3;
-
-  const device = await (await navigator.gpu.requestAdapter())?.requestDevice();
-  if (device) {
-    const model = new SchellingSegregationModel({
-      gridSize,
-      agentTypeShares: agentRatios,
-      tolerance,
-    });
-    const segregation = new SchellingSegregationKernelGPU(model, device);
-    await segregation.init(workgroupSize, workitemSize);
-    const result = await segregation.updateGridData();
-    console.log(result);
-  }
-})();
- */

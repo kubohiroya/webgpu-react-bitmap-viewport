@@ -9,8 +9,9 @@ import { SchellingSegregationModes } from './schellingSegregation/SchellingSegre
 import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 
 export const Index = () => {
-  const [value, setValue] = React.useState('1');
-  //const [value, setValue] = React.useState('3');
+  console.log(document.location.hash);
+  const [value, setValue] = React.useState(document.location.hash || '#1');
+  //const [value, setValue] = React.useState('#3');
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
@@ -35,7 +36,7 @@ export const Index = () => {
                 <Tab label="Viewport of Multi Agent Simulation" value="3" />
               </TabList>
             </Box>
-            <TabPanel value="1">
+            <TabPanel value="#1">
               <h2>
                 Synchronized Viewports of Static Image: "The Grate Wave off
                 Kanagawa" from the series Thirty-six Views of Mount Fuji by
@@ -54,7 +55,7 @@ export const Index = () => {
               />
             </TabPanel>
 
-            <TabPanel value="2">
+            <TabPanel value="#2">
               <div>
                 <h2>Synchronized Viewports of Dynamic Image</h2>
                 <h3>RGBARandomGrid</h3>
@@ -117,7 +118,7 @@ export const Index = () => {
               </div>
             </TabPanel>
 
-            <TabPanel value="3">
+            <TabPanel value="#3">
               <h2>
                 Viewport of Multi Agent Simulation: Schelling's model of
                 segregation
