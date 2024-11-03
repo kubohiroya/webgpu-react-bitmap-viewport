@@ -1,7 +1,7 @@
 {
   "name": "webgpu-react-bitmap-viewport",
   "description": "a React component that uses WebGPU to render bitmap data within a set of viewports synchronously",
-  "version": "1.0.0a6",
+  "version": "1.0.0a7",
   "license": "MIT",
   "projectType": "library",
   "repository": {
@@ -27,14 +27,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "dev": "vite serve",
     "typedoc": "typedoc",
-    "build-lib": "vite build --mode lib",
-    "build-example": "vite build",
-    "build": "pnpm run build-lib && pnpm run build-example && pnpm typedoc",
+    "build-lib": "vite build",
+    "build": "pnpm run build-lib && pnpm typedoc",
     "test": "vite test",
     "predeploy": "pnpm run build",
-    "deploy": "gh-pages -d dist/webgpu-react-bitmap-viewport -r git@github.com:kubohiroya/webgpu-react-bitmap-viewport.git",
     "prepublish": "pnpm run build"
   },
   "dependencies": {
@@ -58,6 +55,7 @@
     "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
     "@webgpu/types": "^0.1.46",
+    "assemblyscript": "^0.27.30",
     "cypress": "^13.14.2",
     "eslint": "~8.57.1",
     "eslint-config-prettier": "^9.1.0",
@@ -74,6 +72,8 @@
     "typescript": "~5.4.5",
     "vite": "~5.4.7",
     "vite-plugin-glsl": "^1.3.0",
+    "vite-plugin-top-level-await": "^1.4.4",
+    "vite-plugin-wasm": "^3.3.0",
     "vitest": "^1.6.0"
   }
 }

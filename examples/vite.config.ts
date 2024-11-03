@@ -1,38 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import wasm from 'vite-plugin-wasm';
+import assemblyScriptPlugin from 'vite-plugin-assemblyscript-asc';
+import topLevelWait from 'vite-plugin-top-level-await';
 import { resolve } from 'path';
 
-const libConfig = defineConfig({
-  root: __dirname,
-  cacheDir: './node_modules/.vite/.',
-
-  plugins: [react()],
-
-  build: {
-    outDir: '../dist/lib',
-    reportCompressedSize: true,
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
-    lib: {
-      entry: resolve(__dirname, '../src/index.ts'),
-      name: 'WebGPU-React-Bitmap-Viewport',
-      fileName: (format) => `webgpu-react-bitmap-viewport.${format}.js`,
-    },
-    rollupOptions: {
-      external: ['react', 'react-dom', 'jsx-runtime', '@webgpu/types'],
-      output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-        },
-      },
-    },
-    sourcemap: true,
-  },
-});
-
-const examplesConfig = defineConfig({
+export default defineConfig({
   root: __dirname,
   cacheDir: './node_modules/.vite/.',
 
@@ -53,14 +26,30 @@ const examplesConfig = defineConfig({
   resolve: {
     alias: {
       'webgpu-react-bitmap-viewport': resolve(__dirname, '../src/index.ts'),
+      SchellingSegregationKernelFunctions: resolve(
+        __dirname,
+        './dist/webgpu-react-bitmap-viewport/examples/lib/SchellingSegregationKernelFunctions.release',
+      ),
     },
   },
 
-  plugins: [react()],
+  plugins: [
+    react(),
+    assemblyScriptPlugin({
+      projectRoot: resolve(__dirname, '../'),
+      srcEntryFile: 'examples/src/as/assembly/index.ts',
+      configFile: 'examples/asconfig.json',
+      targetWasmFile:
+        'examples/dist/webgpu-react-bitmap-viewport/lib/SchellingSegregationKernelFunctions.wasm',
+    }),
+    wasm(),
+    topLevelWait(),
+  ],
   build: {
-    outDir: '../dist/webgpu-react-bitmap-viewport',
+    // target: 'esnext',
+    outDir: './dist/webgpu-react-bitmap-viewport',
     rollupOptions: {
-      external: ['@webgpu/types'],
+      external: ['@webgpu/types', 'SchellingSegregationKernelFunctions'],
       output: {
         globals: {
           react: 'React',
@@ -68,16 +57,8 @@ const examplesConfig = defineConfig({
         },
       },
       input: {
-        main: resolve(__dirname, './index.html'),
+        main: resolve(__dirname, 'index.html'),
       },
     },
   },
-});
-
-export default defineConfig(({ command, mode }) => {
-  if (mode === 'lib') {
-    return libConfig;
-  } else {
-    return examplesConfig;
-  }
 });

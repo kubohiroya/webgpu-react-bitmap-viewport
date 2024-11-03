@@ -284,7 +284,8 @@ export function SchellingSegregationShell(
             aria-label={'grid size'}
             value={gridSize}
             min={2}
-            max={1024}
+            max={2048}
+            //max={1024}
             step={1}
             marks={[
               {

@@ -1,0 +1,19 @@
+{
+  "entries": ["./src/as/assembly/index.ts"],
+  "options": {
+    "importTable": true,
+    "exportRuntime": true,
+    "bindings": "esm",
+    "enable": ["threads", "simd", "reference-types"]
+  },
+  "targets": {
+    "release": {
+      "optimize": true,
+      "outFile": "./dist/webgpu-react-bitmap-viewport/examples/lib/SchellingSegregationKernelFunctions.release.wasm"
+    },
+    "debug": {
+      "debug": true,
+      "outFile": "./dist/webgpu-react-bitmap-viewport/examples/lib/SchellingSegregationKernelFunctions.debug.wasm"
+    }
+  }
+}

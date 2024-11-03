@@ -16,14 +16,6 @@
 - Allows toggling the selected state of each column and row, and highlight the selected ones
 - Supports many-to-many relationships between viewports and bitmap data sources.
 
-# Live demo
-
-[Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/examples/index.html)
-- Synchronized Viewports of Static Image: "The Grate Wave off Kanagawa" from the series Thirty-six Views of Mount Fuji by Hokusai
-- Synchronized Viewports of Dynamic Image: Randomly generated data
-- Viewport of Multi Agent Simulation: Schelling's model of segregation
-
-
 # Download and Installation
 
 Download the latest version of webgpu-react-bitmap-viewport from the npm repository:
@@ -31,12 +23,23 @@ Download the latest version of webgpu-react-bitmap-viewport from the npm reposit
 ```bash
 pnpm install webgpu-react-bitmap-viewport
 ```
-
 # API
 
 [doc](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/modules.html)
 
-# Usage
+# Live Demo
+
+```bash
+cd examples
+pnpm install && pnpm dev
+```
+
+[Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/index.html)
+- Synchronized Viewports of Static Image: "The Grate Wave off Kanagawa" from the series Thirty-six Views of Mount Fuji by Hokusai
+- Synchronized Viewports of Dynamic Image: Randomly generated data
+- Viewport of Multi Agent Simulation: Schelling's model of segregation
+
+# Code Example
 
 ```tsx
 import { Grid, GridHandles } from "webgpu-react-bitmap-viewport";

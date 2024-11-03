@@ -40,11 +40,27 @@ const SubPlayButton = styled(PlayButton)`
 const MainPlayButton = styled(PlayButton)``;
 export const PlayController = (props: PlayControllerProps) => {
   const [speed, setSpeed] = useState<number>(props.speed);
-  const [frameCount, setFrameCount] = useState<number>(0);
+  const [elapsed, setElapsed] = useState<number | null>(null);
+  const [fps, setFps] = useState<string | null>(null);
+
+  const frame = useRef<number | null>(null);
+  const numStepFrames = useRef<number>(0);
+  const startedAt = useRef<number | null>(null);
+  const pausedAt = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateFrameCount = (frameCount: number) => {
-    setFrameCount(frameCount);
+    frame.current = frameCount;
+    if (startedAt.current && startedAt.current > 0) {
+      const now = Date.now();
+      setFps(
+        (
+          (frameCount - numStepFrames.current) /
+          ((now - startedAt.current) / 1000)
+        ).toFixed(1),
+      );
+      setElapsed(Math.round((now - startedAt.current) / 1000));
+    }
     props.updateFrameCount(frameCount);
   };
 
@@ -55,24 +71,57 @@ export const PlayController = (props: PlayControllerProps) => {
     [setSpeed],
   );
 
+  const stepTimer = () => {
+    numStepFrames.current++;
+    props.tick().then((_: boolean) => {
+      nextFrameCount();
+    });
+  };
+
   const stopTimer = useCallback(() => {
     timerRef.current && clearTimeout(timerRef.current);
     timerRef.current = null;
+    pausedAt.current = Date.now();
   }, []);
 
-  const startTimer = useCallback(() => {
+  const startTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    if (startedAt.current !== null && pausedAt.current !== null) {
+      startedAt.current = Date.now() - (pausedAt.current - startedAt.current);
+    } else {
+      startedAt.current = Date.now();
+      frame.current = 0;
+    }
     const delay = Math.pow(1.0 - speed, 2) * 1000 + 1;
-    timerRef.current = setTimeout(() => {
-      props.tick().then((_: boolean) => {
-        updateFrameCount(frameCount + 1);
-        startTimer();
-      });
+    let running = false;
+    timerRef.current = setInterval(() => {
+      if (!running) {
+        running = true;
+        props.tick().then((_: boolean) => {
+          nextFrameCount();
+          running = false;
+        });
+      }
     }, delay);
-  }, [speed, props.tick, frameCount]);
+  };
 
   const restartTimer = () => {
     stopTimer();
     startTimer();
+  };
+
+  const resetFrameCount = () => {
+    startedAt.current = null;
+    numStepFrames.current = 0;
+    setElapsed(null);
+    setFps(null);
+    updateFrameCount(0);
+  };
+
+  const nextFrameCount = () => {
+    frame.current !== null && updateFrameCount(frame.current + 1);
   };
 
   useEffect(() => {
@@ -80,19 +129,15 @@ export const PlayController = (props: PlayControllerProps) => {
       case PlayControllerState.INITIALIZING:
       case PlayControllerState.INITIALIZED:
         stopTimer();
-        updateFrameCount(0);
+        resetFrameCount();
         break;
       case PlayControllerState.RUNNING:
-        if (timerRef.current) {
-          restartTimer();
-        } else {
+        if (!timerRef.current) {
           startTimer();
         }
         break;
       case PlayControllerState.STEP_RUNNING:
-        props.tick().then((_: boolean) => {
-          updateFrameCount(frameCount + 1);
-        });
+        stepTimer();
         break;
       case PlayControllerState.PAUSED:
         stopTimer();
@@ -100,21 +145,31 @@ export const PlayController = (props: PlayControllerProps) => {
       default:
         break;
     }
-  }, [props.state, props.tick, frameCount]);
+  }, [props.state, props.tick]);
+
+  useEffect(() => {
+    return () => {
+      stopTimer();
+    };
+  }, []);
 
   useEffect(() => {
     if (props.speed !== speed) {
       restartTimer();
     }
-  }, [speed]);
+  }, [speed, startTimer]);
 
   return (
     <>
-      <StyledButtonGroup>
+      <StyledButtonGroup
+        color={
+          props.state === PlayControllerState.RUNNING ? 'warning' : 'primary'
+        }
+      >
         <SubPlayButton
           variant="contained"
           size="small"
-          onClick={props.onReset && props.onReset}
+          onClick={props.onReset}
           disabled={
             props.state === PlayControllerState.INITIALIZING ||
             props.state === PlayControllerState.INITIALIZED ||
@@ -128,7 +183,7 @@ export const PlayController = (props: PlayControllerProps) => {
         <SubPlayButton
           variant="contained"
           size="small"
-          onClick={props.onPause && props.onPause}
+          onClick={props.onPause}
           disabled={
             props.state === PlayControllerState.INITIALIZING ||
             props.state === PlayControllerState.INITIALIZED ||
@@ -142,7 +197,7 @@ export const PlayController = (props: PlayControllerProps) => {
         <SubPlayButton
           variant="contained"
           size="small"
-          onClick={props.onStep && props.onStep}
+          onClick={props.onStep}
           disabled={
             props.state === PlayControllerState.INITIALIZING ||
             props.state === PlayControllerState.RUNNING ||
@@ -154,7 +209,7 @@ export const PlayController = (props: PlayControllerProps) => {
         </SubPlayButton>
         <MainPlayButton
           variant="contained"
-          onClick={props.onPlay && props.onPlay}
+          onClick={props.onPlay}
           disabled={
             props.state === PlayControllerState.INITIALIZING ||
             props.state === PlayControllerState.RUNNING ||
@@ -169,16 +224,16 @@ export const PlayController = (props: PlayControllerProps) => {
       <Box
         style={{
           display: 'flex',
-          margin: '0 36px 0 36px',
-          columnGap: '18px',
+          margin: '0 8px 8px',
+          columnGap: '8px',
         }}
       >
         <Box
           style={{
             display: 'flex',
-            width: '90%',
+            width: '65%',
             columnGap: '12px',
-            padding: '1px 12px 1px 12px',
+            padding: '1px 8px 1px 8px',
             borderRadius: '30px',
             borderStyle: 'solid',
             borderWidth: '1px',
@@ -199,14 +254,20 @@ export const PlayController = (props: PlayControllerProps) => {
         </Box>
         <Typography
           fontSize={11}
-          color="grey"
+          color={
+            props.state === PlayControllerState.RUNNING ? 'warning' : 'primary'
+          }
           style={{
             alignSelf: 'center',
-            padding: '0 10px 0 10px',
-            width: '10%',
+            padding: '0 0 0 0',
+            width: '35%',
           }}
         >
-          {frameCount}
+          {frame.current}
+
+          {elapsed !== null ? '  / ' + elapsed + ' sec' : ''}
+
+          {fps !== null ? ' (' + fps + ' fps)' : ''}
         </Typography>
       </Box>
     </>

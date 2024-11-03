@@ -15,9 +15,15 @@ export default function SchellingSegregation(
     ...props,
   });
 
-  if (props.mode === SchellingSegregationModes.CPU) {
+  if (
+    props.mode === SchellingSegregationModes.JS ||
+    props.mode === SchellingSegregationModes.WEBASM
+  ) {
     return <SchellingSegregationCPUShell {...props} model={model} />;
-  } else if (props.mode === SchellingSegregationModes.GPU) {
+  } else if (
+    props.mode === SchellingSegregationModes.WEBGPU ||
+    props.mode === SchellingSegregationModes.WEBGPU_WEBASM
+  ) {
     return <SchellingSegregationGPUShell {...props} model={model} />;
   }
 }

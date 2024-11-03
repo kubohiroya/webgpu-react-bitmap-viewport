@@ -1,19 +1,19 @@
-export function shuffleUint32Array(gridData: Uint32Array): void {
+export function shuffleUint32Array(data: Uint32Array, length: number): void {
   // シャッフル関数 (Fisher–Yates shuffle)
-  for (let i = gridData.length - 1; i >= 0; i--) {
+  for (let i = 0; i < length; i++) {
     const j = Math.floor(Math.random() * (i + 1));
-    const tmp = gridData[i];
-    gridData[i] = gridData[j];
-    gridData[j] = tmp;
+    const tmp = data[i];
+    data[i] = data[j];
+    data[j] = tmp;
   }
 }
 
-export function shuffle(gridData: Array<number>): void {
-  for (let i = gridData.length - 1; i >= 0; i--) {
+export function shuffle(data: Array<number>): void {
+  for (let i = 0; i < data.length; i++) {
     const j = Math.floor(Math.random() * (i + 1));
-    const tmp = gridData[i];
-    gridData[i] = gridData[j];
-    gridData[j] = tmp;
+    const tmp = data[i];
+    data[i] = data[j];
+    data[j] = tmp;
   }
 }
 

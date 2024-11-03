@@ -7,6 +7,7 @@ import { findIndices, shuffleUint32Array } from './arrayUtils';
 export class SchellingSegregationModel
   implements SchellingSegregationModelHandler
 {
+  mode: string;
   gridSize!: number;
   grid!: Uint32Array;
   frameCount: number;
@@ -18,6 +19,7 @@ export class SchellingSegregationModel
   viewportStates!: Float32Array;
 
   constructor(props: SchellingSegregationModelProps) {
+    this.mode = props.mode;
     this.updatePrimaryStateGridData(
       props.gridSize,
       cumulativeSum(props.agentTypeShares),
@@ -71,7 +73,7 @@ export class SchellingSegregationModel
   }
 
   updateSecondaryStateGridData() {
-    shuffleUint32Array(this.grid);
+    shuffleUint32Array(this.grid, this.gridSize * this.gridSize);
     this.cellIndices = findIndices(this.grid, EMPTY_VALUE);
   }
 

@@ -1,6 +1,6 @@
 import React, { ReactNode, useLayoutEffect, useState } from 'react';
 
-export type WebGPUDeviceContextType = GPUDevice | null;
+type WebGPUDeviceContextType = GPUDevice | null;
 
 export const WebGPUDeviceContext =
   React.createContext<WebGPUDeviceContextType>(null);
@@ -15,13 +15,13 @@ export const WebGPUDeviceContextProvider = ({
   useLayoutEffect(() => {
     (async () => {
       const initWebGPU = async function (
-        callback: (device: GPUDevice) => void
+        callback: (device: GPUDevice | undefined) => void
       ) {
-        const requestDevice = async (): Promise<GPUDevice> => {
+        const requestDevice = async (): Promise<GPUDevice | undefined> => {
           try {
             const adapter = await navigator.gpu.requestAdapter();
             if (!adapter) {
-              throw new Error('No appropriate GPUAdapter found.');
+              return;
             }
 
             const device = await adapter.requestDevice();
@@ -46,11 +46,11 @@ export const WebGPUDeviceContextProvider = ({
 
         callback(await requestDevice());
       };
-      await initWebGPU((device: GPUDevice) => {
+      await initWebGPU((device: GPUDevice | undefined) => {
         if (!navigator.gpu) {
           throw new Error('WebGPU not supported on this browser.');
         }
-        setDevice(device);
+        device && setDevice(device);
       });
     })();
 
