@@ -159,13 +159,12 @@ export const PlayController = (props: PlayControllerProps) => {
     }
   }, [speed, startTimer]);
 
+  const color =
+    props.state === PlayControllerState.RUNNING ? 'warning' : 'primary';
+
   return (
     <>
-      <StyledButtonGroup
-        color={
-          props.state === PlayControllerState.RUNNING ? 'warning' : 'primary'
-        }
-      >
+      <StyledButtonGroup color={color}>
         <SubPlayButton
           variant="contained"
           size="small"
@@ -248,15 +247,14 @@ export const PlayController = (props: PlayControllerProps) => {
             step={0.01}
             min={0}
             max={1}
+            color={color}
             onChange={onSpeedChange}
           />
           🐇
         </Box>
         <Typography
           fontSize={11}
-          color={
-            props.state === PlayControllerState.RUNNING ? 'warning' : 'primary'
-          }
+          color={color}
           style={{
             alignSelf: 'center',
             padding: '0 0 0 0',

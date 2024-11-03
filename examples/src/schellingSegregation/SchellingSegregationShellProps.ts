@@ -1,8 +1,8 @@
 export enum SchellingSegregationModes {
   'JS' = 'Plain JavaScript',
-  'WEBGPU' = 'WebGPU Compute Shader(64 workgroups)',
-  'WEBASM' = 'CPU + WebAssembly',
-  'WEBGPU_WEBASM' = 'WebGPU Compute Shader(64 workgroups) + WebAssembly',
+  'WEBGPU' = 'JavaScript + WebGPU ComputeShader(64 workgroups)',
+  'WEBASM' = 'JavaScript + WebAssembly',
+  'WEBGPU_WEBASM' = 'JavaScript + WebGPU ComputeShader(64 workgroups) + WebAssembly',
 }
 
 export type SchellingSegregationShellProps = {

@@ -1,10 +1,10 @@
-import { Index } from './index';
 import { createRoot } from 'react-dom/client';
+import WebGPUApp from './WebGPUApp';
 
 const root = createRoot(document.getElementById('root') as HTMLElement);
 
 const render = () => {
-  root.render(<Index />);
+  root.render(<WebGPUApp src="./app" />);
 };
 
 render();

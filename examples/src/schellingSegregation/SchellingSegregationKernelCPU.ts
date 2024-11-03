@@ -1,6 +1,6 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SchellingSegregationKernel } from './SchellingSegregationKernel';
-import { shuffle, shuffleUint32Array } from './arrayUtils';
+import { shuffle } from './arrayUtils';
 import { SchellingSegregationModes } from './SchellingSegregationShellProps';
 import * as SchellingSegregationKernelFunctions from '../as/assembly/SchellingSegregationKernelFunctions';
 import { SchellingSegregationModel } from './SchellingSegregationModel';
@@ -44,9 +44,9 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
     super(model);
     const totalCells = this.model.gridSize * this.model.gridSize;
     this.agentIndicesArray = new Uint32Array(totalCells);
-    this.agentIndicesLengthArray = new Uint32Array(1);
+    this.agentIndicesLengthArray = new Uint32Array(totalCells);
     this.emptyCellIndices = new Uint32Array(totalCells);
-    this.movingAgentIndicesArray = new Uint32Array(1);
+    this.movingAgentIndicesArray = new Uint32Array(totalCells);
   }
 
   async updateGridData() {
@@ -102,31 +102,46 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
       }
       return this.model.grid;
     } else {
-      this.emptyCellIndicesLength =
+      const createEmptyCellIndicesArrayResult =
         SchellingSegregationKernelFunctions.createEmptyCellIndicesArray(
-          this.emptyCellIndices,
-          this.model.gridSize * this.model.gridSize,
           this.model.grid,
+          this.model.gridSize * this.model.gridSize,
+          this.emptyCellIndices,
           EMPTY_VALUE,
         );
 
-      console.log(this.emptyCellIndices, this.emptyCellIndicesLength);
+      this.emptyCellIndices =
+        createEmptyCellIndicesArrayResult.emptyCellIndices;
+      this.emptyCellIndicesLength =
+        createEmptyCellIndicesArrayResult.emptyCellIndicesLength;
 
-      shuffleUint32Array(this.emptyCellIndices, this.emptyCellIndicesLength);
+      this.emptyCellIndices =
+        SchellingSegregationKernelFunctions.shuffleUint32Array(
+          this.emptyCellIndices,
+          this.emptyCellIndicesLength,
+        );
 
-      SchellingSegregationKernelFunctions.compactIndicesArray(
-        this.movingAgentIndicesArray,
-        this.agentIndicesLengthArray,
-        this.agentIndicesArray,
-        this.model.gridSize * this.model.gridSize,
-      );
+      const createMovingAgentIndicesResult =
+        SchellingSegregationKernelFunctions.createMovingAgentIndicesArray(
+          this.model.grid,
+          this.model.gridSize,
+          this.model.gridSize,
+          this.movingAgentIndicesArray,
+          EMPTY_VALUE,
+          this.model.tolerance,
+        );
+      this.movingAgentIndicesArray =
+        createMovingAgentIndicesResult.movingAgentIndices;
+      this.movingAgentIndicesArrayLength =
+        createMovingAgentIndicesResult.movingAgentIndicesLength;
 
-      SchellingSegregationKernelFunctions.shuffleUint32Array(
-        this.movingAgentIndicesArray,
-        this.movingAgentIndicesArrayLength,
-      );
+      this.movingAgentIndicesArray =
+        SchellingSegregationKernelFunctions.shuffleUint32Array(
+          this.movingAgentIndicesArray,
+          this.movingAgentIndicesArrayLength,
+        );
 
-      const result =
+      const moveAgentAndSwapEmptyCellResult =
         SchellingSegregationKernelFunctions.moveAgentAndSwapEmptyCell(
           this.movingAgentIndicesArray,
           this.movingAgentIndicesArrayLength,
@@ -136,8 +151,10 @@ export class SchellingSegregationKernelCPU extends SchellingSegregationKernel {
           EMPTY_VALUE,
         );
 
-      this.model.grid.set(result.grid);
-      this.emptyCellIndices.set(result.emptyCellIndices);
+      this.model.grid.set(moveAgentAndSwapEmptyCellResult.grid);
+      this.emptyCellIndices.set(
+        moveAgentAndSwapEmptyCellResult.emptyCellIndices,
+      );
     }
     return this.model.grid;
   }

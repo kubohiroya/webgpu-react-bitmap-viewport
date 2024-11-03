@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist",
+    "types": ["node"],
+    "paths": {
+      "webgpu-react-bitmap-viewport": ["./dist/types/src/index.d.ts"]
+    }
+  },
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"]
+}

@@ -3,6 +3,7 @@
   "options": {
     "importTable": true,
     "exportRuntime": true,
+    "memoryBase": 0,
     "bindings": "esm",
     "enable": ["threads", "simd", "reference-types"]
   },
