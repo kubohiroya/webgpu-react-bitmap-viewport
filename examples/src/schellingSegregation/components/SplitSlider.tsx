@@ -1,4 +1,4 @@
-import React, { ReactNode, SyntheticEvent, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Select,
   MenuItem,
@@ -21,11 +21,8 @@ const SplitSlider = (props: SplitSliderProps) => {
   const [splitValues, setSplitValues] = useState<number[]>(props.splitValues); // デフォルトの分割位置
 
   // 分割数を変更したときの処理
-  const handleSplitCountChange = (
-    event: SelectChangeEvent<unknown>,
-    value: ReactNode,
-  ) => {
-    const newCount = parseInt(event.target.value as string);
+  const handleSplitCountChange = (event: SelectChangeEvent<unknown>) => {
+    const newCount = parseInt((event.target as any).value as string);
     setSplitCount(newCount);
     // 分割数に応じて初期値を設定（合計1.0を保つ）
     const newValues = Array(newCount)
@@ -38,10 +35,7 @@ const SplitSlider = (props: SplitSliderProps) => {
   };
 
   // スライダーの値を変更したときの処理
-  const handleSliderChange = (
-    event: Event | SyntheticEvent,
-    value: number | number[],
-  ) => {
+  const handleSliderChange = (event: Event, value: number | number[]) => {
     const newValues = value as number[];
     setSplitValues(newValues);
     props.onChange(newValues);

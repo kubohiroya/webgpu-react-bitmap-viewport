@@ -1,6 +1,13 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "lib": ["esnext", "dom"],
     "rootDir": ".",
     "outDir": "./dist",
     "types": ["node"],

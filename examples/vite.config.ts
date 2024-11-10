@@ -1,8 +1,7 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import wasm from 'vite-plugin-wasm';
 import assemblyScriptPlugin from 'vite-plugin-assemblyscript-asc';
-import topLevelWait from 'vite-plugin-top-level-await';
+// import react from '@vitejs/plugin-react';
+// import topLevelWait from 'vite-plugin-top-level-await';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -26,30 +25,43 @@ export default defineConfig({
   resolve: {
     alias: {
       'webgpu-react-bitmap-viewport': resolve(__dirname, '../src/index.ts'),
+      /*
       SchellingSegregationKernelFunctions: resolve(
         __dirname,
-        './dist/webgpu-react-bitmap-viewport/examples/lib/SchellingSegregationKernelFunctions.release',
+        '../examples/build/webgpu-react-bitmap-viewport/as/SchellingSegregationKernelFunctions.release/index.wasm?init',
       ),
+       */
     },
   },
 
   plugins: [
-    react(),
+    // topLevelWait(),
+    // react(),
     assemblyScriptPlugin({
-      projectRoot: resolve(__dirname, '../'),
-      srcEntryFile: 'examples/src/as/assembly/index.ts',
-      configFile: 'examples/asconfig.json',
+      projectRoot: '.',
+      configFile: 'asconfig.json',
+      srcMatch: 'src/as/assembly',
+      srcEntryFile: 'src/as/assembly/index.ts',
       targetWasmFile:
-        'examples/dist/webgpu-react-bitmap-viewport/lib/SchellingSegregationKernelFunctions.wasm',
-    }),
-    wasm(),
-    topLevelWait(),
+        'build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release/index.wasm',
+      distFolder: 'dist',
+    }) as any,
+    {
+      name: 'configure-response-headers',
+      configureServer: (server) => {
+        server.middlewares.use((_req, res, next) => {
+          res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+          next();
+        });
+      },
+    },
   ],
   build: {
-    // target: 'esnext',
+    target: 'esnext',
     outDir: './dist/webgpu-react-bitmap-viewport',
     rollupOptions: {
-      external: ['@webgpu/types', 'SchellingSegregationKernelFunctions'],
+      external: ['@webgpu/types'],
       output: {
         globals: {
           react: 'React',

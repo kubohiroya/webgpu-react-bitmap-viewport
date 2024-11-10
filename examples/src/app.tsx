@@ -1,12 +1,23 @@
 import { HueGridExample } from './multipleRandomImages/HueGridExample';
 import { RGBARandomGridExample } from './multipleRandomImages/RGBARandomGridExample';
 import { SynchronizedMultiStaticImage } from './multipleStaticImages/SynchronizedMultiStaticImage';
-import SchellingSegregation from './schellingSegregation/SchellingSegregation';
+import Segregation from './schellingSegregation/Segregation';
 import React, { useState } from 'react';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Box, Tab, Typography } from '@mui/material';
-import { SchellingSegregationModes } from './schellingSegregation/SchellingSegregationShellProps';
+import { SegregationModes } from './schellingSegregation/SegregationUIProps';
 import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
+
+const GRID_SIZE = 1024;
+const WORKGROUP_SIZE_MAX = 64;
+
+const SCHELLING_APPS_FULL = [
+  [SegregationModes.JS, SegregationModes.ASM],
+  [SegregationModes.GPU],
+];
+// const SCHELLING_APPS_GPU_ONLY = [[SegregationModes.GPU]];
+const SCHELLING_APPS = SCHELLING_APPS_FULL;
+//const SCHELLING_APPS = SCHELLING_APPS_GPU_ONLY;
 
 const SynchronizedHokusaiImage = () => {
   return (
@@ -99,10 +110,11 @@ const Schelling = ({ mode, index }: { mode: any; index: number }) => {
   return (
     <>
       <Typography>{mode}</Typography>
-      <SchellingSegregation
+      <Segregation
         id={`schelling-${mode}-${index}`}
         mode={mode}
-        gridSize={1024}
+        gridSize={GRID_SIZE}
+        workgroupSizeMax={WORKGROUP_SIZE_MAX}
         agentTypeShares={[0.15, 0.15, 0.15, 0.15, 0.15]}
         //agentTypeShares={[0.7, 0.23]}
         speed={1.0}
@@ -162,32 +174,23 @@ export const App = () => {
                 Viewport of Multi Agent Simulation: Schelling's model of
                 segregation
               </h2>
-              {[
-                [
-                  SchellingSegregationModes.JS,
-                  SchellingSegregationModes.WEBASM,
-                ],
-                [
-                  SchellingSegregationModes.WEBGPU,
-                  SchellingSegregationModes.WEBGPU_WEBASM,
-                ],
-              ].map((modes: SchellingSegregationModes[], index: number) => (
-                <div
-                  key={index}
-                  style={{
-                    background: '#ddd',
-                    padding: '8px',
-                    borderRadius: '8px',
-                  }}
-                >
+              {SCHELLING_APPS.map(
+                (modes: SegregationModes[], index: number) => (
                   <div
+                    key={index}
                     style={{
-                      display: 'flex',
-                      columnGap: '16px',
+                      background: '#ddd',
+                      padding: '8px',
+                      borderRadius: '8px',
                     }}
                   >
-                    {modes.map(
-                      (mode: SchellingSegregationModes, index: number) => (
+                    <div
+                      style={{
+                        display: 'flex',
+                        columnGap: '16px',
+                      }}
+                    >
+                      {modes.map((mode: SegregationModes, index: number) => (
                         <div
                           key={index}
                           style={{
@@ -198,11 +201,11 @@ export const App = () => {
                         >
                           <Schelling mode={mode} index={index}></Schelling>
                         </div>
-                      ),
-                    )}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </TabPanel>
           </Box>
         </TabContext>

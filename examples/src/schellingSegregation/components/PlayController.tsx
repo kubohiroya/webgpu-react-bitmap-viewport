@@ -43,26 +43,14 @@ export const PlayController = (props: PlayControllerProps) => {
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [fps, setFps] = useState<string | null>(null);
 
-  const frame = useRef<number | null>(null);
-  const numStepFrames = useRef<number>(0);
-  const startedAt = useRef<number | null>(null);
-  const pausedAt = useRef<number | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const stepFrameCount = useRef<number>(0);
 
-  const updateFrameCount = (frameCount: number) => {
-    frame.current = frameCount;
-    if (startedAt.current && startedAt.current > 0) {
-      const now = Date.now();
-      setFps(
-        (
-          (frameCount - numStepFrames.current) /
-          ((now - startedAt.current) / 1000)
-        ).toFixed(1),
-      );
-      setElapsed(Math.round((now - startedAt.current) / 1000));
-    }
-    props.updateFrameCount(frameCount);
-  };
+  const frameCountRef = useRef<number>(0);
+  const [frameCount, setFrameCount] = useState<number>(0);
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startedAt = useRef<number>(0);
+  const timeTotal = useRef<number>(0);
 
   const onSpeedChange = useCallback(
     (_: Event, value: number[] | number) => {
@@ -71,76 +59,103 @@ export const PlayController = (props: PlayControllerProps) => {
     [setSpeed],
   );
 
-  const stepTimer = () => {
-    numStepFrames.current++;
-    props.tick().then((_: boolean) => {
-      nextFrameCount();
-    });
-  };
-
-  const stopTimer = useCallback(() => {
-    timerRef.current && clearTimeout(timerRef.current);
-    timerRef.current = null;
-    pausedAt.current = Date.now();
-  }, []);
-
-  const startTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+  const start = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
     }
-    if (startedAt.current !== null && pausedAt.current !== null) {
-      startedAt.current = Date.now() - (pausedAt.current - startedAt.current);
-    } else {
-      startedAt.current = Date.now();
-      frame.current = 0;
-    }
+    startedAt.current = Date.now();
     const delay = Math.pow(1.0 - speed, 2) * 1000 + 1;
     let running = false;
-    timerRef.current = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       if (!running) {
         running = true;
-        props.tick().then((_: boolean) => {
-          nextFrameCount();
-          running = false;
+
+        requestAnimationFrame(() => {
+          props.tick().then((result: boolean) => {
+            if (result) {
+              frameCountRef.current++;
+              setFrameCount(frameCountRef.current);
+              updateFPS();
+            }
+            running = false;
+          });
         });
       }
     }, delay);
   };
 
-  const restartTimer = () => {
-    stopTimer();
-    startTimer();
+  const pause = useCallback(() => {
+    intervalRef.current && clearTimeout(intervalRef.current);
+    intervalRef.current = null;
+    if (startedAt.current > 0) {
+      timeTotal.current += Date.now() - startedAt.current;
+      startedAt.current = 0;
+    }
+  }, []);
+
+  const restart = () => {
+    pause();
+    start();
   };
 
-  const resetFrameCount = () => {
-    startedAt.current = null;
-    numStepFrames.current = 0;
+  const reset = () => {
+    startedAt.current = 0;
+    frameCountRef.current = 0;
+    stepFrameCount.current = 0;
+    timeTotal.current = 0;
+    setFrameCount(0);
     setElapsed(null);
     setFps(null);
-    updateFrameCount(0);
   };
 
-  const nextFrameCount = () => {
-    frame.current !== null && updateFrameCount(frame.current + 1);
+  const doStep = () => {
+    frameCountRef.current++;
+    setFrameCount(frameCountRef.current);
+    stepFrameCount.current++;
+    props.onStep();
+  };
+
+  const step = () => {
+    /*
+    props.tick().then((result: boolean) => {
+      result && updateFPS();
+    });
+     */
+    props.tick();
+  };
+
+  const updateFPS = () => {
+    if (startedAt.current && startedAt.current > 0) {
+      const elapsedMsec = Date.now() - startedAt.current + timeTotal.current;
+      if (frameCountRef.current >= 10) {
+        setFps(
+          (
+            (frameCountRef.current - stepFrameCount.current) /
+            (elapsedMsec / 1000)
+          ).toFixed(1),
+        );
+      }
+      setElapsed(Math.round(elapsedMsec / 1000));
+    }
   };
 
   useEffect(() => {
     switch (props.state) {
       case PlayControllerState.INITIALIZING:
       case PlayControllerState.INITIALIZED:
-        stopTimer();
-        resetFrameCount();
+        pause();
+        reset();
         break;
       case PlayControllerState.RUNNING:
-        if (!timerRef.current) {
-          startTimer();
+        if (!intervalRef.current) {
+          start();
         }
         break;
       case PlayControllerState.STEP_RUNNING:
-        stepTimer();
+        step();
         break;
       case PlayControllerState.PAUSED:
-        stopTimer();
+        pause();
         break;
       default:
         break;
@@ -149,15 +164,15 @@ export const PlayController = (props: PlayControllerProps) => {
 
   useEffect(() => {
     return () => {
-      stopTimer();
+      pause();
     };
   }, []);
 
   useEffect(() => {
     if (props.speed !== speed) {
-      restartTimer();
+      restart();
     }
-  }, [speed, startTimer]);
+  }, [speed, start]);
 
   const color =
     props.state === PlayControllerState.RUNNING ? 'warning' : 'primary';
@@ -196,7 +211,7 @@ export const PlayController = (props: PlayControllerProps) => {
         <SubPlayButton
           variant="contained"
           size="small"
-          onClick={props.onStep}
+          onClick={doStep}
           disabled={
             props.state === PlayControllerState.INITIALIZING ||
             props.state === PlayControllerState.RUNNING ||
@@ -261,10 +276,8 @@ export const PlayController = (props: PlayControllerProps) => {
             width: '35%',
           }}
         >
-          {frame.current}
-
+          {frameCount}
           {elapsed !== null ? '  / ' + elapsed + ' sec' : ''}
-
           {fps !== null ? ' (' + fps + ' fps)' : ''}
         </Typography>
       </Box>

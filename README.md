@@ -37,7 +37,7 @@ pnpm install && pnpm dev
 [Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/index.html)
 - Synchronized Viewports of Static Image: "The Grate Wave off Kanagawa" from the series Thirty-six Views of Mount Fuji by Hokusai
 - Synchronized Viewports of Dynamic Image: Randomly generated data
-- Viewport of Multi Agent Simulation: Schelling's model of segregation
+- Viewport of Multi Agent Simulation: Schelling's model of segregation implemented with Plain-JS/WebGPU/WebAssembly
 
 # Code Example
 
