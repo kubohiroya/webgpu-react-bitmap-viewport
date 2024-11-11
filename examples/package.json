@@ -23,10 +23,10 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^22.8.7",
+    "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@webgpu/types": "^0.1.50",
+    "@webgpu/types": "^0.1.51",
     "as-type": "^2.0.0",
     "assemblyscript": "^0.27.30",
     "prettier": "^3.3.3",

@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import assemblyScriptPlugin from 'vite-plugin-assemblyscript-asc';
-// import react from '@vitejs/plugin-react';
-// import topLevelWait from 'vite-plugin-top-level-await';
+import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -25,18 +24,11 @@ export default defineConfig({
   resolve: {
     alias: {
       'webgpu-react-bitmap-viewport': resolve(__dirname, '../src/index.ts'),
-      /*
-      SchellingSegregationKernelFunctions: resolve(
-        __dirname,
-        '../examples/build/webgpu-react-bitmap-viewport/as/SchellingSegregationKernelFunctions.release/index.wasm?init',
-      ),
-       */
     },
   },
 
   plugins: [
-    // topLevelWait(),
-    // react(),
+    react(),
     assemblyScriptPlugin({
       projectRoot: '.',
       configFile: 'asconfig.json',
