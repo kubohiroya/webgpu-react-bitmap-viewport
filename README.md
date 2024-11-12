@@ -66,7 +66,7 @@ const viewportStates = new Float32Array([
 ]);
 
 export const Index = () => {
-  const gridRefs =
+  const gridHandlerRefs =
     [
       useRef<GridHandles>(null),
       useRef<GridHandles>(null)
@@ -76,7 +76,7 @@ export const Index = () => {
     <>
       <Grid
         index={0}
-        ref={gridRefs[0]}
+        ref={gridHandlerRefs[0]}
         numViewports={2}
         headerOffset={{ left: 10, top: 10 }}
         canvasSize={{ width: 138, height: 138 }}
@@ -91,18 +91,18 @@ export const Index = () => {
         selectedStates={selectedStates}
         viewportStates={viewportStates}
         onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[1].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
+          gridHandlerRefs[1].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
-          gridRefs[1].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
+          gridHandlerRefs[1].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
-          gridRefs[1].current?.refreshViewportState(sourceIndex);
+          gridHandlerRefs[1].current?.refreshViewportState(sourceIndex);
         }}
       />
       <Grid
         index={1}
-        ref={gridRefs[1]}
+        ref={gridHandlerRefs[1]}
         numViewports={2}
         headerOffset={{ left: 10, top: 10 }}
         canvasSize={{ width: 138, height: 138 }}
@@ -117,13 +117,13 @@ export const Index = () => {
         selectedStates={selectedStates}
         viewportStates={viewportStates}
         onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[0].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
+          gridHandlerRefs[0].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridRefs[0].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
+          gridHandlerRefs[0].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
         }}
         onViewportStateChange={(sourceIndex: number) => {
-          gridRefs[0].current?.refreshViewportState(sourceIndex);
+          gridHandlerRefs[0].current?.refreshViewportState(sourceIndex);
         }}
       />
     </>
