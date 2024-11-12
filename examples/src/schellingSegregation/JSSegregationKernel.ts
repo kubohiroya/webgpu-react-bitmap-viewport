@@ -2,7 +2,7 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationKernel } from './SegregationKernel';
 import { SegregationUIState } from './SegregationUIState';
 import { JSSegregationKernelData } from './JSSegregationKernelData';
-import { shuffleUint32Array } from './utils/arrayUtils';
+import { processConvolution, shuffleUint32Array } from './utils/arrayUtils';
 
 export class JSSegregationKernel extends SegregationKernel {
   protected data!: JSSegregationKernelData;
@@ -51,32 +51,6 @@ export class JSSegregationKernel extends SegregationKernel {
     }
   }
 
-  processConvolution(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    callback: (index: number) => void,
-  ): void {
-    // x, y の周囲の相対的な位置
-    [
-      [-1, -1],
-      [0, -1],
-      [1, -1], // 上の行
-      [-1, 0],
-      [1, 0], // 左右
-      [-1, 1],
-      [0, 1],
-      [1, 1], // 下の行
-    ].forEach(([dx, dy]) => {
-      // xとyの上下左右ループを考慮して、座標を計算
-      const newX = (x + dx + width) % width;
-      const newY = (y + dy + height) % height;
-      // インデックスを計算
-      callback(newY * width + newX);
-    });
-  }
-
   moveAgentAndSwapEmptyCell(
     grid: Uint32Array,
     emptyCellIndices: Uint32Array,
@@ -111,7 +85,7 @@ export class JSSegregationKernel extends SegregationKernel {
         if (currentAgentType !== EMPTY_VALUE) {
           let neighborCount = 0;
           let similarCount = 0;
-          this.processConvolution(
+          processConvolution(
             x,
             y,
             this.data.width,

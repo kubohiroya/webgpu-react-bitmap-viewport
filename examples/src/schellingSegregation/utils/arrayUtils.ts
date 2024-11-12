@@ -76,3 +76,29 @@ export function reverseCumulativeSum(arr: number[]): number[] {
     return original;
   });
 }
+
+export function processConvolution(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  callback: (index: number) => void,
+): void {
+  // x, y の周囲の相対的な位置
+  [
+    [-1, -1],
+    [0, -1],
+    [1, -1], // 上の行
+    [-1, 0],
+    [1, 0], // 左右
+    [-1, 1],
+    [0, 1],
+    [1, 1], // 下の行
+  ].forEach(([dx, dy]) => {
+    // xとyの上下左右ループを考慮して、座標を計算
+    const newX = (x + dx + width) % width;
+    const newY = (y + dy + height) % height;
+    // インデックスを計算
+    callback(newY * width + newX);
+  });
+}

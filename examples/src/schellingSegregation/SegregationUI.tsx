@@ -12,7 +12,7 @@ import {
   GridHandles,
   GridShaderMode,
 } from 'webgpu-react-bitmap-viewport';
-import { Box, CircularProgress, Slider } from '@mui/material';
+import { Box, CircularProgress, Slider, Typography } from '@mui/material';
 import {
   GridOn,
   PieChart,
@@ -25,6 +25,7 @@ import {
 } from './components/PlayController';
 import { SegregationKernel } from './SegregationKernel';
 import { cumulativeSum } from './utils/arrayUtils';
+import { CellInfo } from './CellInfo';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -45,6 +46,7 @@ export function SegregationUI(
     useState<PlayControllerState>(PlayControllerState.INITIALIZING);
 
   const [gridSize, setGridSize] = useState(Math.max(props.width, props.height));
+  const [gridSizeSource, setGridSizeSource] = useState(10);
 
   const [tolerance, setTolerance] = useState<number>(
     props.tolerance !== undefined ? props.tolerance : 0.5,
@@ -52,6 +54,8 @@ export function SegregationUI(
   const [agentTypeCumulativeShares, setAgentTypeCumulativeShares] = useState<
     number[]
   >(cumulativeSum(props.agentTypeShares));
+
+  const [focusedCell, setFocusedCell] = useState<[number, number]>([-1, -1]);
 
   const updateFrameCount = useCallback((frameCount: number) => {
     kernelRef.current.getUIState().setFrameCount(frameCount);
@@ -106,7 +110,9 @@ export function SegregationUI(
     (_: Event | SyntheticEvent, newValueSource: number | number[]) => {
       setPlayControllerState(PlayControllerState.INITIALIZING);
       const newGridSizeSource = newValueSource as number;
-      setGridSize(newGridSizeSource);
+      const newGridSize = 2 ** newGridSizeSource;
+      setGridSizeSource(newGridSizeSource);
+      setGridSize(newGridSize);
     },
     [],
   );
@@ -114,10 +120,12 @@ export function SegregationUI(
   const onGridSizeChangeCommit = useCallback(
     (_: Event | SyntheticEvent, newValueSource: number | number[]) => {
       const newGridSizeSource = newValueSource as number;
-      setGridSize(newGridSizeSource);
+      const newGridSize = 2 ** newGridSizeSource;
+      setGridSizeSource(newGridSizeSource);
+      setGridSize(newGridSize);
       update(
         PlayControllerState.INITIALIZING,
-        newGridSizeSource,
+        newGridSize,
         agentTypeCumulativeShares,
       );
     },
@@ -210,18 +218,20 @@ export function SegregationUI(
     setPlayControllerState(PlayControllerState.RUNNING);
   }, [playControllerState]);
 
-  const getOnFocusedStateChange = useCallback(() => {
-    return (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+  const getOnFocusedStateChange = useCallback(
+    (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+      setFocusedCell([columnIndex, rowIndex]);
       gridHandlesRefs
         .filter((_, index) => index !== 0)
-        .forEach((ref) =>
-          ref.current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex),
-        );
-    };
-  }, []);
+        .forEach((ref) => {
+          ref.current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
+        });
+    },
+    [],
+  );
 
   const getOnSelectedStateChange = useCallback(
-    () => (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+    (sourceIndex: number, columnIndex: number, rowIndex: number) => {
       gridHandlesRefs
         .filter((_, index) => index !== 0)
         .forEach((ref) =>
@@ -231,14 +241,11 @@ export function SegregationUI(
     [],
   );
 
-  const getOnViewportStateChange = useCallback(
-    () => (sourceIndex: number) => {
-      gridHandlesRefs
-        .filter((_, index) => index !== 0)
-        .forEach((ref) => ref.current?.refreshViewportState(sourceIndex));
-    },
-    [],
-  );
+  const getOnViewportStateChange = useCallback((sourceIndex: number) => {
+    gridHandlesRefs
+      .filter((_, index) => index !== 0)
+      .forEach((ref) => ref.current?.refreshViewportState(sourceIndex));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -258,10 +265,18 @@ export function SegregationUI(
     })();
   }, []);
 
-  /*
   function calculateValue(value: number) {
     return 2 ** value;
-  }*/
+  }
+
+  const info =
+    CellInfo({
+      focusedCell,
+      width: gridSize,
+      height: gridSize,
+      agentTypeCumulativeShares,
+      grid: kernelRef.current.getGrid(),
+    }) || '';
 
   return (
     <>
@@ -288,14 +303,14 @@ export function SegregationUI(
 
           <Slider
             aria-label={'grid size'}
-            value={gridSize}
-            min={2}
-            max={2048}
-            //max={1024}
+            value={gridSizeSource}
+            min={3}
+            max={12}
+            scale={calculateValue}
             step={1}
-            marks={[2, 4, 8, 16, 32, 64, 128, 256, 512, 1024].map((value) => ({
-              value,
-              label: value.toString(),
+            marks={[3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((value) => ({
+              value: value,
+              label: (2 ** value).toString(),
             }))}
             onChange={onGridSizeChangeTransient}
             onChangeCommitted={onGridSizeChangeCommit}
@@ -392,6 +407,7 @@ export function SegregationUI(
             />
           )}
         </Box>
+        <Typography>{info || `gridSize: ${gridSize} x ${gridSize}`}</Typography>
       </Box>
     </>
   );

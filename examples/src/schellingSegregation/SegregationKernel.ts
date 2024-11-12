@@ -2,6 +2,19 @@ import { SegregationUIState } from './SegregationUIState';
 import { reverseCumulativeSum } from './utils/arrayUtils';
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 
+export function createAgentTypeValues(agentTypeCumulativeShares: number[]) {
+  return agentTypeCumulativeShares
+    .map((share: number) => Math.floor(255 * share))
+    .concat(EMPTY_VALUE);
+}
+
+export function findAgentTypeIndex(
+  agentTypeValues: number[],
+  value: number,
+): number {
+  return createAgentTypeValues(agentTypeValues).findIndex((v) => v == value);
+}
+
 export abstract class SegregationKernel {
   protected uiState: SegregationUIState;
 
@@ -23,9 +36,7 @@ export abstract class SegregationKernel {
     if (this.getWidth() !== width || this.getHeight() !== height) {
       this.updateGridSize(width, height, agentTypeCumulativeShares, tolerance);
     }
-    const agentTypeValues = agentTypeCumulativeShares
-      .map((share: number) => Math.floor(255 * share))
-      .concat(EMPTY_VALUE);
+    const agentTypeValues = createAgentTypeValues(agentTypeCumulativeShares);
 
     const _agentTypeCounts = reverseCumulativeSum(
       agentTypeCumulativeShares,
