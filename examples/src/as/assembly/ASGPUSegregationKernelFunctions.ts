@@ -73,8 +73,11 @@ function calcSimilarity(
       }
     }
   }
-
-  return f32(similarCount) / f32(neighborCount);
+  if (neighborCount === 0) {
+    return 0.0;
+  } else {
+    return f32(similarCount) / f32(neighborCount);
+  }
 }
 
 export function getWidth(data: ASGPUSegregationKernelData): i32 {

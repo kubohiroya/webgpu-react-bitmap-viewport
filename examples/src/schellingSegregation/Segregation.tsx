@@ -13,6 +13,7 @@ export default function Segregation(
   props: SegregationProps & SegregationUIProps & { workgroupSizeMax: number },
 ) {
   const [width, height] = [props.gridSize, props.gridSize];
+  const seed = props.seed;
   const uiState = new SegregationUIState({
     width,
     height,
@@ -27,18 +28,20 @@ export default function Segregation(
   const kernel = (() => {
     switch (props.mode) {
       case SegregationModes.JS:
-        return new JSSegregationKernel(uiState);
+        return new JSSegregationKernel(uiState, seed);
       case SegregationModes.GPU:
         return new GPUSegregationKernel(
           uiState,
+          seed,
           device,
           props.workgroupSizeMax,
         );
       case SegregationModes.ASM:
-        return new ASSegregationKernel(uiState);
+        return new ASSegregationKernel(uiState, seed);
       case SegregationModes.ASM_GPU:
         return new ASGPUSegregationKernel(
           uiState,
+          seed,
           device,
           props.workgroupSizeMax,
         );

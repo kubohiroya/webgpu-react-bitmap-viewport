@@ -1,6 +1,6 @@
-import { findAgentTypeIndex } from './SegregationKernel';
-import { processConvolution } from './utils/arrayUtils';
+import { processConvolution } from '../utils/arrayUtil';
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
+import { findAgentTypeIndex } from '../SegregationKernelService';
 
 function processCell(
   x: number,
@@ -12,7 +12,7 @@ function processCell(
 ) {
   let neighborCount = 0;
   let similarCount = 0;
-  processConvolution(x, y, width, height, (index) => {
+  processConvolution(x, y, width, height, (index: number) => {
     const agentType = grid[index];
     if (agentType !== EMPTY_VALUE) {
       neighborCount++;

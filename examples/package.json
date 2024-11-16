@@ -1,6 +1,6 @@
 {
   "name": "webgpu-react-bitmap-viewport-examples",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "WebGPU React Bitmap Viewport Examples: A Set of Synchronized Viewports/Dynamic Viewport of Schelling Segregation Model",
   "main": "src/main.tsx",
   "scripts": {
@@ -20,12 +20,14 @@
     "@mui/material": "^6.1.6",
     "@mui/styled-engine": "^6.1.6",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "seedrandom": "^3.0.5"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/seedrandom": "^3.0.8",
     "@webgpu/types": "^0.1.51",
     "as-type": "^2.0.0",
     "assemblyscript": "^0.27.30",

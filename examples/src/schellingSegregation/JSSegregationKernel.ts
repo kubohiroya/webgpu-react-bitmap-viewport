@@ -2,13 +2,17 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationKernel } from './SegregationKernel';
 import { SegregationUIState } from './SegregationUIState';
 import { JSSegregationKernelData } from './JSSegregationKernelData';
-import { processConvolution, shuffleUint32Array } from './utils/arrayUtils';
+import {
+  processConvolution,
+  shuffleUint32Array,
+  sortUint32ArrayRange,
+} from './utils/arrayUtil';
 
 export class JSSegregationKernel extends SegregationKernel {
   protected data!: JSSegregationKernelData;
 
-  constructor(uiState: SegregationUIState) {
-    super(uiState);
+  constructor(uiState: SegregationUIState, seed: string | undefined) {
+    super(uiState, seed);
   }
 
   updateGridSize(
@@ -31,7 +35,11 @@ export class JSSegregationKernel extends SegregationKernel {
   }
 
   shuffleGridContent() {
-    shuffleUint32Array(this.data.grid, this.data.width * this.data.height);
+    shuffleUint32Array(
+      this.data.grid,
+      this.data.width * this.data.height,
+      this.rng,
+    );
   }
 
   updateEmptyCellIndices(_emptyCellIndices?: Uint32Array) {
@@ -111,15 +119,24 @@ export class JSSegregationKernel extends SegregationKernel {
         }
       }
     }
+    if (this.rng) {
+      sortUint32ArrayRange(
+        this.data.movingAgentIndices,
+        0,
+        this.data.movingAgentIndicesLength,
+      );
+    }
 
     shuffleUint32Array(
       this.data.emptyCellIndices,
       this.data.emptyCellIndicesLength,
+      this.rng,
     );
 
     shuffleUint32Array(
       this.data.movingAgentIndices,
       this.data.movingAgentIndicesLength,
+      this.rng,
     );
 
     this.moveAgentAndSwapEmptyCell(

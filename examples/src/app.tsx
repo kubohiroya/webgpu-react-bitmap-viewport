@@ -8,16 +8,22 @@ import { Box, Tab, Typography } from '@mui/material';
 import { SegregationModes } from './schellingSegregation/SegregationUIProps';
 import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 
-const GRID_SIZE = 1024;
 const WORKGROUP_SIZE_MAX = 64;
 
 const SCHELLING_APPS_FULL = [
   [SegregationModes.JS, SegregationModes.ASM],
   [SegregationModes.GPU],
 ];
+// const SCHELLING_APPS_HALF = [[SegregationModes.JS, SegregationModes.GPU]];
 // const SCHELLING_APPS_GPU_ONLY = [[SegregationModes.GPU]];
 const SCHELLING_APPS = SCHELLING_APPS_FULL;
-//const SCHELLING_APPS = SCHELLING_APPS_GPU_ONLY;
+// const SCHELLING_APPS = SCHELLING_APPS_HALF;
+// const SCHELLING_APPS = SCHELLING_APPS_GPU_ONLY;
+
+const urlParams = new URLSearchParams(window.location.search);
+const seed = urlParams.get('seed') || undefined;
+const gridSizeValue = urlParams.get('gridSize');
+const gridSize = gridSizeValue ? parseInt(gridSizeValue) : 1024;
 
 const SynchronizedHokusaiImage = () => {
   return (
@@ -113,7 +119,8 @@ const Schelling = ({ mode, index }: { mode: any; index: number }) => {
       <Segregation
         id={`schelling-${mode}-${index}`}
         mode={mode}
-        gridSize={GRID_SIZE}
+        seed={seed}
+        gridSize={gridSize}
         workgroupSizeMax={WORKGROUP_SIZE_MAX}
         agentTypeShares={[0.15, 0.15, 0.15, 0.15, 0.15]}
         //agentTypeShares={[0.7, 0.23]}

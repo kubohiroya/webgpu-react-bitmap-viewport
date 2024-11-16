@@ -9,10 +9,11 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
 
   constructor(
     uiState: SegregationUIState,
+    seed: string | undefined,
     device: GPUDevice,
     workgroupSize: number,
   ) {
-    super(uiState, device, workgroupSize);
+    super(uiState, seed, device, workgroupSize);
   }
 
   setTolerance(newTolerance: number) {

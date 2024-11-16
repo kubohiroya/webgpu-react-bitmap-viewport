@@ -1,16 +1,34 @@
-export function shuffleUint32Array(data: Uint32Array, length: number): void {
+import seedrandom from 'seedrandom';
+
+export function sortUint32ArrayRange(
+  array: Uint32Array,
+  start: number,
+  end: number,
+): void {
+  const subArray = Array.from(array.slice(start, end));
+  subArray.sort((a, b) => a - b);
+  array.set(subArray, start);
+}
+
+export function shuffleUint32Array(
+  data: Uint32Array,
+  length: number,
+  rng?: seedrandom.PRNG,
+): void {
   // シャッフル関数 (Fisher–Yates shuffle)
+  const random = rng ? rng : Math.random;
   for (let i = 0; i < length; i++) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     const tmp = data[i];
     data[i] = data[j];
     data[j] = tmp;
   }
 }
 
-export function shuffle(data: Array<number>): void {
+export function shuffle(data: Array<number>, rng?: seedrandom.PRNG): void {
+  const random = rng ? rng : Math.random;
   for (let i = 0; i < data.length; i++) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     const tmp = data[i];
     data[i] = data[j];
     data[j] = tmp;
@@ -101,4 +119,36 @@ export function processConvolution(
     // インデックスを計算
     callback(newY * width + newX);
   });
+}
+
+export function printGrid(
+  grid: ArrayLike<number>,
+  width: number,
+  height: number,
+) {
+  for (let i = 0; i < height; i++) {
+    let line = '';
+    for (let j = 0; j < width; j++) {
+      if (j !== 0) line += ', ';
+      line += grid[i * width + j];
+    }
+    console.log(line);
+  }
+}
+
+export function print2DMatrix(
+  grid: Array<Array<number>>,
+  width: number,
+  height: number,
+) {
+  console.log(`[`);
+  for (let i = 0; i < height; i++) {
+    let line = '';
+    for (let j = 0; j < width; j++) {
+      if (j !== 0) line += ', ';
+      line += grid[i][j];
+    }
+    console.log(line);
+  }
+  console.log(']');
 }

@@ -3,16 +3,16 @@ export class GPUSegregationKernelData {
   dispatchSize: number;
   random: Float32Array;
 
-  agentIndicesArray: Uint32Array;
-  agentIndicesLengthArray: Uint32Array;
+  agentIndices: Uint32Array;
+  agentIndicesLength: Uint32Array;
 
   constructor(width: number, height: number, workgroupSizeMax: number) {
     this.workgroupSize = Math.min(width, workgroupSizeMax);
     this.dispatchSize = Math.min(height, workgroupSizeMax);
     this.random = new Float32Array(width * height);
 
-    this.agentIndicesArray = new Uint32Array(width * height);
-    this.agentIndicesLengthArray = new Uint32Array(
+    this.agentIndices = new Uint32Array(width * height);
+    this.agentIndicesLength = new Uint32Array(
       this.workgroupSize * this.dispatchSize,
     );
   }

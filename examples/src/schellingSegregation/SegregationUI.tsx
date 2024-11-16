@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  EMPTY_VALUE,
   Grid,
   GridHandles,
   GridShaderMode,
@@ -24,8 +25,8 @@ import {
   PlayControllerState,
 } from './components/PlayController';
 import { SegregationKernel } from './SegregationKernel';
-import { cumulativeSum } from './utils/arrayUtils';
-import { CellInfo } from './CellInfo';
+import { cumulativeSum } from './utils/arrayUtil';
+import { CellInfo } from './components/CellInfo';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -76,6 +77,7 @@ export function SegregationUI(
             height,
             _agentTypeCumulativeShares || agentTypeCumulativeShares,
             tolerance,
+            EMPTY_VALUE,
           );
           kernelRef.current.syncGridContent(grid);
           setPlayControllerState(PlayControllerState.INITIALIZED);
