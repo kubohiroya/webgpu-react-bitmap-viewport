@@ -175,7 +175,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
 
     this.bindGroup = this.createBindGroup(this.bindGroupLayout);
 
-    const mooreNeighborhoodRange = 5;
+    const mooreNeighborhoodRange = 1;
     const mooreNeighborhoodSize = mooreNeighborhoodRange * 2 + 1;
     const workgroupSize = this.gpuData.workgroupSize;
     const dispatchSize = this.gpuData.dispatchSize;

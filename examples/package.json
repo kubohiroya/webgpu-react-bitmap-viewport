@@ -15,10 +15,10 @@
   "dependencies": {
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
-    "@mui/icons-material": "^6.1.6",
+    "@mui/icons-material": "^6.1.7",
     "@mui/lab": "6.0.0-beta.10",
-    "@mui/material": "^6.1.6",
-    "@mui/styled-engine": "^6.1.6",
+    "@mui/material": "^6.1.7",
+    "@mui/styled-engine": "^6.1.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "seedrandom": "^3.0.5"
@@ -30,10 +30,10 @@
     "@types/seedrandom": "^3.0.8",
     "@webgpu/types": "^0.1.51",
     "as-type": "^2.0.0",
-    "assemblyscript": "^0.27.30",
+    "assemblyscript": "^0.27.31",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
-    "vite": "^5.4.10",
+    "vite": "^5.4.11",
     "vite-plugin-assemblyscript-asc": "^1.0.5",
     "vite-plugin-glsl": "^1.3.0",
     "vite-plugin-top-level-await": "^1.4.4"
