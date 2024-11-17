@@ -12,7 +12,7 @@ const WORKGROUP_SIZE_MAX = 64;
 
 const SCHELLING_APPS_FULL = [
   [SegregationModes.JS, SegregationModes.AS],
-  [SegregationModes.GPU, SegregationModes.ASGPU],
+  [SegregationModes.GPU], // SegregationModes.ASGPU
 ];
 // const SCHELLING_APPS_HALF = [[SegregationModes.JS, SegregationModes.GPU]];
 // const SCHELLING_APPS_GPU_ONLY = [[SegregationModes.GPU]];

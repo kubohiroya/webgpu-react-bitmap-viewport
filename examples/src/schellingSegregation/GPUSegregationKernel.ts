@@ -22,7 +22,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
   protected workgroupSizeMax: number;
 
   protected paramsBuffer: GPUBuffer;
-  protected gridBuffer!: GPUBuffer;
+  protected gridTexture!: GPUTexture;
   protected randomBuffer!: GPUBuffer;
   protected emptyCellIndicesBuffer!: GPUBuffer;
   protected agentIndicesBuffer!: GPUBuffer;
@@ -85,7 +85,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     this.data.movingAgentIndices = new Uint32Array(totalCells + 1); // last item is length of the array body
 
     this.randomBuffer && this.randomBuffer.destroy();
-    this.gridBuffer && this.gridBuffer.destroy();
+    this.gridTexture && this.gridTexture.destroy();
 
     this.emptyCellIndicesBuffer && this.emptyCellIndicesBuffer.destroy();
     this.agentIndicesBuffer && this.agentIndicesBuffer.destroy();
@@ -109,13 +109,15 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     });
 
     // Create GPUBuffer for input grid data
-    this.gridBuffer = this.device.createBuffer({
+    this.gridTexture = this.device.createTexture({
       label: 'gridBuffer',
-      size: totalCells * Uint32Array.BYTES_PER_ELEMENT,
+      size: [width * height],
+      format: 'r8uint',
+      dimension: '1d',
       usage:
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_SRC |
-        GPUBufferUsage.COPY_DST,
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.COPY_SRC |
+        GPUTextureUsage.COPY_DST,
     });
 
     this.emptyCellIndicesBuffer = this.device.createBuffer({
@@ -239,9 +241,18 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     );
   }
 
+  writeGridTexture(grid: Uint32Array) {
+    this.device.queue.writeTexture(
+      { texture: this.gridTexture },
+      grid,
+      { bytesPerRow: this.data.width },
+      [this.data.width * this.data.height],
+    );
+  }
+
   syncGridContent(grid: Uint32Array) {
     super.syncGridContent(grid);
-    this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
+    this.writeGridTexture(grid);
     this.updateEmptyCellIndices();
 
     this.data.emptyCellIndices[this.data.emptyCellIndices.length - 1] =
@@ -371,7 +382,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
             this.data.movingAgentIndicesLength,
           );
         }
-        this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
+        this.writeGridTexture(this.data.grid);
       } else {
         this.device.queue.submit([command0, command1, command2]);
         await this.device.queue.onSubmittedWorkDone();
@@ -393,7 +404,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
           this.data.movingAgentIndices,
           movingAgentIndicesLength,
         );
-        this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
+        this.writeGridTexture(this.data.grid);
       }
     } else {
       const sources = [
@@ -476,32 +487,77 @@ export class GPUSegregationKernel extends JSSegregationKernel {
         this.data.movingAgentIndices,
         this.data.movingAgentIndicesLength,
       );
-      this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
+      this.writeGridTexture(this.data.grid);
     }
 
     return this.data.grid;
   }
 
   private createBindGroupLayout() {
-    const types: Array<'uniform' | 'storage' | 'read-only-storage'> = [
+    const types: Array<
+      'uniform' | 'storage' | 'read-only-storage' | 'texture'
+    > = [
       'uniform',
       'read-only-storage',
-      'storage',
+      'texture',
       'storage',
       'storage',
       'storage',
       'storage',
     ];
     return this.device.createBindGroupLayout({
-      entries: types.map((type, index) => {
-        return {
-          binding: index,
+      entries: [
+        {
+          binding: 0,
           visibility: GPUShaderStage.COMPUTE,
           buffer: {
-            type,
+            type: 'uniform',
           },
-        };
-      }),
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: 'read-only-storage',
+          },
+        },
+        {
+          binding: 2,
+          visibility: GPUShaderStage.COMPUTE,
+          storageTexture: {
+            access: 'read-write',
+            format: 'r8uint',
+          },
+        },
+        {
+          binding: 3,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: 'storage',
+          },
+        },
+        {
+          binding: 4,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: 'storage',
+          },
+        },
+        {
+          binding: 5,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: 'storage',
+          },
+        },
+        {
+          binding: 6,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: 'storage',
+          },
+        },
+      ],
     });
   }
 
@@ -525,10 +581,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
         },
         {
           binding: 2,
-          resource: {
-            label: 'grid',
-            buffer: this.gridBuffer,
-          },
+          resource: this.gridTexture.createView(),
         },
         {
           binding: 3,

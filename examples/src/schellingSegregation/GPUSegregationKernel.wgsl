@@ -16,8 +16,8 @@ struct Params {
 
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var<storage, read> random: array<f32>;
-@group(0) @binding(2) var<storage, read_write> grid: array<u32>;
-@group(0) @binding(3) var<storage, read_write> emptyCellIndices: array<u32>;
+@group(0) @binding(2) var grid: texture_storage_1d<r8uint, read_write>;
+@group(0) @binding(3) var<storage, read> emptyCellIndices: array<u32>;
 @group(0) @binding(4) var<storage, read_write> agentIndices: array<u32>;
 @group(0) @binding(5) var<storage, read_write> agentIndicesLength: array<u32>;
 @group(0) @binding(6) var<storage, read_write> movingAgentIndices: array<u32>;
