@@ -36,9 +36,9 @@ export default function Segregation(
           device,
           props.workgroupSizeMax,
         );
-      case SegregationModes.ASM:
+      case SegregationModes.AS:
         return new ASSegregationKernel(uiState, seed);
-      case SegregationModes.ASM_GPU:
+      case SegregationModes.ASGPU:
         return new ASGPUSegregationKernel(
           uiState,
           seed,

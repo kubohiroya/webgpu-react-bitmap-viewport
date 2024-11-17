@@ -22,7 +22,7 @@ export class ASSegregationKernel extends SegregationKernel {
     agentShares: number[],
     tolerance: number,
   ) {
-    this.asData = SegregationKernelFunctions.createSegregationKernelDataAS(
+    this.asData = SegregationKernelFunctions.createASSegregationKernelData(
       width,
       height,
       agentShares,
@@ -49,7 +49,7 @@ export class ASSegregationKernel extends SegregationKernel {
   }
 
   setTolerance(newTolerance: number) {
-    SegregationKernelFunctions.setToleranceAS(this.asData, newTolerance);
+    SegregationKernelFunctions.setASTolerance(this.asData, newTolerance);
   }
 
   shuffleGridContent() {
@@ -57,12 +57,12 @@ export class ASSegregationKernel extends SegregationKernel {
   }
 
   updateEmptyCellIndices() {
-    SegregationKernelFunctions.updateEmptyCellIndicesArrayAS(this.asData);
+    SegregationKernelFunctions.updateASEmptyCellIndicesArray(this.asData);
   }
 
   syncGridContent(grid: Uint32Array): void {
     this.grid.set(grid);
-    SegregationKernelFunctions.setGridAS(this.asData, Array.from(grid));
+    SegregationKernelFunctions.setASGrid(this.asData, Array.from(grid));
   }
 
   getGrid(): Uint32Array {

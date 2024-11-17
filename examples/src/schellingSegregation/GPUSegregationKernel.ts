@@ -262,6 +262,9 @@ export class GPUSegregationKernel extends JSSegregationKernel {
   private getBlockHeight = () => {
     return Math.ceil(this.data.height / this.gpuData.workgroupSize);
   };
+  protected getBlockSize = () => {
+    return this.getBlockWidth() * this.getBlockHeight();
+  };
 
   private updateRandomBuffer = (
     size: number,
@@ -288,7 +291,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     console.log(label, debugData);
   }
 
-  private createCommandBuffer(
+  protected createCommandBuffer(
     computePipeline: GPUComputePipeline,
     dispatchSize: number,
   ) {
@@ -433,6 +436,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
             throw new Error();
           }
           await targetBuffer.mapAsync(GPUMapMode.READ);
+
           entry.target.set(
             new Uint32Array(targetBuffer.getMappedRange(0, entry.size)),
           );

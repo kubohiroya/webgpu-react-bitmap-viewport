@@ -100,6 +100,14 @@ export function setGrid(
   grid: Array<u32>,
 ): void {
   data.grid = StaticArray.fromArray<u32>(grid);
+  updateEmptyCellIndicesArray(data);
+}
+
+export function setEmptyCellIndices (
+  data: ASGPUSegregationKernelData,
+  emptyCellIndices: StaticArray<i32>,
+): void {
+  data.emptyCellIndices = emptyCellIndices;
 }
 
 export function setTolerance(
@@ -119,11 +127,13 @@ export function getMovingAgentIndices(
 ): StaticArray<i32> {
   return data.movingAgentIndices;
 }
+/*
 export function getEmptyCellIndicesLength(
   data: ASGPUSegregationKernelData,
 ): i32 {
   return data.emptyCellIndicesLength;
 }
+ */
 export function getMovingAgentIndicesLength(
   data: ASGPUSegregationKernelData,
 ): i32 {
@@ -136,6 +146,7 @@ export function createSegregationKernelData(
   agentShares: Array<f32>,
   tolerance: f32,
   workgroupSize: i32,
+  dispatchSize: i32,
   EMPTY_VALUE: i32,
 ): ASGPUSegregationKernelData {
   return new ASGPUSegregationKernelData(
@@ -144,6 +155,7 @@ export function createSegregationKernelData(
     agentShares,
     tolerance,
     workgroupSize,
+    dispatchSize,
     EMPTY_VALUE,
   );
 }
@@ -155,16 +167,16 @@ export function compactIndicesArray(
   data.movingAgentIndicesLength = 0;
   for (
     let blockIndex: i32 = 0;
-    blockIndex < data.agentIndicesLengthArray.length;
+    blockIndex < data.agentIndicesLength.length;
     blockIndex++
   ) {
-    if (data.agentIndicesLengthArray[blockIndex] > 0) {
+    if (data.agentIndicesLength[blockIndex] > 0) {
       const start = blockIndex * blockSize;
-      const end = start + data.agentIndicesLengthArray[blockIndex];
+      const end = start + data.agentIndicesLength[blockIndex];
       for (let i: i32 = start; i < end; i++) {
         unchecked(
           (data.movingAgentIndices[data.movingAgentIndicesLength] =
-            data.agentIndicesArray[i]),
+            data.agentIndices[i]),
         );
         data.movingAgentIndicesLength++;
       }
@@ -246,9 +258,14 @@ export function moveAgentAndSwapEmptyCell(
   }
 }
 
-export function tick(data: ASGPUSegregationKernelData): StaticArray<u32> {
-  updateEmptyCellIndicesArray(data);
-  updateMovingAgentIndicesArray(data);
+
+export function tick(data: ASGPUSegregationKernelData,
+                     agentIndices: Uint32Array,
+                     agentIndicesLength: Uint32Array,
+                     blockSize: i32): StaticArray<u32> {
+  data.agentIndices = agentIndices;
+  data.agentIndicesLength = agentIndicesLength;
+  compactIndicesArray(data, blockSize);
   shuffleCellIndices(data);
   shuffleMovingAgents(data);
   moveAgentAndSwapEmptyCell(data);

@@ -1,8 +1,8 @@
 export enum SegregationModes {
   'JS' = 'Plain JavaScript',
   'GPU' = 'JavaScript + WebGPU(64 workgroups)',
-  'ASM' = 'JavaScript + WebAssembly',
-  'ASM_GPU' = 'JavaScript + WebAssembly + WebGPU(64 workgroups)',
+  'AS' = 'JavaScript + WebAssembly',
+  'ASGPU' = 'JavaScript + WebAssembly + WebGPU(64 workgroups)',
 }
 
 export type SegregationUIProps = {

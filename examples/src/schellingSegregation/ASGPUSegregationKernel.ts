@@ -18,16 +18,9 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
 
   setTolerance(newTolerance: number) {
     super.setTolerance(newTolerance);
-    return SegregationKernelFunctions.setToleranceASGPU(
+    return SegregationKernelFunctions.setASGPUTolerance(
       this.asGpuData,
       newTolerance,
-    );
-  }
-
-  getGrid(): Uint32Array {
-    // return this.data.grid; // CHECK ME? FIXME ?
-    return Uint32Array.from(
-      SegregationKernelFunctions.getGridASGPU(this.asGpuData),
     );
   }
 
@@ -38,60 +31,88 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
     tolerance: number,
   ): void {
     this.asGpuData =
-      SegregationKernelFunctions.createSegregationKernelDataASGPU(
+      SegregationKernelFunctions.createASGPUSegregationKernelData(
         width,
         height,
         agentShares,
         tolerance,
-        Math.min(64, width),
+        Math.min(this.workgroupSizeMax, height),
+        Math.min(this.workgroupSizeMax, width),
         EMPTY_VALUE,
       );
     super.updateGridSize(width, height, agentShares, tolerance);
   }
 
-  /*
-  shuffleGridContent(): void {
-    SegregationKernelFunctions.shuffleGridDataASGPU(this.asGpuData);
-  }
-
-  updateEmptyCellIndices() {
-    SegregationKernelFunctions.updateEmptyCellIndicesArrayASGPU(this.asGpuData);
-  }
-
-  updateGridContent(grid: Uint32Array): void {
-    return SegregationKernelFunctions.setGridASGPU(
-      this.asGpuData,
-      Array.from(grid),
-    );
-  }
-   */
-
   async tick(): Promise<Uint32Array> {
-    this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid.buffer);
-    /*
-    await this.execShader(this.computePipelines[0], this.gpuData.dispatchSize);
+    const command0 = this.createCommandBuffer(
+      this.computePipelines[0],
+      this.gpuData.dispatchSize,
+    ); // convolution
 
-    await this.copyBufferToArray(
-      this.agentIndicesBuffer,
-      this.gpuData.movingAgentIndices,
-      this.agentIndicesTargetBuffer,
-    );
-    await this.copyBufferToArray(
-      this.agentIndicesLengthBuffer,
-      this.gpuData.agentIndicesLengths,
-      this.agentIndicesLengthTargetBuffer,
-    );
- */
+    const sources = [
+      {
+        key: 'cells',
+        source: this.agentIndicesBuffer,
+        size:
+          this.data.width * this.data.height * Uint32Array.BYTES_PER_ELEMENT,
+        target: this.gpuData.agentIndices,
+      },
+      {
+        key: 'workItems',
+        source: this.agentIndicesLengthBuffer,
+        size:
+          this.gpuData.workgroupSize *
+          this.gpuData.dispatchSize *
+          Uint32Array.BYTES_PER_ELEMENT,
+        target: this.gpuData.agentIndicesLength,
+      },
+    ];
 
-    // TODO: copy this.gpuData.agentIndices to AS
-    // TODO: copy this.gpuData.agentIndicesLengths to AS
-    // TODO: shuffle emptyCellIndices in AS
-    // TODO: shuffle agentIndices in AS
-    // TODO: compact agentIndices in AS
-    // TODO: move agents in AS
+    const copyEncoders = sources.map((entry) => {
+      const commandEncoder = this.device.createCommandEncoder();
+      commandEncoder.copyBufferToBuffer(
+        entry.source,
+        0,
+        this.targetBuffers.get(entry.key)!,
+        0,
+        entry.size,
+      );
+      return commandEncoder.finish();
+    });
 
-    return Promise.resolve(
-      Uint32Array.from(SegregationKernelFunctions.tickASGPU(this.asGpuData)),
+    this.device.queue.submit([command0, ...copyEncoders]);
+    await Promise.all(
+      sources.map(async (entry) => {
+        const targetBuffer = this.targetBuffers.get(entry.key);
+        if (!targetBuffer) {
+          throw new Error();
+        }
+        await targetBuffer.mapAsync(GPUMapMode.READ);
+        entry.target.set(
+          new Uint32Array(targetBuffer.getMappedRange(0, entry.size)),
+        );
+        targetBuffer.unmap();
+      }),
     );
+    await this.device.queue.onSubmittedWorkDone();
+
+    const grid = Uint32Array.from(
+      SegregationKernelFunctions.tickASGPU(
+        this.asGpuData,
+        this.gpuData.agentIndices,
+        this.gpuData.agentIndicesLength,
+        this.getBlockSize(),
+      ),
+    );
+
+    super.syncGridContent(grid);
+    SegregationKernelFunctions.setASGPUGrid(this.asGpuData, Array.from(grid));
+
+    return Promise.resolve(this.data.grid);
+  }
+
+  syncGridContent(grid: Uint32Array) {
+    super.syncGridContent(grid);
+    SegregationKernelFunctions.setASGPUGrid(this.asGpuData, Array.from(grid));
   }
 }

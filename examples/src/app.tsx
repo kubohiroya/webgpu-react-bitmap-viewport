@@ -11,14 +11,16 @@ import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 const WORKGROUP_SIZE_MAX = 64;
 
 const SCHELLING_APPS_FULL = [
-  [SegregationModes.JS, SegregationModes.ASM],
-  [SegregationModes.GPU],
+  [SegregationModes.JS, SegregationModes.AS],
+  [SegregationModes.GPU, SegregationModes.ASGPU],
 ];
 // const SCHELLING_APPS_HALF = [[SegregationModes.JS, SegregationModes.GPU]];
 // const SCHELLING_APPS_GPU_ONLY = [[SegregationModes.GPU]];
+// const SCHELLING_APPS_ASGPU_ONLY = [[SegregationModes.ASGPU]];
 const SCHELLING_APPS = SCHELLING_APPS_FULL;
 // const SCHELLING_APPS = SCHELLING_APPS_HALF;
 // const SCHELLING_APPS = SCHELLING_APPS_GPU_ONLY;
+// const SCHELLING_APPS = SCHELLING_APPS_ASGPU_ONLY;
 
 const urlParams = new URLSearchParams(window.location.search);
 const seed = urlParams.get('seed') || undefined;

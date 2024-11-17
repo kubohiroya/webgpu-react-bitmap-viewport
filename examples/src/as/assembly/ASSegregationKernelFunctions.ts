@@ -218,7 +218,8 @@ export function moveAgentAndSwapEmptyCell(data: ASSegregationKernelData): void {
   }
 }
 
-export function tick(data: ASSegregationKernelData): StaticArray<u32> {
+export function tick(data: ASSegregationKernelData,
+                     ): StaticArray<u32> {
   updateEmptyCellIndicesArray(data);
   updateMovingAgentIndicesArray(data);
   shuffleCellIndices(data);
