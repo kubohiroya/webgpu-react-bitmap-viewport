@@ -13,8 +13,7 @@
 - Interactive viewport navigation via mouse drag and scrollbar handling, as well as zoom in and out via the mouse wheel.
 - Customizable for bitmap image size, viewport display size, canvas size, header area size, and scrollbar size through React component props.
 - Highlights the column and row under the current mouse pointer.
-- Allows toggling the selected state of each column and row, and highlight the selected ones
-- Supports many-to-many relationships between viewports and bitmap data sources.
+- Allows toggling the selected state of each column and row, and highlight the selected ones.
 
 # Download and Installation
 
