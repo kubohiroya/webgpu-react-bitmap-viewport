@@ -25,6 +25,7 @@ import {
   GridOn,
   PieChart,
   SentimentVeryDissatisfied,
+  SentimentVerySatisfied,
 } from '@mui/icons-material';
 import SplitSlider from './components/SplitSlider';
 import {
@@ -369,7 +370,7 @@ export function SegregationUI(
             />
           </Box>
         </Tooltip>
-        <Tooltip title={`AgentShares(${empty}% empty)`} placement={'right'}>
+        <Tooltip title={`AgentShares (${empty}% empty)`} placement={'right'}>
           <Box
             style={{
               display: 'flex',
@@ -393,8 +394,10 @@ export function SegregationUI(
           borderStyle: 'solid',
           borderColor: '#b3b3b3',
           borderRadius: '5px',
-          padding: '8px 32px 8px 32px',
+          padding: '0px 32px 0px 32px',
           margin: '2px 0 2px 0',
+          alignSelf: 'center',
+          justifyItems: 'center',
         }}
       >
         <PlayController
@@ -411,7 +414,7 @@ export function SegregationUI(
 
       <Tooltip title={`DissatisfiedThreshold`} placement={'right'}>
         <Box style={{ display: 'flex', columnGap: '18px', padding: '16px' }}>
-          <SentimentVeryDissatisfied />
+          <SentimentVerySatisfied />
           <Slider
             aria-label="tolerance"
             min={0}
@@ -425,6 +428,7 @@ export function SegregationUI(
             onChange={onToleranceChange}
             valueLabelDisplay="auto"
           />
+          <SentimentVeryDissatisfied />
         </Box>
       </Tooltip>
       <Box>

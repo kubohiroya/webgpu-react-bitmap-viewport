@@ -23,8 +23,8 @@ export type PlayControllerProps = {
 };
 const StyledButtonGroup = styled(ButtonGroup)`
   margin: 4px;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 4px;
+  padding-right: 4px;
   border-collapse: separate;
 `;
 const PlayButton = styled(Button)`
@@ -181,6 +181,7 @@ export const PlayController = (props: PlayControllerProps) => {
     <>
       <StyledButtonGroup color={color}>
         <SubPlayButton
+          title="Restart"
           variant="contained"
           size="small"
           onClick={props.onReset}
@@ -195,6 +196,7 @@ export const PlayController = (props: PlayControllerProps) => {
           Reset
         </SubPlayButton>
         <SubPlayButton
+          title="Pause"
           variant="contained"
           size="small"
           onClick={props.onPause}
@@ -209,6 +211,7 @@ export const PlayController = (props: PlayControllerProps) => {
           Pause
         </SubPlayButton>
         <SubPlayButton
+          title="Step"
           variant="contained"
           size="small"
           onClick={doStep}
@@ -222,6 +225,7 @@ export const PlayController = (props: PlayControllerProps) => {
           Step
         </SubPlayButton>
         <MainPlayButton
+          title="Play"
           variant="contained"
           onClick={props.onPlay}
           disabled={
@@ -238,23 +242,29 @@ export const PlayController = (props: PlayControllerProps) => {
       <Box
         style={{
           display: 'flex',
-          margin: '0 8px 8px',
+          margin: '8px 8px 8px',
           columnGap: '8px',
+          justifySelf: 'center',
+          width: '100%',
         }}
       >
         <Box
           style={{
             display: 'flex',
-            width: '65%',
-            columnGap: '12px',
-            padding: '1px 8px 1px 8px',
+            columnGap: '18px',
+            padding: '3px 8px 3px 8px',
             borderRadius: '30px',
             borderStyle: 'solid',
             borderWidth: '1px',
             borderColor: '#b3b3b3',
+            //justifySelf: 'center',
+            //alignItems: 'center',
+            //alignSelf: 'center',
+            width: '100%',
+            //margin: 'auto',
           }}
         >
-          🐢
+          <Typography style={{ alignSelf: 'center' }}>🐢</Typography>
           <Slider
             value={speed}
             aria-label="custom thumb label"
@@ -265,21 +275,39 @@ export const PlayController = (props: PlayControllerProps) => {
             color={color}
             onChange={onSpeedChange}
           />
-          🐇
+          <Typography style={{ alignSelf: 'center' }}>🐇</Typography>
         </Box>
-        <Typography
-          fontSize={11}
-          color={color}
+        <Box
           style={{
-            alignSelf: 'center',
-            padding: '0 0 0 0',
-            width: '35%',
+            display: 'flex',
+            columnGap: '12px',
+            padding: '2px 8px 2px 8px',
+            borderRadius: '30px',
+            borderStyle: 'solid',
+            borderWidth: '1px',
+            borderColor: '#b3b3b3',
+            //justifySelf: 'center',
+            //alignItems: 'center',
+            //alignSelf: 'center',
+            width: '45%',
+            //margin: 'auto',
           }}
         >
-          {frameCount}
-          {elapsed !== null ? '  / ' + elapsed + ' sec' : ''}
-          {fps !== null ? ' (' + fps + ' fps)' : ''}
-        </Typography>
+          <Typography
+            fontSize={11}
+            color={color}
+            style={{
+              width: '100%',
+              alignSelf: 'center',
+              textAlign: 'end',
+              justifyContent: 'center',
+            }}
+          >
+            {frameCount}
+            {elapsed !== null ? '  / ' + elapsed + ' sec' : ''}
+            {fps !== null ? ' (' + fps + ' fps)' : ''}
+          </Typography>
+        </Box>
       </Box>
     </>
   );
