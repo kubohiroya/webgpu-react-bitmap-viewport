@@ -4,6 +4,7 @@ import React, {
   SyntheticEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -13,7 +14,13 @@ import {
   GridHandles,
   GridShaderMode,
 } from 'webgpu-react-bitmap-viewport';
-import { Box, CircularProgress, Slider, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Slider,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import {
   GridOn,
   PieChart,
@@ -27,6 +34,7 @@ import {
 import { SegregationKernel } from './SegregationKernel';
 import { cumulativeSum } from './utils/arrayUtil';
 import { CellInfo } from './components/CellInfo';
+import { hsvToRgb } from './utils/colorUtil';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -280,6 +288,46 @@ export function SegregationUI(
       grid: kernelRef.current.getGrid(),
     }) || '';
 
+  const splitSliderSx = useMemo(
+    () => ({
+      '& .MuiSlider-thumb': agentTypeCumulativeShares
+        .map((value: number, index: number) => {
+          const rgb = hsvToRgb(1 - value, 0.9, 0.9);
+          //rgb[0] = Math.floor(rgb[0]);
+          return [
+            `&[data-index='${index}']`,
+            {
+              color: `rgb(${rgb.join(' ')})`,
+            },
+          ];
+        })
+        .reduce<Record<string, { color: string }>>(
+          (acc: Record<string, { color: string }>, [key, value]: any) => {
+            acc[key] = value;
+            return acc;
+          },
+          {},
+        ),
+    }),
+    [agentTypeCumulativeShares],
+  );
+
+  const valueLabelFormat = useCallback(
+    (value: number, index: number) => {
+      const format = (value: number) => `${(value * 100).toFixed(1)}%`;
+      if (index === 0 || index === -1) {
+        return format(value); // 最初のサムはそのままの値を表示
+      }
+      return format(value - agentTypeCumulativeShares[index - 1]); // 直前の値との差を表示
+    },
+    [agentTypeCumulativeShares],
+  );
+
+  const empty = (
+    (1 - agentTypeCumulativeShares[agentTypeCumulativeShares.length - 1]) *
+    100
+  ).toFixed(1);
+
   return (
     <>
       <Box
@@ -292,46 +340,52 @@ export function SegregationUI(
           margin: '2px 0 2px 0',
         }}
       >
-        <Box
-          style={{
-            display: 'flex',
-            columnGap: '18px',
-            alignItems: 'center',
-          }}
-        >
-          <Box style={{ marginBottom: '10px' }}>
-            <GridOn />
-          </Box>
+        <Tooltip title={`GridSize`} placement={'right'}>
+          <Box
+            style={{
+              display: 'flex',
+              columnGap: '18px',
+              alignItems: 'center',
+            }}
+          >
+            <Box style={{ marginBottom: '10px' }}>
+              <GridOn />
+            </Box>
 
-          <Slider
-            aria-label={'grid size'}
-            value={gridSizeSource}
-            min={3}
-            max={12}
-            scale={calculateValue}
-            step={1}
-            marks={[3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((value) => ({
-              value: value,
-              label: (2 ** value).toString(),
-            }))}
-            onChange={onGridSizeChangeTransient}
-            onChangeCommitted={onGridSizeChangeCommit}
-            valueLabelDisplay="auto"
-          />
-        </Box>
-        <Box
-          style={{
-            display: 'flex',
-            columnGap: '18px',
-            alignItems: 'center',
-          }}
-        >
-          <PieChart />
-          <SplitSlider
-            splitValues={agentTypeCumulativeShares}
-            onChange={onAgentTypeCumulativeSharesChange}
-          />
-        </Box>
+            <Slider
+              aria-label={'grid size'}
+              value={gridSizeSource}
+              min={3}
+              max={12}
+              scale={calculateValue}
+              step={1}
+              marks={[3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((value) => ({
+                value: value,
+                label: (2 ** value).toString(),
+              }))}
+              onChange={onGridSizeChangeTransient}
+              onChangeCommitted={onGridSizeChangeCommit}
+              valueLabelDisplay="auto"
+            />
+          </Box>
+        </Tooltip>
+        <Tooltip title={`AgentShares(${empty}% empty)`} placement={'right'}>
+          <Box
+            style={{
+              display: 'flex',
+              columnGap: '18px',
+              alignItems: 'center',
+            }}
+          >
+            <PieChart style={{ marginTop: '8px', marginRight: '8px' }} />
+            <SplitSlider
+              splitValues={agentTypeCumulativeShares}
+              onChange={onAgentTypeCumulativeSharesChange}
+              sx={splitSliderSx}
+              valueLabelFormat={valueLabelFormat}
+            />
+          </Box>
+        </Tooltip>
       </Box>
       <Box
         style={{
@@ -355,22 +409,24 @@ export function SegregationUI(
         />
       </Box>
 
-      <Box style={{ display: 'flex', columnGap: '18px', padding: '16px' }}>
-        <SentimentVeryDissatisfied />
-        <Slider
-          aria-label="tolerance"
-          min={0}
-          max={1.0}
-          step={0.01}
-          marks={[0, 1, 2, 3, 4, 5, 6, 7, 8].map((value) => ({
-            value: value / 8,
-            label: `${value} / 8`,
-          }))}
-          value={tolerance}
-          onChange={onToleranceChange}
-          valueLabelDisplay="auto"
-        />
-      </Box>
+      <Tooltip title={`DissatisfiedThreshold`} placement={'right'}>
+        <Box style={{ display: 'flex', columnGap: '18px', padding: '16px' }}>
+          <SentimentVeryDissatisfied />
+          <Slider
+            aria-label="tolerance"
+            min={0}
+            max={1.0}
+            step={0.01}
+            marks={[0, 1, 2, 3, 4, 5, 6, 7, 8].map((value) => ({
+              value: value / 8,
+              label: `${value} / 8`,
+            }))}
+            value={tolerance}
+            onChange={onToleranceChange}
+            valueLabelDisplay="auto"
+          />
+        </Box>
+      </Tooltip>
       <Box>
         <Box
           style={{

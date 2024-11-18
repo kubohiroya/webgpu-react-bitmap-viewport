@@ -30,6 +30,7 @@ export const createInitialGridData = (
     agentTypeCumulativeShares,
     EMPTY_VALUE,
   );
+
   const _agentTypeCounts = reverseCumulativeSum(agentTypeCumulativeShares).map(
     (share) => Math.floor(numCells * share),
   );

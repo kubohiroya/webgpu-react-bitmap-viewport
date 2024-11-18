@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { ReactNode, useCallback, useState } from 'react';
 import {
   Select,
   MenuItem,
@@ -12,7 +12,15 @@ import styled from '@emotion/styled';
 type SplitSliderProps = {
   splitValues: number[];
   onChange: (values: number[]) => void;
+  sx: any;
+  valueLabelFormat: (value: number, index: number) => ReactNode;
 };
+
+const StyledSelect = styled(Select)`
+  margin: 2px;
+  padding: 0 8px 0 0;
+`;
+
 const SplitSlider = (props: SplitSliderProps) => {
   const [splitCount, setSplitCount] = useState<number>(
     props.splitValues.length,
@@ -21,18 +29,21 @@ const SplitSlider = (props: SplitSliderProps) => {
   const [splitValues, setSplitValues] = useState<number[]>(props.splitValues); // デフォルトの分割位置
 
   // 分割数を変更したときの処理
-  const handleSplitCountChange = (event: SelectChangeEvent<unknown>) => {
-    const newCount = parseInt((event.target as any).value as string);
-    setSplitCount(newCount);
-    // 分割数に応じて初期値を設定（合計1.0を保つ）
-    const newValues = Array(newCount)
-      .fill(0)
-      .map((value, index) => {
-        return (index + 1.0) / (newCount + 1);
-      });
-    setSplitValues(newValues);
-    props.onChange(newValues);
-  };
+  const handleSplitCountChange = useCallback(
+    (event: SelectChangeEvent<unknown>) => {
+      const newCount = parseInt((event.target as any).value as string);
+      setSplitCount(newCount);
+      // 分割数に応じて初期値を設定（合計1.0を保つ）
+      const newValues = Array(newCount)
+        .fill(0)
+        .map((value, index) => {
+          return (index + 1.0) / (newCount + 1);
+        });
+      setSplitValues(newValues);
+      props.onChange(newValues);
+    },
+    [],
+  );
 
   // スライダーの値を変更したときの処理
   const handleSliderChange = (event: Event, value: number | number[]) => {
@@ -41,12 +52,8 @@ const SplitSlider = (props: SplitSliderProps) => {
     props.onChange(newValues);
   };
 
-  const StyledSelect = styled(Select)`
-    margin: 2px;
-    padding: 0 8px 0 0;
-  `;
   // スライダーの値を表示するための関数
-  const valuetext = (value: number) => value.toFixed(2);
+  const valuetext = useCallback((value: number) => value.toFixed(2), []);
 
   return (
     <Box
@@ -75,13 +82,14 @@ const SplitSlider = (props: SplitSliderProps) => {
         value={splitValues}
         onChange={handleSliderChange}
         getAriaValueText={valuetext}
-        valueLabelFormat={valuetext}
         valueLabelDisplay="auto"
         step={0.001}
         min={0}
         max={1}
         track={false}
         disableSwap
+        sx={props.sx}
+        valueLabelFormat={props.valueLabelFormat}
       />
     </Box>
   );
