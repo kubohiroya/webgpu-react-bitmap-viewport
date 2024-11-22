@@ -19,7 +19,7 @@ export default defineConfig({
 
   publicDir: './public',
 
-  base: '/webgpu-react-bitmap-viewport',
+  base: '/webgpu-react-bitmap-viewport/examples/',
 
   resolve: {
     alias: {
@@ -51,7 +51,7 @@ export default defineConfig({
   ],
   build: {
     target: 'esnext',
-    outDir: './dist/webgpu-react-bitmap-viewport',
+    outDir: './dist/webgpu-react-bitmap-viewport/examples',
     rollupOptions: {
       external: ['@webgpu/types'],
       output: {

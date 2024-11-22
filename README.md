@@ -3,9 +3,9 @@
 [![npm version](https://badge.fury.io/js/webgpu-react-bitmap-viewport.svg)](https://badge.fury.io/js/webgpu-react-bitmap-viewport)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/hokusai_demo_movie.gif)
+![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/examples/hokusai_demo_movie.gif)
 
-![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/schelling_demo_movie.gif)
+![animation](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/examples/schelling_demo_movie.gif)
 
 - A React component displaying bitmap data as a set of viewport contents with use of WebGPU API, without dependencies other than React.
 - Dynamic synchronization of GPUBuffers from JavaScript image data (e.g., Uint32Array of RGBA color values).
@@ -33,7 +33,7 @@ cd examples
 pnpm install && pnpm dev
 ```
 
-[Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/index.html)
+[Live demo](https://kubohiroya.github.io/webgpu-react-bitmap-viewport/examples/index.html)
 - Synchronized Viewports of Static Image: "The Grate Wave off Kanagawa" from the series Thirty-six Views of Mount Fuji by Hokusai
 - Synchronized Viewports of Dynamic Image: Randomly generated data
 - Viewport of Multi Agent Simulation: Schelling's model of segregation implemented with Plain-JS/WebGPU/WebAssembly

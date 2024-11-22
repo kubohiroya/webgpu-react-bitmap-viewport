@@ -3,7 +3,7 @@
   "cleanOutputDir": false,
   "entryPoints": ["src/index.ts"],
   "entryPointStrategy": "expand",
-  "out": "dist/webgpu-react-bitmap-viewport",
+  "out": "examples/dist/webgpu-react-bitmap-viewport",
   "emit": "both",
   "exclude": ["node_modules", "dist", "examples/src/**/*"]
 }
