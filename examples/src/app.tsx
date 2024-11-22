@@ -35,7 +35,9 @@ const SynchronizedHokusaiImage = () => {
         from the series Thirty-six Views of Mount Fuji by Hokusai
       </h2>
       <SynchronizedMultiStaticImage
-        src={'/webgpu-react-bitmap-viewport/The_Great_Wave_off_Kanagawa.jpg'}
+        src={
+          '/webgpu-react-bitmap-viewport/examples/The_Great_Wave_off_Kanagawa.jpg'
+        }
         canvasSizes={[
           { width: 1044, height: 726 },
           { width: 547, height: 363 },
