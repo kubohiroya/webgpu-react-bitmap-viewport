@@ -30,18 +30,21 @@ fn vertexBody(
     let gridX: u32 = cellX + left;
     let gridY: u32 = cellY + top;
     let gridIndex = gridX + gridY * u32uni.gridSize.x;
-    let columnFocused = checkColumnFocused(gridX);
-    let rowFocused = checkRowFocused(gridY);
+    //let columnFocused = checkColumnFocused(gridX);
+    //let rowFocused = checkRowFocused(gridY);
 
     var output: VertexOutput;
     output.position = vec4f(transform(cellX, cellY, input.position), 0, 1);
-    output.isFocused = select(FALSE, TRUE, (!(columnFocused && rowFocused)) && (columnFocused || rowFocused));
-    output.isSelected = select(FALSE, TRUE, checkSelected(gridX) || checkSelected(gridY));
+    output.isFocused = select(FALSE, TRUE, checkFocused(gridX, gridY));
+    output.isSelected = select(FALSE, TRUE, checkSelected(gridX, gridY));
     output.rgba = u32ToVec4f(gridData[gridIndex]) / 255.0;
     return output;
 }
 
 @fragment
 fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
+  if(isTrue(input.isFocused)){
+    return vec4<f32>(1.0,1.0,1.0,0);
+  }
   return input.rgba;
 }

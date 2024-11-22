@@ -69,6 +69,12 @@ export class ASSegregationKernel extends SegregationKernel {
     return this.grid;
   }
 
+  getMovingAgentCount() {
+    return SegregationKernelFunctions.getASMovingAgentIndicesLength(
+      this.asData,
+    );
+  }
+
   tick() {
     const grid = Uint32Array.from(
       SegregationKernelFunctions.tickAS(this.asData),

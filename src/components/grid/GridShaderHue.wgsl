@@ -25,7 +25,7 @@ fn vertexBody(
     var output: VertexOutput;
     output.position = vec4f(transform(cellX, cellY, input.position), 0, 1);
     output.isFocused = select(FALSE, TRUE, (!(columnFocused && rowFocused)) && (columnFocused || rowFocused));
-    output.isSelected = select(FALSE, TRUE, checkSelected(gridX) || checkSelected(gridY));
+    output.isSelected = select(FALSE, TRUE, checkSelected(gridX, gridY));
     output.cellValue = gridData[gridIndex];
     return output;
 }

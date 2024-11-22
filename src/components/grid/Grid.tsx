@@ -7,6 +7,7 @@ import { GridProps } from './GridProps';
 import { GridHandles } from './GridHandles';
 import { WebGPUDisplayContextProvider } from './WebGPUDisplayContext';
 import { CanvasContextProvider } from './CanvasContext';
+import { KeyboardModifier } from './KeyboardModifier';
 
 /**
  * A React component that renders a grid with the specified properties.
@@ -36,12 +37,14 @@ export const Grid = React.memo(
       refreshSelectedState: (
         sourceIndex: number,
         columnIndex: number,
-        rowIndex: number
+        rowIndex: number,
+        keyboardModifier: KeyboardModifier
       ) => {
         gridUIRef.current?.refreshSelectedState(
           sourceIndex,
           columnIndex,
-          rowIndex
+          rowIndex,
+          keyboardModifier
         );
       },
       refreshViewportState: (sourceIndex: number) => {
@@ -71,9 +74,13 @@ export const Grid = React.memo(
               <WebGPUDisplayContextProvider>
                 <GridUI
                   ref={gridUIRef}
-                  focusedStates={props.focusedStates}
+                  numColumns={props.numColumns}
+                  numRows={props.numRows}
+                  focusedCellPosition={props.focusedCellPosition}
                   selectedStates={props.selectedStates}
-                  onFocusedStatesChange={props.onFocusedStateChange}
+                  onFocusedCellPositionChange={
+                    props.onFocusedCellPositionChange
+                  }
                   onSelectedStatesChange={props.onSelectedStateChange}
                   onViewportStateChange={props.onViewportStateChange}
                 />

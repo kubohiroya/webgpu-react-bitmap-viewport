@@ -165,6 +165,10 @@ export class JSSegregationKernel extends SegregationKernel {
     return this.data.agentShares;
   }
 
+  getMovingAgentCount() {
+    return this.data.movingAgentIndicesLength;
+  }
+
   setTolerance(newTolerance: number) {
     this.data.tolerance = newTolerance;
   }

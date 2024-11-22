@@ -1,11 +1,7 @@
-import {
-  GridShaderMode,
-  WebGPUDeviceContextProvider,
-} from 'webgpu-react-bitmap-viewport';
+import { GridShaderMode } from 'webgpu-react-bitmap-viewport';
 import { GridGroup } from '../GridGroup';
 import { loadImage } from './loadImage';
 import React, { useEffect, useState } from 'react';
-import { Typography } from '@mui/material';
 
 type RGBAImageGridExampleProps = {
   src: string;
@@ -88,7 +84,7 @@ export const SynchronizedMultiStaticImage = (
         }}
         canvasSizes={props.canvasSizes}
         data={state.data}
-        focusedStates={state.focusedStates}
+        focusedCellPosition={state.focusedStates}
         selectedStates={state.selectedStates}
         viewportStates={state.viewportStates}
       />

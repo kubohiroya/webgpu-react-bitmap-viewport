@@ -57,7 +57,7 @@ export const HueGridExample = (props: HueGridExampleProps) => {
       canvasSizes={props.canvasSizes}
       headerOffset={props.headerOffset}
       data={data}
-      focusedStates={focusedStates}
+      focusedCellPosition={focusedStates}
       selectedStates={selectedStates}
       viewportStates={props.viewportStates}
     />

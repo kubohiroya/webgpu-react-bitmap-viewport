@@ -4,6 +4,7 @@ import {
   GridShaderMode,
 } from 'webgpu-react-bitmap-viewport';
 import { useRef } from 'react';
+import { KeyboardModifier } from 'dist/types/src/components/grid/KeyboardModifier';
 
 type GridGroupProps = {
   id: string;
@@ -23,7 +24,7 @@ type GridGroupProps = {
     height: number;
   }[];
   data: Float32Array | Uint32Array;
-  focusedStates: Uint32Array;
+  focusedCellPosition: Uint32Array;
   selectedStates: Uint32Array;
   viewportStates: Float32Array;
 };
@@ -48,10 +49,10 @@ export const GridGroup = (props: GridGroupProps) => {
       numColumns={props.numColumns}
       numRows={props.numRows}
       data={props.data}
-      focusedStates={props.focusedStates}
+      focusedCellPosition={props.focusedCellPosition}
       selectedStates={props.selectedStates}
       viewportStates={props.viewportStates}
-      onFocusedStateChange={(
+      onFocusedCellPositionChange={(
         sourceIndex: number,
         columnIndex: number,
         rowIndex: number,
@@ -70,6 +71,7 @@ export const GridGroup = (props: GridGroupProps) => {
         sourceIndex: number,
         columnIndex: number,
         rowIndex: number,
+        keyboardModifier: KeyboardModifier,
       ) => {
         gridRefs
           .filter((ref, index) => index !== _index)
@@ -78,6 +80,7 @@ export const GridGroup = (props: GridGroupProps) => {
               sourceIndex,
               columnIndex,
               rowIndex,
+              keyboardModifier,
             ),
           );
       }}

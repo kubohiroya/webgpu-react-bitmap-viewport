@@ -1,3 +1,5 @@
+import { KeyboardModifier } from './KeyboardModifier';
+
 export type GridHandles = {
   refreshData: (sourceIndex: number) => void;
   refreshFocusedState: (
@@ -8,7 +10,8 @@ export type GridHandles = {
   refreshSelectedState: (
     sourceIndex: number,
     columnIndex: number,
-    rowIndex: number
+    rowIndex: number,
+    keyboardModifier: KeyboardModifier
   ) => void;
   refreshViewportState: (sourceIndex: number) => void;
 };

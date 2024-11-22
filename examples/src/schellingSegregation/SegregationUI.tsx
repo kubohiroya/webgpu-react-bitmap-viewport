@@ -14,19 +14,8 @@ import {
   GridHandles,
   GridShaderMode,
 } from 'webgpu-react-bitmap-viewport';
-import {
-  Box,
-  CircularProgress,
-  Slider,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import {
-  GridOn,
-  PieChart,
-  SentimentVeryDissatisfied,
-  SentimentVerySatisfied,
-} from '@mui/icons-material';
+import { Box, CircularProgress, Slider, Tooltip } from '@mui/material';
+import { GridOn, PieChart } from '@mui/icons-material';
 import SplitSlider from './components/SplitSlider';
 import {
   PlayController,
@@ -34,8 +23,13 @@ import {
 } from './components/PlayController';
 import { SegregationKernel } from './SegregationKernel';
 import { cumulativeSum } from './utils/arrayUtil';
-import { CellInfo } from './components/CellInfo';
 import { hsvToRgb } from './utils/colorUtil';
+
+import {
+  ToleranceController,
+  ToleranceControllerHandle,
+} from './ToleranceController';
+import { KeyboardModifier } from 'dist/types/src/components/grid/KeyboardModifier';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -50,6 +44,7 @@ export function SegregationUI(
 ) {
   const locked = useRef<boolean>(false);
   const gridHandlesRefs = [useRef<GridHandles>(null)];
+  const toleranceControllerRef = useRef<ToleranceControllerHandle>(null);
   const kernelRef = useRef<SegregationKernel>(props.kernel);
 
   const [playControllerState, setPlayControllerState] =
@@ -66,6 +61,12 @@ export function SegregationUI(
   >(cumulativeSum(props.agentTypeShares));
 
   const [focusedCell, setFocusedCell] = useState<[number, number]>([-1, -1]);
+  const [selectedCell, setSelectedCell] = useState<[number, number]>([-1, -1]);
+  /*
+  const [selectedState, setSelectedState] = useState<Uint32Array>(
+    new Uint32Array((props.width * props.height) / 32),
+  );
+   */
 
   const updateFrameCount = useCallback((frameCount: number) => {
     kernelRef.current.getUIState().setFrameCount(frameCount);
@@ -89,6 +90,7 @@ export function SegregationUI(
             EMPTY_VALUE,
           );
           kernelRef.current.syncGridContent(grid);
+          toleranceControllerRef.current!.update(0);
           setPlayControllerState(PlayControllerState.INITIALIZED);
           break;
         case PlayControllerState.INITIALIZED:
@@ -96,6 +98,8 @@ export function SegregationUI(
           kernelRef.current.updateEmptyCellIndices();
           kernelRef.current.syncGridContent(kernelRef.current.getGrid());
           setPlayControllerState(PlayControllerState.PAUSED);
+          const newMovingAgentCount = kernelRef.current.getMovingAgentCount();
+          toleranceControllerRef.current!.update(newMovingAgentCount);
           break;
         case PlayControllerState.RUNNING:
           await kernelRef.current.tick();
@@ -177,9 +181,20 @@ export function SegregationUI(
       if (!locked.current) {
         locked.current = true;
         await update(playControllerState, gridSize, agentTypeCumulativeShares);
+
         gridHandlesRefs?.forEach((ref, index) => {
           ref.current?.refreshData(index);
         });
+
+        const newMovingAgentCount = kernelRef.current.getMovingAgentCount();
+        toleranceControllerRef.current!.update(newMovingAgentCount);
+
+        if (
+          playControllerState === PlayControllerState.RUNNING &&
+          newMovingAgentCount === 0
+        ) {
+          setPlayControllerState(PlayControllerState.PAUSED);
+        }
         locked.current = false;
         return true;
       } else {
@@ -229,7 +244,7 @@ export function SegregationUI(
     setPlayControllerState(PlayControllerState.RUNNING);
   }, [playControllerState]);
 
-  const getOnFocusedStateChange = useCallback(
+  const onFocusedCellPositionChange = useCallback(
     (sourceIndex: number, columnIndex: number, rowIndex: number) => {
       setFocusedCell([columnIndex, rowIndex]);
       gridHandlesRefs
@@ -241,18 +256,41 @@ export function SegregationUI(
     [],
   );
 
-  const getOnSelectedStateChange = useCallback(
-    (sourceIndex: number, columnIndex: number, rowIndex: number) => {
+  const onSelectedStateChange = useCallback(
+    (
+      sourceIndex: number,
+      columnIndex: number,
+      rowIndex: number,
+      keyboardModifier: KeyboardModifier,
+    ) => {
       gridHandlesRefs
         .filter((_, index) => index !== 0)
         .forEach((ref) =>
-          ref.current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex),
+          ref.current?.refreshSelectedState(
+            sourceIndex,
+            columnIndex,
+            rowIndex,
+            keyboardModifier,
+          ),
         );
+      const bitIndex = rowIndex * gridSize + columnIndex;
+      const cellIndex = Math.floor(bitIndex / 32);
+      const bitPosition = bitIndex % 32;
+      // console.log(kernelRef.current.getUIState().selectedStates);
+      if (
+        (kernelRef.current.getUIState().selectedStates[cellIndex] &
+          (1 << bitPosition)) ===
+        0
+      ) {
+        setSelectedCell([-1, -1]);
+      } else {
+        setSelectedCell([columnIndex, rowIndex]);
+      }
     },
     [],
   );
 
-  const getOnViewportStateChange = useCallback((sourceIndex: number) => {
+  const onViewportStateChange = useCallback((sourceIndex: number) => {
     gridHandlesRefs
       .filter((_, index) => index !== 0)
       .forEach((ref) => ref.current?.refreshViewportState(sourceIndex));
@@ -276,29 +314,43 @@ export function SegregationUI(
     })();
   }, []);
 
-  function calculateValue(value: number) {
+  const calculateGridCellCount = useCallback((value: number) => {
     return 2 ** value;
-  }
+  }, []);
 
-  const info =
-    CellInfo({
-      focusedCell,
-      width: gridSize,
-      height: gridSize,
-      agentTypeCumulativeShares,
-      grid: kernelRef.current.getGrid(),
-    }) || '';
+  const rgbValueEntries = useMemo(() => {
+    return agentTypeCumulativeShares.map((value: number) => {
+      return [Math.floor(255 * value), hsvToRgb(1 - value, 0.9, 0.9)];
+    });
+  }, [agentTypeCumulativeShares]);
+
+  const rgbValues = useMemo(() => {
+    return rgbValueEntries.map(([_, rgb]) => rgb as [number, number, number]);
+  }, [rgbValueEntries]);
+
+  const rgbValueMap = useMemo(() => {
+    return new Map<number, [number, number, number]>(
+      rgbValueEntries as [number, [number, number, number]][],
+    );
+  }, [rgbValueEntries]);
+
+  const valueToRGB = useCallback(
+    (value: number) => {
+      const rgb = rgbValueMap.get(Math.floor(255 * value));
+      return rgb || [255, 255, 255];
+    },
+    [rgbValueMap],
+  );
 
   const splitSliderSx = useMemo(
     () => ({
-      '& .MuiSlider-thumb': agentTypeCumulativeShares
-        .map((value: number, index: number) => {
-          const rgb = hsvToRgb(1 - value, 0.9, 0.9);
+      '& .MuiSlider-thumb': rgbValues
+        .map((rgbValue, index) => {
           //rgb[0] = Math.floor(rgb[0]);
           return [
             `&[data-index='${index}']`,
             {
-              color: `rgb(${rgb.join(' ')})`,
+              color: `rgb(${rgbValue.join(' ')})`,
             },
           ];
         })
@@ -324,10 +376,25 @@ export function SegregationUI(
     [agentTypeCumulativeShares],
   );
 
-  const empty = (
-    (1 - agentTypeCumulativeShares[agentTypeCumulativeShares.length - 1]) *
-    100
-  ).toFixed(1);
+  const empty = useMemo(
+    () =>
+      (
+        (1 - agentTypeCumulativeShares[agentTypeCumulativeShares.length - 1]) *
+        100
+      ).toFixed(1),
+    [agentTypeCumulativeShares],
+  );
+
+  const gridSizeMarks = useMemo(
+    () =>
+      [3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((value) => ({
+        value: value,
+        label: (2 ** value).toString(),
+      })),
+    [],
+  );
+
+  const grid = kernelRef.current.getGrid();
 
   return (
     <>
@@ -341,35 +408,31 @@ export function SegregationUI(
           margin: '2px 0 2px 0',
         }}
       >
-        <Tooltip title={`GridSize`} placement={'right'}>
-          <Box
-            style={{
-              display: 'flex',
-              columnGap: '18px',
-              alignItems: 'center',
-            }}
-          >
-            <Box style={{ marginBottom: '10px' }}>
-              <GridOn />
-            </Box>
-
-            <Slider
-              aria-label={'grid size'}
-              value={gridSizeSource}
-              min={3}
-              max={12}
-              scale={calculateValue}
-              step={1}
-              marks={[3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((value) => ({
-                value: value,
-                label: (2 ** value).toString(),
-              }))}
-              onChange={onGridSizeChangeTransient}
-              onChangeCommitted={onGridSizeChangeCommit}
-              valueLabelDisplay="auto"
-            />
+        <Box
+          style={{
+            display: 'flex',
+            columnGap: '18px',
+            alignItems: 'center',
+          }}
+        >
+          <Box style={{ marginBottom: '10px' }}>
+            <GridOn titleAccess={'gridSize'} />
           </Box>
-        </Tooltip>
+
+          <Slider
+            aria-label={'grid size'}
+            value={gridSizeSource}
+            min={3}
+            max={12}
+            scale={calculateGridCellCount}
+            step={1}
+            marks={gridSizeMarks}
+            onChange={onGridSizeChangeTransient}
+            onChangeCommitted={onGridSizeChangeCommit}
+            valueLabelDisplay="auto"
+          />
+        </Box>
+
         <Tooltip title={`AgentShares (${empty}% empty)`} placement={'right'}>
           <Box
             style={{
@@ -412,25 +475,23 @@ export function SegregationUI(
         />
       </Box>
 
-      <Tooltip title={`DissatisfiedThreshold`} placement={'right'}>
-        <Box style={{ display: 'flex', columnGap: '18px', padding: '16px' }}>
-          <SentimentVerySatisfied />
-          <Slider
-            aria-label="tolerance"
-            min={0}
-            max={1.0}
-            step={0.01}
-            marks={[0, 1, 2, 3, 4, 5, 6, 7, 8].map((value) => ({
-              value: value / 8,
-              label: `${value} / 8`,
-            }))}
-            value={tolerance}
-            onChange={onToleranceChange}
-            valueLabelDisplay="auto"
-          />
-          <SentimentVeryDissatisfied />
-        </Box>
-      </Tooltip>
+      <ToleranceController
+        ref={toleranceControllerRef}
+        grid={grid}
+        width={gridSize}
+        height={gridSize}
+        x={selectedCell[0] >= 0 ? selectedCell[0] : focusedCell[0]}
+        y={selectedCell[1] >= 0 ? selectedCell[1] : focusedCell[1]}
+        tolerance={tolerance}
+        onToleranceChange={onToleranceChange}
+        valueToRGB={valueToRGB}
+        canvasWidth={48}
+        canvasHeight={32}
+        torus={true}
+        mooreNeighborhoodSize={3}
+        movingAgentCount={0}
+      />
+
       <Box>
         <Box
           style={{
@@ -459,17 +520,18 @@ export function SegregationUI(
               headerOffset={props.headerOffset}
               scrollBar={SCROLLBAR}
               canvasSize={props.canvasSize}
-              data={kernelRef.current.getGrid()}
-              focusedStates={kernelRef.current.getUIState().focusedStates}
+              data={grid}
+              focusedCellPosition={
+                kernelRef.current.getUIState().focusedCellPosition
+              }
               selectedStates={kernelRef.current.getUIState().selectedStates}
               viewportStates={kernelRef.current.getUIState().viewportStates}
-              onFocusedStateChange={getOnFocusedStateChange}
-              onSelectedStateChange={getOnSelectedStateChange}
-              onViewportStateChange={getOnViewportStateChange}
+              onFocusedCellPositionChange={onFocusedCellPositionChange}
+              onSelectedStateChange={onSelectedStateChange}
+              onViewportStateChange={onViewportStateChange}
             />
           )}
         </Box>
-        <Typography>{info || `gridSize: ${gridSize} x ${gridSize}`}</Typography>
       </Box>
     </>
   );

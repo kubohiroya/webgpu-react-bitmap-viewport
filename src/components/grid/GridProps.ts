@@ -1,4 +1,5 @@
 import { GridShaderMode } from './GridShaderMode';
+import { KeyboardModifier } from './KeyboardModifier';
 
 /**
  * Properties for the Grid component.
@@ -40,7 +41,7 @@ export type GridProps = {
   data: Float32Array | Uint32Array;
 
   /** The focused states of the grid, stored in a Uint32Array: notFocused=0, verticalFocused=1, horizontalFocused=2, verticalAndHorizontalFocused=3*/
-  focusedStates: Uint32Array;
+  focusedCellPosition: Uint32Array;
   /** The selected states of the grid, stored in a Uint32Array: notSelected=0, verticalSelected=1, horizontalSelected=2, verticalAndHorizontalSelected=3*/
   selectedStates: Uint32Array;
 
@@ -64,7 +65,7 @@ export type GridProps = {
   };
 
   onDataChange?: (sourceIndex: number) => void;
-  onFocusedStateChange?: (
+  onFocusedCellPositionChange?: (
     sourceIndex: number,
     columnIndex: number,
     rowIndex: number
@@ -72,7 +73,8 @@ export type GridProps = {
   onSelectedStateChange?: (
     sourceIndex: number,
     columnIndex: number,
-    rowIndex: number
+    rowIndex: number,
+    keyboardModifier: KeyboardModifier
   ) => void;
   onViewportStateChange?: (sourceIndex: number) => void;
 };

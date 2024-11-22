@@ -257,11 +257,7 @@ export const PlayController = (props: PlayControllerProps) => {
             borderStyle: 'solid',
             borderWidth: '1px',
             borderColor: '#b3b3b3',
-            //justifySelf: 'center',
-            //alignItems: 'center',
-            //alignSelf: 'center',
             width: '100%',
-            //margin: 'auto',
           }}
         >
           <Typography style={{ alignSelf: 'center' }}>🐢</Typography>
@@ -286,11 +282,7 @@ export const PlayController = (props: PlayControllerProps) => {
             borderStyle: 'solid',
             borderWidth: '1px',
             borderColor: '#b3b3b3',
-            //justifySelf: 'center',
-            //alignItems: 'center',
-            //alignSelf: 'center',
             width: '45%',
-            //margin: 'auto',
           }}
         >
           <Typography

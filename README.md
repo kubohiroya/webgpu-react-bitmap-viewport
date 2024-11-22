@@ -45,7 +45,6 @@ import { Grid, GridHandles } from "webgpu-react-bitmap-viewport";
 import { useRef } from "react";
 
 const gridSize = { numColumns: 128, numRows: 128 };
-const gridSizeMax = Math.max(gridSize.numColumns, gridSize.numRows);
 
 const data =  new Float32Array(gridSize.numRows * gridSize.numColumns);
 for (let i = 0; i < data.length; i++) {
@@ -56,8 +55,8 @@ for (let i = 0; i < data.length; i++) {
   }
 }
 
-const focusedStates = new Uint32Array(gridSizeMax);
-const selectedStates = new Uint32Array(gridSizeMax);
+const focusedCellPosition = new Uint32Array([-1, -1]);
+const selectedStates = new Uint32Array(Math.ceil(gridSize.numRows * gridSize.numColumns / 32));
 
 const viewportStates = new Float32Array([
   0.0, 0.0, 16.0, 16.0, // viewport index 0: left, top, right, bottom
@@ -86,11 +85,11 @@ export const Index = () => {
           margin: 2.0,
         }}
         data={data}
-        focusedStates={focusedStates}
+        focusedCellPosition={focusedCellPosition}
         selectedStates={selectedStates}
         viewportStates={viewportStates}
-        onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridHandlerRefs[1].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
+        onFocusedCellPositionChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+          gridHandlerRefs[1].current?.refreshFocusedCellPosition(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex:number, columnIndex: number, rowIndex: number) => {
           gridHandlerRefs[1].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);
@@ -112,11 +111,11 @@ export const Index = () => {
           margin: 2.0,
         }}
         data={data}
-        focusedStates={focusedStates}
+        focusedCellPosition={focusedCellPosition}
         selectedStates={selectedStates}
         viewportStates={viewportStates}
-        onFocusedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
-          gridHandlerRefs[0].current?.refreshFocusedState(sourceIndex, columnIndex, rowIndex);
+        onFocusedCellPositionChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
+          gridHandlerRefs[0].current?.refreshFocusedCellPosition(sourceIndex, columnIndex, rowIndex);
         }}
         onSelectedStateChange={(sourceIndex: number, columnIndex: number, rowIndex: number) => {
           gridHandlerRefs[0].current?.refreshSelectedState(sourceIndex, columnIndex, rowIndex);

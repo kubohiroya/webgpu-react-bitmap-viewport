@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { CanvasRefContext, useCanvasRefContext } from './CanvasRefContext';
+import { useCanvasRefContext } from './CanvasRefContext';
 import { useViewportContext } from './ViewportContext';
 import { useGridContext } from './GridContext';
 import { useWebGPUDeviceContext } from './WebGPUDeviceContext';
@@ -20,17 +20,19 @@ import {
   POINTER_CONTEXT_SCROLLBAR_OTHER,
 } from './GridConstatns';
 import { ScrollBarStateValues } from './ScrollBarStateValues';
-import { SelectedStateValues } from './SelectedStateValues';
 import { useCanvasContext } from './CanvasContext';
+import { KeyboardModifier } from './KeyboardModifier';
 
 type GridUIProps = {
-  focusedStates: Uint32Array;
+  numColumns: number;
+  numRows: number;
+  focusedCellPosition: Uint32Array;
   selectedStates: Uint32Array;
   onDataChanged?: (
     sourceIndex: number,
     gridData: Float32Array | Uint32Array
   ) => void;
-  onFocusedStatesChange?: (
+  onFocusedCellPositionChange?: (
     sourceIndex: number,
     columnIndex: number,
     rowIndex: number
@@ -38,7 +40,8 @@ type GridUIProps = {
   onSelectedStatesChange?: (
     sourceIndex: number,
     columnIndex: number,
-    rowIndex: number
+    rowIndex: number,
+    keyboardModifier: KeyboardModifier
   ) => void;
   onViewportStateChange?: (sourceIndex: number) => void;
 };
@@ -156,8 +159,13 @@ function regulateRectangleTranslate(
   return regulatedTarget;
 }
 
+type CellPosition = {
+  columnIndex: number;
+  rowIndex: number;
+};
+
 export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
-  const { focusedStates, selectedStates } = props;
+  const { focusedCellPosition, selectedStates } = props;
   const webGpuDeviceContext = useWebGPUDeviceContext();
   const viewportContext = useViewportContext();
   const gridContext = useGridContext();
@@ -166,8 +174,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const canvas = useCanvasRefContext();
   const tickerRef = useRef<NodeJS.Timeout>();
 
-  const prevFocusedColumnIndex = useRef<number>(-1);
-  const prevFocusedRowIndex = useRef<number>(-1);
+  const prevFocusedCellPosition = useRef<CellPosition | null>(null);
+  const prevClickedCellPosition = useRef<CellPosition | null>(null);
   const renderBundleBuilder = useRef<RenderBundleBuilder>();
 
   useImperativeHandle(ref, () => ({
@@ -184,14 +192,115 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     refreshSelectedState: (
       sourceIndex: number,
       columnIndex: number,
-      rowIndex: number
+      rowIndex: number,
+      keyboardModifier: KeyboardModifier
     ) => {
-      refreshSelectedState(sourceIndex, columnIndex, rowIndex);
+      refreshSelectedState(
+        sourceIndex,
+        columnIndex,
+        rowIndex,
+        keyboardModifier
+      );
     },
     refreshViewportState: (sourceIndex: number) => {
       refreshViewportState(sourceIndex);
     },
   }));
+
+  const toggleCell = (columnIndex: number, rowIndex: number) => {
+    const index = rowIndex * props.numColumns + columnIndex;
+    const arrayIndex = Math.floor(index / 32);
+    const bitIndex = index % 32;
+    props.selectedStates[arrayIndex] ^= 1 << bitIndex;
+  };
+
+  const selectCell = (columnIndex: number, rowIndex: number) => {
+    const index = rowIndex * props.numColumns + columnIndex;
+    const arrayIndex = Math.floor(index / 32);
+    const bitIndex = index % 32;
+    props.selectedStates[arrayIndex] |= 1 << bitIndex;
+  };
+
+  const selectRange = (
+    startColumn: number,
+    startRow: number,
+    endColumn: number,
+    endRow: number
+  ) => {
+    for (
+      let row = Math.min(startRow, endRow);
+      row <= Math.max(startRow, endRow);
+      row++
+    ) {
+      for (
+        let col = Math.min(startColumn, endColumn);
+        col <= Math.max(startColumn, endColumn);
+        col++
+      ) {
+        const index = row * props.numColumns + col;
+        const arrayIndex = Math.floor(index / 32);
+        const bitIndex = index % 32;
+        props.selectedStates[arrayIndex] |= 1 << bitIndex;
+      }
+    }
+  };
+
+  const toggleRange = (
+    startColumn: number,
+    startRow: number,
+    endColumn: number,
+    endRow: number
+  ) => {
+    let allSelected = true;
+
+    // チェックして、全選択状態かどうかを確認
+    for (
+      let row = Math.min(startRow, endRow);
+      row <= Math.max(startRow, endRow);
+      row++
+    ) {
+      for (
+        let col = Math.min(startColumn, endColumn);
+        col <= Math.max(startColumn, endColumn);
+        col++
+      ) {
+        const index = row * props.numColumns + col;
+        const arrayIndex = Math.floor(index / 32);
+        const bitIndex = index % 32;
+        if ((props.selectedStates[arrayIndex] & (1 << bitIndex)) === 0) {
+          allSelected = false;
+          break;
+        }
+      }
+      if (!allSelected) break;
+    }
+
+    // 全選択状態なら全て未選択に、それ以外なら全て選択に
+    for (
+      let row = Math.min(startRow, endRow);
+      row <= Math.max(startRow, endRow);
+      row++
+    ) {
+      for (
+        let col = Math.min(startColumn, endColumn);
+        col <= Math.max(startColumn, endColumn);
+        col++
+      ) {
+        const index = row * props.numColumns + col;
+        const arrayIndex = Math.floor(index / 32);
+        const bitIndex = index % 32;
+        if (allSelected) {
+          props.selectedStates[arrayIndex] &= ~(1 << bitIndex);
+        } else {
+          props.selectedStates[arrayIndex] |= 1 << bitIndex;
+        }
+      }
+    }
+  };
+
+  const clearSelection = () => {
+    props.selectedStates.fill(0);
+  };
 
   const overscroll = useRef<{ x: number; y: number }>(
     viewportContext.initialOverscroll || {
@@ -426,93 +535,112 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     rowIndex: number
   ) => {
     if (
-      columnIndex === prevFocusedColumnIndex.current &&
-      rowIndex === prevFocusedRowIndex.current
+      columnIndex === prevFocusedCellPosition.current?.columnIndex &&
+      rowIndex === prevFocusedCellPosition.current?.rowIndex
     ) {
       return;
     }
-    focusedStates.fill(ScrollBarStateValues.NotFocused);
+    focusedCellPosition.fill(-1);
 
     if (columnIndex !== -1 && rowIndex === -1) {
-      focusedStates[columnIndex] = ScrollBarStateValues.HorizontalFocused;
+      focusedCellPosition.fill(columnIndex, 0, 0);
     } else if (columnIndex === -1 && rowIndex !== -1) {
-      focusedStates[rowIndex] = ScrollBarStateValues.VerticalFocused;
+      focusedCellPosition.fill(rowIndex, 1, 1);
     } else if (columnIndex !== -1 && rowIndex !== -1) {
-      focusedStates[columnIndex] = ScrollBarStateValues.HorizontalFocused;
-      focusedStates[rowIndex] = ScrollBarStateValues.VerticalFocused;
+      focusedCellPosition.fill(rowIndex, 0, 0);
+      focusedCellPosition.fill(columnIndex, 1, 1);
     }
 
-    prevFocusedColumnIndex.current = columnIndex;
-    prevFocusedRowIndex.current = rowIndex;
+    prevFocusedCellPosition.current = null;
 
-    renderBundleBuilder.current?.updateFocusedStateStorage(focusedStates);
+    renderBundleBuilder.current?.updateFocusedCellPositionStorage(
+      focusedCellPosition
+    );
     startInertia();
 
     if (sourceIndex === viewportContext.viewportIndex) {
-      props.onFocusedStatesChange?.(sourceIndex, columnIndex, rowIndex);
+      props.onFocusedCellPositionChange?.(sourceIndex, columnIndex, rowIndex);
     }
   };
 
   const refreshSelectedState = (
     sourceIndex: number,
     columnIndex: number,
-    rowIndex: number
+    rowIndex: number,
+    keyboardModifier: KeyboardModifier
   ) => {
-    if (sourceIndex === viewportContext.viewportIndex) {
-      if (columnIndex === POINTER_CONTEXT_HEADER) {
-        if (rowIndex === POINTER_CONTEXT_HEADER) {
-          const filled = selectedStates.some((value) => value > 0);
-          selectedStates.fill(filled ? 0 : 1);
-        } else {
-          for (let i = 0; i < selectedStates.length; i++) {
-            if (i < selectedStates.length) {
-              const value = selectedStates[i];
-              selectedStates[i] =
-                rowIndex === i
-                  ? value === SelectedStateValues.NotSelected
-                    ? SelectedStateValues.Selected
-                    : SelectedStateValues.NotSelected
-                  : value;
-            } else {
-              selectedStates[i] = SelectedStateValues.NotSelected;
-            }
-          }
-        }
+    const currentCellPosition = { columnIndex, rowIndex };
+    if (!(keyboardModifier.ctrl || keyboardModifier.meta)) {
+      clearSelection();
+    }
+    const prevCellPosition =
+      prevClickedCellPosition.current || currentCellPosition;
+
+    if (keyboardModifier.shift) {
+      // Shiftキーによる範囲選択の処理
+      if (currentCellPosition.rowIndex === -1) {
+        // 列の範囲選択
+        selectRange(
+          currentCellPosition.columnIndex,
+          prevCellPosition.rowIndex,
+          currentCellPosition.columnIndex,
+          currentCellPosition.rowIndex
+        );
+      } else if (currentCellPosition.columnIndex === -1) {
+        // 行の範囲選択
+        selectRange(
+          prevCellPosition.columnIndex,
+          currentCellPosition.rowIndex,
+          currentCellPosition.columnIndex,
+          currentCellPosition.rowIndex
+        );
       } else {
-        if (rowIndex === POINTER_CONTEXT_HEADER) {
-          for (let i = 0; i < selectedStates.length; i++) {
-            if (i < selectedStates.length) {
-              const value = selectedStates[i];
-              selectedStates[i] =
-                columnIndex === i
-                  ? value === SelectedStateValues.NotSelected
-                    ? SelectedStateValues.Selected
-                    : SelectedStateValues.NotSelected
-                  : value;
-            } else {
-              selectedStates[i] = SelectedStateValues.NotSelected;
-            }
-          }
-        } else {
-          for (let i = 0; i < selectedStates.length; i++) {
-            if (i < selectedStates.length) {
-              const value = selectedStates[i];
-              selectedStates[i] =
-                rowIndex === i || columnIndex === i
-                  ? value === SelectedStateValues.NotSelected
-                    ? SelectedStateValues.Selected
-                    : SelectedStateValues.NotSelected
-                  : value;
-            }
-          }
-        }
+        selectRange(
+          prevCellPosition.columnIndex,
+          prevCellPosition.rowIndex,
+          currentCellPosition.columnIndex,
+          currentCellPosition.rowIndex
+        );
       }
+    } else if (keyboardModifier.ctrl || keyboardModifier.meta) {
+      // Ctrlキーによるトグル選択の処理
+      if (currentCellPosition.rowIndex === -1) {
+        // 列トグル
+        toggleRange(
+          prevCellPosition.columnIndex,
+          0,
+          currentCellPosition.columnIndex,
+          props.numRows - 1
+        );
+      } else if (currentCellPosition.columnIndex === -1) {
+        // 行トグル
+        toggleRange(
+          0,
+          prevCellPosition.rowIndex,
+          props.numColumns - 1,
+          currentCellPosition.rowIndex
+        );
+      } else {
+        toggleCell(
+          currentCellPosition.columnIndex,
+          currentCellPosition.rowIndex
+        );
+      }
+    } else {
+      selectCell(currentCellPosition.columnIndex, currentCellPosition.rowIndex);
     }
 
     renderBundleBuilder.current?.updateSelectedStateStorage(selectedStates);
+    // 選択後、セルの位置を更新（次のShift操作に備える）
+    prevClickedCellPosition.current = currentCellPosition;
 
     if (sourceIndex === viewportContext.viewportIndex) {
-      props.onSelectedStatesChange?.(sourceIndex, columnIndex, rowIndex);
+      props.onSelectedStatesChange?.(
+        sourceIndex,
+        columnIndex,
+        rowIndex,
+        keyboardModifier
+      );
     }
   };
 
@@ -575,7 +703,10 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     props.onViewportStateChange?.(viewportContext.viewportIndex);
   };
 
-  const calculateCellPosition = (clientX: number, clientY: number) => {
+  const calculateCellPosition = (
+    clientX: number,
+    clientY: number
+  ): CellPosition => {
     const { left, top, right, bottom } = getViewport();
     const rect = canvas?.getBoundingClientRect();
     if (!rect) {
@@ -709,32 +840,33 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
   };
 
-  const onDown = (x: number, y: number) => {
+  const onDown = (x: number, y: number, keyboardModifier: KeyboardModifier) => {
     if (!canvas || !canvas) {
       throw new Error();
     }
 
     const { left, top, right, bottom } = getViewport();
-    const cellPosition = calculateCellPosition(x, y);
+    const currentCell = calculateCellPosition(x, y);
 
     if (
-      cellPosition.columnIndex === POINTER_CONTEXT_HEADER ||
-      cellPosition.rowIndex === POINTER_CONTEXT_HEADER
+      currentCell.columnIndex === POINTER_CONTEXT_HEADER ||
+      currentCell.rowIndex === POINTER_CONTEXT_HEADER
     ) {
       canvas.style.cursor = 'grab';
       refreshSelectedState(
         viewportContext.viewportIndex,
-        cellPosition.columnIndex,
-        cellPosition.rowIndex
+        currentCell.columnIndex,
+        currentCell.rowIndex,
+        keyboardModifier
       );
     }
 
     if (
-      (cellPosition.columnIndex >= 0 && cellPosition.rowIndex >= 0) ||
-      cellPosition.columnIndex === POINTER_CONTEXT_HEADER ||
-      cellPosition.rowIndex === POINTER_CONTEXT_HEADER ||
-      cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE ||
-      cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE
+      (currentCell.columnIndex >= 0 && currentCell.rowIndex >= 0) ||
+      currentCell.columnIndex === POINTER_CONTEXT_HEADER ||
+      currentCell.rowIndex === POINTER_CONTEXT_HEADER ||
+      currentCell.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE ||
+      currentCell.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE
     ) {
       canvas.style.cursor = 'grab';
       pointerState.current = {
@@ -770,8 +902,16 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         },
         isMouseOut: false,
       };
+
+      refreshSelectedState(
+        viewportContext.viewportIndex,
+        currentCell.columnIndex,
+        currentCell.rowIndex,
+        keyboardModifier
+      );
+
       return;
-    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
+    } else if (currentCell.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
       if (left * 2 < right) {
         setViewport({
           left: 0,
@@ -783,7 +923,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
           right: left,
         });
       }
-    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
+      return;
+    } else if (currentCell.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
       if (top * 2 < bottom) {
         setViewport({
           top: 0,
@@ -795,7 +936,9 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
           bottom: top,
         });
       }
-    } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
+
+      return;
+    } else if (currentCell.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
       if (right * 2 - left < gridContext.numColumns) {
         setViewport({
           left: right,
@@ -807,7 +950,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
           right: gridContext.numColumns,
         });
       }
-    } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
+      return;
+    } else if (currentCell.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
       if (bottom * 2 - top < gridContext.numRows) {
         setViewport({
           top: bottom,
@@ -819,16 +963,25 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
           bottom: gridContext.numRows,
         });
       }
+      return;
     }
   };
 
   const onMouseDown = (event: MouseEvent) => {
-    onDown(event.clientX, event.clientY);
+    onDown(event.clientX, event.clientY, {
+      ctrl: event.ctrlKey,
+      shift: event.shiftKey,
+      meta: event.metaKey,
+    });
     update();
   };
 
   const onTouchStart = (event: TouchEvent) => {
-    onDown(event.touches[0].clientX, event.touches[0].clientY);
+    onDown(event.touches[0].clientX, event.touches[0].clientY, {
+      ctrl: event.ctrlKey,
+      shift: event.shiftKey,
+      meta: event.metaKey,
+    });
     update();
   };
 
@@ -1134,7 +1287,9 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
 
     renderBundleBuilder.current.updateDataBufferStorage(gridContext.data);
     renderBundleBuilder.current.updateSelectedStateStorage(selectedStates);
-    renderBundleBuilder.current.updateFocusedStateStorage(focusedStates);
+    renderBundleBuilder.current.updateFocusedCellPositionStorage(
+      focusedCellPosition
+    );
 
     update();
 

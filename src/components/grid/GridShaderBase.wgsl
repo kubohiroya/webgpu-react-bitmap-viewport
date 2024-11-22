@@ -13,26 +13,6 @@ const rectVertices = array<vec2f, 6>(
    vec2f(-1, -1),  vec2f(1, 1),  vec2f(-1, 1)
 );
 
-/*
-struct VertexOutput {
-  @builtin(position) position: vec4<f32>,
-  @location(0) texCoord: vec2<f32>,
-}
-
-@vertex
-fn main(
-  @builtin(vertex_index) VertexIndex : u32
-) -> VertexOutput {
-  var output : VertexOutput;
-  let x = f32((VertexIndex & 1) << 2);
-  let y = f32((VertexIndex & 2) << 1);
-  output.texCoord.x = x * 0.5;
-  output.texCoord.y = y * 0.5;
-  output.position = vec4<f32>(x - 1.0, y - 1.0, 0, 1);
-  return output;
-}
-*/
-
 struct F32uni {
   gridSize: vec2f,
   canvasSize: vec2f,
@@ -134,7 +114,6 @@ fn vertexLeftHeader(input: VertexInput) -> VertexOutput {
   output.position = vec4f(transformed, 0.0, 1.0);
   // output.vertexIndex = input.vertexIndex;
   output.isFocused = select(FALSE, TRUE, checkRowFocused(rowIndex));
-  output.isSelected = select(FALSE, TRUE, checkSelected(rowIndex));
   if(input.instanceIndex == 0){
     if(input.vertexIndex == 0u || input.vertexIndex == 3u || input.vertexIndex == 5u){
       output.position.x = -1.0;
@@ -165,7 +144,6 @@ fn vertexTopHeader(input: VertexInput) -> VertexOutput {
   output.position = vec4f(transformed, 0.0, 1.0);
   // output.vertexIndex = input.vertexIndex;
   output.isFocused = select(FALSE, TRUE, checkColumnFocused(colIndex));
-  output.isSelected = select(FALSE, TRUE, checkSelected(colIndex));
   if(input.instanceIndex == 0){
     if(input.vertexIndex == 2u || input.vertexIndex == 3u || input.vertexIndex == 4u){
       output.position.y = 1.0;
@@ -196,8 +174,6 @@ fn vertexColumnFocusSelect(input: VertexInput) -> VertexOutput{
   var transformed: vec2f = transform(cellX, 0, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   output.isFocused = select(FALSE, TRUE, checkColumnFocused(colIndex));
-  output.isSelected = select(FALSE, TRUE, checkSelected(colIndex));
-
   if(input.vertexIndex == 2u || input.vertexIndex == 4u || input.vertexIndex == 5u){
     output.position.y = 1.0;
   }
@@ -218,7 +194,6 @@ fn vertexRowFocusSelect(input: VertexInput) -> VertexOutput{
   var transformed: vec2f = transform(0, cellY, input.position);
   output.position = vec4f(transformed, 0.0, 1.0);
   output.isFocused = select(FALSE, TRUE, checkRowFocused(rowIndex));
-  output.isSelected = select(FALSE, TRUE, checkSelected(rowIndex));
   if(input.vertexIndex == 1u || input.vertexIndex == 2u || input.vertexIndex == 4u){
       output.position.x = 1.0;
     }
@@ -424,15 +399,25 @@ fn checkInfinity(value: f32) -> bool {
     return value == value + 1.0 || value == value - 1.0;
 }
 
-fn checkColumnFocused(columnIndex: u32) -> bool {
-    return focused[columnIndex] == 1u || focused[columnIndex] == 3u;
-}
-fn checkRowFocused(rowIndex: u32) -> bool {
-    return focused[rowIndex] == 2u || focused[rowIndex] == 3u;
+fn checkFocused(columnIndex: u32, rowIndex: u32) -> bool {
+    return focused[0] == columnIndex && focused[1] == rowIndex;
 }
 
-fn checkSelected(index: u32) -> bool {
-    return selected[index] == 1u;
+fn checkColumnFocused(columnIndex: u32) -> bool {
+    return focused[0] == columnIndex;
+}
+
+fn checkRowFocused(rowIndex: u32) -> bool {
+    return focused[1] == rowIndex;
+}
+
+fn checkSelected(columnIndex: u32, rowIndex: u32) -> bool {
+    let cellIndex: u32 = rowIndex * u32uni.gridSize.x + columnIndex;
+    let arrayIndex: u32 = cellIndex / 32;
+    let bitIndex: u32 = cellIndex % 32;
+
+    let bitMask: u32 = 1u << bitIndex;
+    return (selected[arrayIndex] & bitMask) != 0;
 }
 
 @fragment

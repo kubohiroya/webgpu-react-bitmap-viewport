@@ -51,7 +51,7 @@ export class RenderBundleBuilder {
   private u32UniformBuffer: GPUBuffer;
   private viewportStateStorage: GPUBuffer;
   private gridDataBufferStorage: GPUBuffer;
-  private focusedStateStorage: GPUBuffer;
+  private focusedCellPositionStorage: GPUBuffer;
   private selectedStateStorage: GPUBuffer;
   private drawIndirectBuffer: GPUBuffer;
 
@@ -258,15 +258,15 @@ export class RenderBundleBuilder {
     );
 
     const numCells = Math.max(gridSize.numColumns, gridSize.numRows) * F32LEN;
-    this.focusedStateStorage = createStorageBuffer(
-      'FocusedStateBuffer',
+    this.focusedCellPositionStorage = createStorageBuffer(
+      'FocusedCellPositionBuffer',
       device,
       numCells
     );
     this.selectedStateStorage = createStorageBuffer(
       'SelectedStateBuffer',
       device,
-      numCells
+      Math.ceil((gridSize.numColumns * gridSize.numRows) / 4)
     );
     this.gridDataBufferStorage = createStorageBuffer(
       'GridDataBuffer',
@@ -282,7 +282,7 @@ export class RenderBundleBuilder {
       this.f32UniformBuffer,
       this.u32UniformBuffer,
       this.viewportStateStorage,
-      this.focusedStateStorage,
+      this.focusedCellPositionStorage,
       this.selectedStateStorage,
       this.gridDataBufferStorage
     );
@@ -351,8 +351,12 @@ export class RenderBundleBuilder {
     updateBuffer(this.device, this.gridDataBufferStorage, data);
   }
 
-  public updateFocusedStateStorage(focusedState: Uint32Array) {
-    updateBuffer(this.device, this.focusedStateStorage, focusedState);
+  public updateFocusedCellPositionStorage(focusedCellPosition: Uint32Array) {
+    updateBuffer(
+      this.device,
+      this.focusedCellPositionStorage,
+      focusedCellPosition
+    );
   }
 
   public updateSelectedStateStorage(selectedState: Uint32Array) {
@@ -365,7 +369,7 @@ export class RenderBundleBuilder {
     f32UniformBuffer: GPUBuffer,
     u32UniformBuffer: GPUBuffer,
     viewportBuffer: GPUBuffer,
-    focusedStateStorage: GPUBuffer,
+    focusedCellPositionStorage: GPUBuffer,
     selectedStateStorage: GPUBuffer,
     gridDataBufferStorage: GPUBuffer
   ) {
@@ -387,7 +391,7 @@ export class RenderBundleBuilder {
         },
         {
           binding: 3,
-          resource: { buffer: focusedStateStorage },
+          resource: { buffer: focusedCellPositionStorage },
         },
         {
           binding: 4,

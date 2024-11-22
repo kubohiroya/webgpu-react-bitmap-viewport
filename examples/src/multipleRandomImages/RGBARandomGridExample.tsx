@@ -64,7 +64,7 @@ export const RGBARandomGridExample = (props: RGBARandomGridExampleProps) => {
       }}
       canvasSizes={props.canvasSizes}
       data={data}
-      focusedStates={focusedStates}
+      focusedCellPosition={focusedStates}
       selectedStates={selectedStates}
       viewportStates={props.viewportStates}
     />

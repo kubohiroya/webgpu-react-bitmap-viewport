@@ -2,7 +2,7 @@ import { SegregationKernelDataHandler } from './SegregationKernelDataHandler';
 
 export class SegregationUIState implements SegregationKernelDataHandler {
   frameCount: number;
-  focusedStates!: Uint32Array;
+  focusedCellPosition!: Uint32Array;
   selectedStates!: Uint32Array;
   viewportStates!: Float32Array;
 
@@ -12,9 +12,8 @@ export class SegregationUIState implements SegregationKernelDataHandler {
   }
 
   updateSize(width: number, height: number): void {
-    const gridSize = Math.max(width, height);
-    this.focusedStates = new Uint32Array(gridSize);
-    this.selectedStates = new Uint32Array(gridSize);
+    this.focusedCellPosition = new Uint32Array([-1, -1]);
+    this.selectedStates = new Uint32Array(Math.ceil((width * height) / 32));
     this.viewportStates = new Float32Array([0, 0, width, height]);
   }
 

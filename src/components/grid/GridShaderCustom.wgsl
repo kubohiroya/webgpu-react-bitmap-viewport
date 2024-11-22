@@ -20,13 +20,11 @@ fn vertexBody(
     let gridX: u32 = cellX + left;
     let gridY: u32 = cellY + top;
     let gridIndex = gridX + gridY * u32uni.gridSize.x;
-    let columnFocused = checkColumnFocused(gridX);
-    let rowFocused = checkRowFocused(gridY);
 
     var output: VertexOutput;
     output.position = vec4f(transform(cellX, cellY, input.position), 0, 1);
-    output.isFocused = select(FALSE, TRUE, (!(columnFocused && rowFocused)) && (columnFocused || rowFocused));
-    output.isSelected = select(FALSE, TRUE, checkSelected(gridX) || checkSelected(gridY));
+    output.isFocused = select(FALSE, TRUE, checkFocused(gridX, gridY));
+    output.isSelected = select(FALSE, TRUE, checkSelected(gridX, gridY));
     output.cellValue = gridData[gridIndex];
     return output;
 }
@@ -36,9 +34,9 @@ fn fragmentBody(input: VertexOutput) -> @location(0) vec4f {
   let s = select(1, 0.5, isTrue(input.isFocused));
   let v = select(1, 0.5, isTrue(input.isSelected));
   if(input.cellValue == Inf){
-      let rgb = hsvToRgb(1.0, 0.0, 1.0);
-      return vec4f(rgb, 1.0);
+    let rgb = hsvToRgb(1.0, 0.0, 1.0);
+    return vec4f(rgb, 1.0);
   }
   let rgb = hsvToRgb(f32(input.cellValue) / 255, 0.9, 0.9);
-  return vec4f(rgb, 1.0);
+  return vec4f(rgb * s, v);
 }
