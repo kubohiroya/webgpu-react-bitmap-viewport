@@ -3,7 +3,6 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationUIState } from './SegregationUIState';
 import { GPUSegregationKernel } from './GPUSegregationKernel';
 import { __Internref8 } from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
-import { shuffleUint32Array } from './utils/arrayUtil';
 
 export class ASGPUSegregationKernel extends GPUSegregationKernel {
   protected asGpuData!: __Internref8;
@@ -81,7 +80,12 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
   }
 
   shuffleGridContent() {
-    shuffleUint32Array(this.grid, this.data.width * this.data.height, this.rng);
+    SegregationKernelFunctions.shuffleASGPUGridData(this.asGpuData);
+  }
+
+  updateEmptyCellIndices() {
+    super.updateEmptyCellIndices();
+    SegregationKernelFunctions.updateASGPUEmptyCellIndicesArray(this.asGpuData);
   }
 
   getMovingAgentCount(): number {

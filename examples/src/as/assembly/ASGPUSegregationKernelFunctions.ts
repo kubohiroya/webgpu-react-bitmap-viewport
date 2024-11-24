@@ -111,6 +111,7 @@ export function setGrid(
   grid: Array<u32>,
 ): void {
   data.grid.set(grid);
+  data.emptyCellIndicesLength = 0;
   updateEmptyCellIndicesArray(data);
 }
 
@@ -192,7 +193,7 @@ export function compactIndicesArray(
   }
 }
 export function updateEmptyCellIndicesArray(
-  data: ASGPUSegregationKernelData,
+  data: ASGPUSegregationKernelData
 ): void {
   if(data.emptyCellIndicesLength !== 0){
     return;
@@ -240,6 +241,7 @@ export function updateMovingAgentIndicesArray(
 
 export function shuffleGridData(data: ASGPUSegregationKernelData): void {
   shuffleUint32Array(data.grid, data.width * data.height);
+  data.emptyCellIndicesLength = 0;
 }
 
 export function shuffleCellIndices(data: ASGPUSegregationKernelData): void {

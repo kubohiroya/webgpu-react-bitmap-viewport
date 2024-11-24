@@ -3,7 +3,6 @@ import { SegregationKernel } from './SegregationKernel';
 import { SegregationUIState } from './SegregationUIState';
 import * as SegregationKernelFunctions from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
 import { __Internref4 } from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
-import { shuffleUint32Array } from './utils/arrayUtil';
 
 export class ASSegregationKernel extends SegregationKernel {
   asData!: __Internref4;
@@ -37,7 +36,6 @@ export class ASSegregationKernel extends SegregationKernel {
       EMPTY_VALUE,
     );
     this.grid = this.createGridUint32Array(width, height);
-    console.log('ASSegregationKernel.updateGridSize', width, height);
     this.width = width;
     this.height = height;
     this.uiState.updateSize(width, height);
@@ -56,11 +54,11 @@ export class ASSegregationKernel extends SegregationKernel {
   }
 
   shuffleGridContent() {
-    shuffleUint32Array(this.grid, this.width * this.height, this.rng);
+    SegregationKernelFunctions.shuffleASGridData(this.asData);
   }
 
   updateEmptyCellIndices() {
-    // do nothing
+    SegregationKernelFunctions.updateASEmptyCellIndicesArray(this.asData);
   }
 
   setGridContent(grid: Uint32Array): void {

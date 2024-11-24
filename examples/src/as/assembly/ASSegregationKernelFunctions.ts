@@ -101,6 +101,8 @@ export function setGrid(
   grid: Array<u32>,
 ): void {
   data.grid.set(grid);
+  data.emptyCellIndicesLength = 0;
+  updateEmptyCellIndicesArray(data);
 }
 
 export function setTolerance(
@@ -149,7 +151,7 @@ export function createSegregationKernelData(
 }
 
 export function updateEmptyCellIndicesArray(
-  data: ASSegregationKernelData,
+  data: ASSegregationKernelData
 ): void {
   if(data.emptyCellIndicesLength !== 0){
     return;
@@ -196,6 +198,7 @@ export function updateMovingAgentIndicesArray(
 
 export function shuffleGridData(data: ASSegregationKernelData): void {
   shuffleUint32Array(data.grid, data.width * data.height);
+  data.emptyCellIndicesLength = 0;
 }
 
 export function shuffleCellIndices(data: ASSegregationKernelData): void {

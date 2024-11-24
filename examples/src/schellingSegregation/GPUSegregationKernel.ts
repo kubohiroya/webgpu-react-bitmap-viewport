@@ -196,18 +196,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
         label: 'pipeline0',
         entryPoint: 'main0',
       },
-      {
-        label: 'pipeline1',
-        entryPoint: 'main1',
-      },
-      {
-        label: 'pipeline2',
-        entryPoint: 'main2',
-      },
-      {
-        label: 'pipeline3',
-        entryPoint: 'main3',
-      },
     ].map(({ label, entryPoint }) =>
       this.device.createComputePipeline({
         label,
@@ -223,7 +211,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
   }
 
   updateEmptyCellIndices() {
-    super.updateEmptyCellIndices(this.data.emptyCellIndices);
+    super.updateEmptyCellIndices();
     this.data.emptyCellIndices[this.data.emptyCellIndices.length - 1] =
       this.data.emptyCellIndicesLength;
     this.device.queue.writeBuffer(
@@ -269,9 +257,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
   private createBindGroupLayout() {
     const types: Array<'uniform' | 'storage' | 'read-only-storage'> = [
       'uniform',
-      'storage',
-      'storage',
-      'storage',
+      'read-only-storage',
       'storage',
       'storage',
     ];
@@ -309,29 +295,15 @@ export class GPUSegregationKernel extends JSSegregationKernel {
         {
           binding: 2,
           resource: {
-            label: 'emptyIndices',
-            buffer: this.emptyCellIndicesBuffer,
-          },
-        },
-        {
-          binding: 3,
-          resource: {
             label: 'agentIndices',
             buffer: this.agentIndicesBuffer,
           },
         },
         {
-          binding: 4,
+          binding: 3,
           resource: {
             label: 'agentIndicesLength',
             buffer: this.agentIndicesLengthBuffer,
-          },
-        },
-        {
-          binding: 5,
-          resource: {
-            label: 'movingAgentIndices',
-            buffer: this.movingAgentIndicesBuffer,
           },
         },
       ],

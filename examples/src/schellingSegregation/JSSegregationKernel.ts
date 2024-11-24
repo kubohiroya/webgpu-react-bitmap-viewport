@@ -42,17 +42,15 @@ export class JSSegregationKernel extends SegregationKernel {
     );
   }
 
-  updateEmptyCellIndices(_emptyCellIndices?: Uint32Array) {
-    const emptyCellIndices = _emptyCellIndices
-      ? _emptyCellIndices
-      : this.data.emptyCellIndices;
+  updateEmptyCellIndices() {
     this.data.emptyCellIndicesLength = 0;
     for (let y = 0; y < this.data.height; y++) {
       for (let x = 0; x < this.data.width; x++) {
         const currentIndex = y * this.data.width + x;
         const agentType = this.data.grid[currentIndex];
         if (agentType === EMPTY_VALUE) {
-          emptyCellIndices[this.data.emptyCellIndicesLength] = currentIndex;
+          this.data.emptyCellIndices[this.data.emptyCellIndicesLength] =
+            currentIndex;
           this.data.emptyCellIndicesLength++;
         }
       }
