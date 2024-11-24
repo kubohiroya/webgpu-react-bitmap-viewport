@@ -2,18 +2,63 @@ import * as SegregationKernelFunctions from '../../build/webgpu-react-bitmap-vie
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationUIState } from './SegregationUIState';
 import { GPUSegregationKernel } from './GPUSegregationKernel';
-import { __Internref9 } from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
+import { __Internref8 } from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
+import { shuffleUint32Array } from './utils/arrayUtil';
 
 export class ASGPUSegregationKernel extends GPUSegregationKernel {
-  protected asGpuData!: __Internref9;
+  protected asGpuData!: __Internref8;
+  grid!: Uint32Array;
+  agentIndices!: Uint32Array;
+  agentIndicesLength!: Uint32Array;
+
+  movingAgentIndicesLength!: number;
 
   constructor(
     uiState: SegregationUIState,
     seed: string | undefined,
     device: GPUDevice,
-    workgroupSize: number,
+    workgroupSizeMax: number,
   ) {
-    super(uiState, seed, device, workgroupSize);
+    super(uiState, seed, device, workgroupSizeMax);
+  }
+
+  createGridUint32Array(width: number, height: number): Uint32Array {
+    return new Uint32Array(
+      SegregationKernelFunctions.memory.buffer,
+      SegregationKernelFunctions.getASGPUGrid(this.asGpuData),
+      width * height,
+    );
+  }
+
+  updateGridSize(
+    width: number,
+    height: number,
+    agentShares: number[],
+    tolerance: number,
+  ): void {
+    const workgroupSize = Math.min(this.workgroupSizeMax, height);
+    const dispatchSize = Math.min(this.workgroupSizeMax, width);
+    this.asGpuData =
+      SegregationKernelFunctions.createASGPUSegregationKernelData(
+        width,
+        height,
+        agentShares,
+        tolerance,
+        EMPTY_VALUE,
+        this.workgroupSizeMax,
+      );
+    this.grid = this.createGridUint32Array(width, height);
+    this.agentIndices = new Uint32Array(
+      SegregationKernelFunctions.memory.buffer,
+      SegregationKernelFunctions.getASGPUAgentIndices(this.asGpuData),
+      width * height,
+    );
+    this.agentIndicesLength = new Uint32Array(
+      SegregationKernelFunctions.memory.buffer,
+      SegregationKernelFunctions.getASGPUAgentIndicesLength(this.asGpuData),
+      workgroupSize * dispatchSize,
+    );
+    super.updateGridSize(width, height, agentShares, tolerance);
   }
 
   setTolerance(newTolerance: number) {
@@ -24,26 +69,26 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
     );
   }
 
-  updateGridSize(
-    width: number,
-    height: number,
-    agentShares: number[],
-    tolerance: number,
-  ): void {
-    this.asGpuData =
-      SegregationKernelFunctions.createASGPUSegregationKernelData(
-        width,
-        height,
-        agentShares,
-        tolerance,
-        Math.min(this.workgroupSizeMax, height),
-        Math.min(this.workgroupSizeMax, width),
-        EMPTY_VALUE,
-      );
-    super.updateGridSize(width, height, agentShares, tolerance);
+  setGridContent(grid: Uint32Array) {
+    if (this.grid.byteLength === 0) {
+      this.grid = this.createGridUint32Array(this.data.width, this.data.height);
+    }
+    this.grid.set(grid);
   }
 
-  async tick(): Promise<Uint32Array> {
+  getGrid(): Uint32Array {
+    return this.grid;
+  }
+
+  shuffleGridContent() {
+    shuffleUint32Array(this.grid, this.data.width * this.data.height, this.rng);
+  }
+
+  getMovingAgentCount(): number {
+    return this.movingAgentIndicesLength;
+  }
+
+  async tick(): Promise<void> {
     const command0 = this.createCommandBuffer(
       this.computePipelines[0],
       this.gpuData.dispatchSize,
@@ -55,7 +100,7 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
         source: this.agentIndicesBuffer,
         size:
           this.data.width * this.data.height * Uint32Array.BYTES_PER_ELEMENT,
-        target: this.gpuData.agentIndices,
+        target: this.agentIndices,
       },
       {
         key: 'workItems',
@@ -64,7 +109,7 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
           this.gpuData.workgroupSize *
           this.gpuData.dispatchSize *
           Uint32Array.BYTES_PER_ELEMENT,
-        target: this.gpuData.agentIndicesLength,
+        target: this.agentIndicesLength,
       },
     ];
 
@@ -80,6 +125,8 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
       return commandEncoder.finish();
     });
 
+    this.device.queue.writeBuffer(this.gridBuffer, 0, this.grid);
+
     this.device.queue.submit([command0, ...copyEncoders]);
     await Promise.all(
       sources.map(async (entry) => {
@@ -94,25 +141,11 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
         targetBuffer.unmap();
       }),
     );
-    await this.device.queue.onSubmittedWorkDone();
 
-    const grid = Uint32Array.from(
-      SegregationKernelFunctions.tickASGPU(
-        this.asGpuData,
-        this.gpuData.agentIndices,
-        this.gpuData.agentIndicesLength,
-        this.getBlockSize(),
-      ),
+    this.movingAgentIndicesLength = SegregationKernelFunctions.tickASGPU(
+      this.asGpuData,
     );
 
-    super.syncGridContent(grid);
-    SegregationKernelFunctions.setASGPUGrid(this.asGpuData, Array.from(grid));
-
-    return Promise.resolve(this.data.grid);
-  }
-
-  syncGridContent(grid: Uint32Array) {
-    super.syncGridContent(grid);
-    SegregationKernelFunctions.setASGPUGrid(this.asGpuData, Array.from(grid));
+    return Promise.resolve();
   }
 }

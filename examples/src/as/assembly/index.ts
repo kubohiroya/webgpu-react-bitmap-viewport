@@ -29,6 +29,8 @@ export {
   getEmptyCellIndices as getASGPUEmptyCellIndices,
   getMovingAgentIndices as getASGPUMovingAgentIndices,
   getMovingAgentIndicesLength as getASGPUMovingAgentIndicesLength,
+  getAgentIndices as getASGPUAgentIndices,
+  getAgentIndicesLength as getASGPUAgentIndicesLength,
   createSegregationKernelData as createASGPUSegregationKernelData,
   updateEmptyCellIndicesArray as updateASGPUEmptyCellIndicesArray,
   shuffleGridData as shuffleASGPUGridData,

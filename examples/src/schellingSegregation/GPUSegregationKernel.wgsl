@@ -15,12 +15,11 @@ struct Params {
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var<storage, read> random: array<f32>;
-@group(0) @binding(2) var<storage, read_write> grid: array<u32>;
-@group(0) @binding(3) var<storage, read_write> emptyCellIndices: array<u32>;
-@group(0) @binding(4) var<storage, read_write> agentIndices: array<u32>;
-@group(0) @binding(5) var<storage, read_write> agentIndicesLength: array<u32>;
-@group(0) @binding(6) var<storage, read_write> movingAgentIndices: array<u32>;
+@group(0) @binding(1) var<storage, read_write> grid: array<u32>;
+@group(0) @binding(2) var<storage, read_write> emptyCellIndices: array<u32>;
+@group(0) @binding(3) var<storage, read_write> agentIndices: array<u32>;
+@group(0) @binding(4) var<storage, read_write> agentIndicesLength: array<u32>;
+@group(0) @binding(5) var<storage, read_write> movingAgentIndices: array<u32>;
 
 fn countSimilarNeighbor(
   rowCache: ptr<function, array<array<u32, blockWidthWithGhostZone>, mooreNeighborhoodSize>>,
@@ -172,6 +171,7 @@ fn main2(@builtin(workgroup_id) workgroup_id: vec3<u32>, @builtin(local_invocati
     }
 }
 
+/*
 @compute @workgroup_size(2)
 fn main3(@builtin(workgroup_id) workgroup_id: vec3<u32>, @builtin(local_invocation_id) local_id: vec3<u32>) {
     // SHUFFLE EMPTY CELL INDICES AND AGENT IDICES ARRAY
@@ -196,9 +196,10 @@ fn main3(@builtin(workgroup_id) workgroup_id: vec3<u32>, @builtin(local_invocati
       }
     }
 }
+*/
 
 @compute @workgroup_size(workgroupSize)
-fn main4(@builtin(workgroup_id) workgroup_id: vec3<u32>, @builtin(local_invocation_id) local_id: vec3<u32>) {
+fn main3(@builtin(workgroup_id) workgroup_id: vec3<u32>, @builtin(local_invocation_id) local_id: vec3<u32>) {
     // MOVE AGENTS
     let workgroupIndex = workgroup_id.x;
     let threadIndex = local_id.x;

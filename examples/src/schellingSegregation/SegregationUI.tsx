@@ -18,17 +18,14 @@ import { Box, CircularProgress, Slider, Tooltip } from '@mui/material';
 import { GridOn, PieChart } from '@mui/icons-material';
 import SplitSlider from './components/SplitSlider';
 import {
-  PlayController,
+  PlayControllerPanel,
   PlayControllerState,
-} from './components/PlayController';
+} from './components/PlayControllerPanel';
 import { SegregationKernel } from './SegregationKernel';
 import { cumulativeSum } from './utils/arrayUtil';
 import { hsvToRgb } from './utils/colorUtil';
 
-import {
-  ToleranceController,
-  ToleranceControllerHandle,
-} from './ToleranceController';
+import { TolerancePanel, TolerancePanelHandle } from './TolerancePanel';
 import { KeyboardModifier } from 'dist/types/src/components/grid/KeyboardModifier';
 
 const SCROLLBAR = {
@@ -44,7 +41,7 @@ export function SegregationUI(
 ) {
   const locked = useRef<boolean>(false);
   const gridHandlesRefs = [useRef<GridHandles>(null)];
-  const toleranceControllerRef = useRef<ToleranceControllerHandle>(null);
+  const tolerancePanelRef = useRef<TolerancePanelHandle>(null);
   const kernelRef = useRef<SegregationKernel>(props.kernel);
 
   const [playControllerState, setPlayControllerState] =
@@ -62,11 +59,6 @@ export function SegregationUI(
 
   const [focusedCell, setFocusedCell] = useState<[number, number]>([-1, -1]);
   const [selectedCell, setSelectedCell] = useState<[number, number]>([-1, -1]);
-  /*
-  const [selectedState, setSelectedState] = useState<Uint32Array>(
-    new Uint32Array((props.width * props.height) / 32),
-  );
-   */
 
   const updateFrameCount = useCallback((frameCount: number) => {
     kernelRef.current.getUIState().setFrameCount(frameCount);
@@ -89,17 +81,16 @@ export function SegregationUI(
             tolerance,
             EMPTY_VALUE,
           );
-          kernelRef.current.syncGridContent(grid);
-          toleranceControllerRef.current!.update(0);
+          kernelRef.current.setGridContent(grid);
+          tolerancePanelRef.current!.update(0);
           setPlayControllerState(PlayControllerState.INITIALIZED);
           break;
         case PlayControllerState.INITIALIZED:
           kernelRef.current.shuffleGridContent();
           kernelRef.current.updateEmptyCellIndices();
-          kernelRef.current.syncGridContent(kernelRef.current.getGrid());
           setPlayControllerState(PlayControllerState.PAUSED);
           const newMovingAgentCount = kernelRef.current.getMovingAgentCount();
-          toleranceControllerRef.current!.update(newMovingAgentCount);
+          tolerancePanelRef.current!.update(newMovingAgentCount);
           break;
         case PlayControllerState.RUNNING:
           await kernelRef.current.tick();
@@ -187,7 +178,7 @@ export function SegregationUI(
         });
 
         const newMovingAgentCount = kernelRef.current.getMovingAgentCount();
-        toleranceControllerRef.current!.update(newMovingAgentCount);
+        tolerancePanelRef.current!.update(newMovingAgentCount);
 
         if (
           playControllerState === PlayControllerState.RUNNING &&
@@ -276,7 +267,6 @@ export function SegregationUI(
       const bitIndex = rowIndex * gridSize + columnIndex;
       const cellIndex = Math.floor(bitIndex / 32);
       const bitPosition = bitIndex % 32;
-      // console.log(kernelRef.current.getUIState().selectedStates);
       if (
         (kernelRef.current.getUIState().selectedStates[cellIndex] &
           (1 << bitPosition)) ===
@@ -463,7 +453,7 @@ export function SegregationUI(
           justifyItems: 'center',
         }}
       >
-        <PlayController
+        <PlayControllerPanel
           state={playControllerState}
           speed={props.speed}
           onReset={onReset}
@@ -475,8 +465,8 @@ export function SegregationUI(
         />
       </Box>
 
-      <ToleranceController
-        ref={toleranceControllerRef}
+      <TolerancePanel
+        ref={tolerancePanelRef}
         grid={grid}
         width={gridSize}
         height={gridSize}

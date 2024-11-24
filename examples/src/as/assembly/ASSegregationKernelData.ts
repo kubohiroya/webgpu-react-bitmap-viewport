@@ -4,10 +4,10 @@ export class ASSegregationKernelData {
   agentShares: Array<f32>;
   tolerance: f32;
   EMPTY_VALUE: i32;
-  grid: StaticArray<u32>;
-  movingAgentIndices: StaticArray<i32>;
+  grid: Uint32Array;
+  movingAgentIndices: Uint32Array;
   movingAgentIndicesLength: i32;
-  emptyCellIndices: StaticArray<i32>;
+  emptyCellIndices: Uint32Array;
   emptyCellIndicesLength: i32;
 
   constructor(
@@ -22,10 +22,10 @@ export class ASSegregationKernelData {
     this.agentShares = agentShares;
     this.tolerance = tolerance;
     this.EMPTY_VALUE = EMPTY_VALUE;
-    this.grid = new StaticArray<u32>(width * height);
-    this.movingAgentIndices = new StaticArray<i32>(width * height);
+    this.grid = new Uint32Array(width * height);
+    this.movingAgentIndices = new Uint32Array(width * height);
     this.movingAgentIndicesLength = 0;
-    this.emptyCellIndices = new StaticArray<i32>(width * height);
+    this.emptyCellIndices = new Uint32Array(width * height);
     this.emptyCellIndicesLength = 0;
   }
 }

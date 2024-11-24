@@ -5,15 +5,11 @@ import { JSSegregationKernel } from './JSSegregationKernel';
 import { shuffleUint32Array, sortUint32ArrayRange } from './utils/arrayUtil';
 // @ts-ignore
 import shader from './GPUSegregationKernel.wgsl?raw';
-//import shader from './GPUSegregationKernel2.wgsl?raw';
 import { replaceConstValue } from './utils/shaderUtil';
-import seedrandom from 'seedrandom';
 
 enum USE_GPU {
-  CONVOLUTION = 2 ^ 0,
-  SHUFFLE = 2 ^ 1,
-  REDUCE = 2 ^ 2,
-  SWAP = 2 ^ 3,
+  CONVOLUTION = 2 << 0,
+  REDUCE = 2 << 1,
 }
 
 export class GPUSegregationKernel extends JSSegregationKernel {
@@ -23,7 +19,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
 
   protected paramsBuffer: GPUBuffer;
   protected gridBuffer!: GPUBuffer;
-  protected randomBuffer!: GPUBuffer;
+
   protected emptyCellIndicesBuffer!: GPUBuffer;
   protected agentIndicesBuffer!: GPUBuffer;
   protected agentIndicesLengthBuffer!: GPUBuffer;
@@ -47,7 +43,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     super(uiState, seed);
     this.device = device;
     this.workgroupSizeMax = workgroupSizeMax;
-    this.targetBuffers = new Map();
+    this.targetBuffers = new Map<string, GPUBuffer>();
     this.paramsBuffer = this.device.createBuffer({
       label: 'paramsBuffer',
       size: Uint32Array.BYTES_PER_ELEMENT + Float32Array.BYTES_PER_ELEMENT,
@@ -56,8 +52,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
 
     // Create a bind group layout
     this.bindGroupLayout = this.createBindGroupLayout();
-
-    //mode = USE_GPU.REDUCE |  USE_GPU.SHUFFLE | USE_GPU.SWAP;
     this.mode = USE_GPU.CONVOLUTION;
   }
 
@@ -72,6 +66,10 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     );
   }
 
+  createKernelData(width: number, height: number) {
+    return new GPUSegregationKernelData(width, height, this.workgroupSizeMax);
+  }
+
   updateGridSize(
     width: number,
     height: number,
@@ -84,7 +82,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     this.data.emptyCellIndices = new Uint32Array(totalCells + 1); // last item is length of the array body
     this.data.movingAgentIndices = new Uint32Array(totalCells + 1); // last item is length of the array body
 
-    this.randomBuffer && this.randomBuffer.destroy();
     this.gridBuffer && this.gridBuffer.destroy();
 
     this.emptyCellIndicesBuffer && this.emptyCellIndicesBuffer.destroy();
@@ -96,17 +93,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
       this.targetBuffers.get(key)?.destroy();
     });
 
-    this.gpuData = new GPUSegregationKernelData(
-      width,
-      height,
-      this.workgroupSizeMax,
-    );
-
-    this.randomBuffer = this.device.createBuffer({
-      label: 'randomBuffer',
-      size: totalCells * Uint32Array.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    });
+    this.gpuData = this.createKernelData(width, height);
 
     // Create GPUBuffer for input grid data
     this.gridBuffer = this.device.createBuffer({
@@ -179,9 +166,9 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     const mooreNeighborhoodSize = mooreNeighborhoodRange * 2 + 1;
     const workgroupSize = this.gpuData.workgroupSize;
     const dispatchSize = this.gpuData.dispatchSize;
-    const blockWidth = this.getBlockWidth();
-    const blockHeight = this.getBlockHeight();
-    const blockSize = blockWidth * blockHeight;
+    const blockWidth = this.gpuData.blockWidth;
+    const blockHeight = this.gpuData.blockHeight;
+    const blockSize = this.gpuData.blockSize;
     const blockWidthWithGhostZone = blockWidth + mooreNeighborhoodRange * 2;
 
     const replacement = {
@@ -221,10 +208,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
         label: 'pipeline3',
         entryPoint: 'main3',
       },
-      {
-        label: 'pipeline4',
-        entryPoint: 'main4',
-      },
     ].map(({ label, entryPoint }) =>
       this.device.createComputePipeline({
         label,
@@ -239,11 +222,8 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     );
   }
 
-  syncGridContent(grid: Uint32Array) {
-    super.syncGridContent(grid);
-    this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
-    this.updateEmptyCellIndices();
-
+  updateEmptyCellIndices() {
+    super.updateEmptyCellIndices(this.data.emptyCellIndices);
     this.data.emptyCellIndices[this.data.emptyCellIndices.length - 1] =
       this.data.emptyCellIndicesLength;
     this.device.queue.writeBuffer(
@@ -251,44 +231,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
       0,
       this.data.emptyCellIndices,
     );
-  }
-
-  updateEmptyCellIndices() {
-    super.updateEmptyCellIndices(this.data.emptyCellIndices);
-  }
-  private getBlockWidth = () => {
-    return Math.ceil(this.data.width / this.gpuData.dispatchSize);
-  };
-  private getBlockHeight = () => {
-    return Math.ceil(this.data.height / this.gpuData.workgroupSize);
-  };
-  protected getBlockSize = () => {
-    return this.getBlockWidth() * this.getBlockHeight();
-  };
-
-  private updateRandomBuffer = (
-    size: number,
-    rng?: seedrandom.PRNG,
-  ): ArrayBufferLike => {
-    const base = this.data.width * this.data.height - size;
-    const random = rng ? rng : Math.random;
-    for (let i = 0; i < size; i++) {
-      this.gpuData.random[i] = random();
-      this.gpuData.random[base + i] = random();
-    }
-    return this.gpuData.random.buffer;
-  };
-
-  async debugUint32(label: string, gpuBuffer: GPUBuffer, arrayLength: number) {
-    const debugData = new Uint32Array(arrayLength);
-    await this.copyBufferToUint32Array(gpuBuffer, debugData);
-    console.log(label, debugData);
-  }
-
-  async debugFloat32(label: string, gpuBuffer: GPUBuffer, arrayLength: number) {
-    const debugData = new Float32Array(arrayLength);
-    await this.copyBufferToFloat32Array(gpuBuffer, debugData);
-    console.log(label, debugData);
   }
 
   protected createCommandBuffer(
@@ -310,7 +252,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     movingAgentIndices: Uint32Array,
   ): number {
     let movingAgentIndicesLength = 0;
-    const blockSize = this.getBlockWidth() * this.getBlockHeight();
     for (
       let blockIndex = 0;
       blockIndex < agentIndicesLengthArray.length;
@@ -318,84 +259,149 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     ) {
       for (let i = 0; i < agentIndicesLengthArray[blockIndex]; i++) {
         movingAgentIndices[movingAgentIndicesLength] =
-          agentIndicesArray[blockIndex * blockSize + i];
+          agentIndicesArray[blockIndex * this.gpuData.blockSize + i];
         movingAgentIndicesLength++;
       }
     }
     return movingAgentIndicesLength;
   }
 
-  async tick(): Promise<Uint32Array> {
+  private createBindGroupLayout() {
+    const types: Array<'uniform' | 'storage' | 'read-only-storage'> = [
+      'uniform',
+      'storage',
+      'storage',
+      'storage',
+      'storage',
+      'storage',
+    ];
+    return this.device.createBindGroupLayout({
+      entries: types.map((type, index) => {
+        return {
+          binding: index,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type,
+          },
+        };
+      }),
+    });
+  }
+
+  private createBindGroup(bindGroupLayout: GPUBindGroupLayout) {
+    return this.device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [
+        {
+          binding: 0,
+          resource: {
+            label: 'params',
+            buffer: this.paramsBuffer,
+          },
+        },
+        {
+          binding: 1,
+          resource: {
+            label: 'grid',
+            buffer: this.gridBuffer,
+          },
+        },
+        {
+          binding: 2,
+          resource: {
+            label: 'emptyIndices',
+            buffer: this.emptyCellIndicesBuffer,
+          },
+        },
+        {
+          binding: 3,
+          resource: {
+            label: 'agentIndices',
+            buffer: this.agentIndicesBuffer,
+          },
+        },
+        {
+          binding: 4,
+          resource: {
+            label: 'agentIndicesLength',
+            buffer: this.agentIndicesLengthBuffer,
+          },
+        },
+        {
+          binding: 5,
+          resource: {
+            label: 'movingAgentIndices',
+            buffer: this.movingAgentIndicesBuffer,
+          },
+        },
+      ],
+    });
+  }
+
+  private async copyBufferToUint32Array(
+    sourceBuffer: GPUBuffer,
+    array: Uint32Array,
+    _targetBuffer?: GPUBuffer,
+    offset = 0,
+    size = array.byteLength,
+  ) {
+    const targetBuffer: GPUBuffer =
+      _targetBuffer ||
+      this.device.createBuffer({
+        size: array.byteLength,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+    const copyEncoder = this.device.createCommandEncoder();
+    copyEncoder.copyBufferToBuffer(sourceBuffer, offset, targetBuffer, 0, size);
+    this.device.queue.submit([copyEncoder.finish()]);
+    await this.device.queue.onSubmittedWorkDone();
+    await targetBuffer.mapAsync(GPUMapMode.READ);
+    array.set(new Uint32Array(targetBuffer.getMappedRange(0, size)));
+    await this.device.queue.onSubmittedWorkDone();
+
+    targetBuffer.unmap();
+    if (!_targetBuffer) {
+      targetBuffer.destroy();
+    }
+  }
+
+  async tick(): Promise<void> {
     const command0 = this.createCommandBuffer(
       this.computePipelines[0],
       this.gpuData.dispatchSize,
     ); // convolution
 
     if (this.mode & USE_GPU.REDUCE) {
+      this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
+
       const command1 = this.createCommandBuffer(this.computePipelines[1], 1); // totalize
       const command2 = this.createCommandBuffer(
         this.computePipelines[2],
         this.gpuData.dispatchSize,
       ); // reduce
 
-      if (this.mode & USE_GPU.SHUFFLE) {
-        const command3 = this.createCommandBuffer(this.computePipelines[3], 1); // shuffle
+      this.device.queue.submit([command0, command1, command2]);
+      await this.device.queue.onSubmittedWorkDone();
+      const movingAgentLengthArray = new Uint32Array(1);
+      await this.copyBufferToUint32Array(
+        this.movingAgentIndicesBuffer,
+        movingAgentLengthArray,
+        this.targetBuffers.get('workItems'),
+        this.data.movingAgentIndices.byteLength - Uint32Array.BYTES_PER_ELEMENT,
+        Uint32Array.BYTES_PER_ELEMENT,
+      );
+      const movingAgentIndicesLength = movingAgentLengthArray[0];
 
-        this.updateRandomBuffer(this.data.width * this.data.height, this.rng);
-        this.device.queue.writeBuffer(
-          this.randomBuffer,
-          0,
-          this.gpuData.random,
-        );
-        if (this.mode & USE_GPU.SWAP) {
-          const command4 = this.createCommandBuffer(
-            this.computePipelines[4],
-            this.gpuData.dispatchSize,
-          );
-          this.device.queue.submit([
-            command0,
-            command1,
-            command2,
-            command3,
-            command4,
-          ]);
-          await this.device.queue.onSubmittedWorkDone();
-        } else {
-          this.device.queue.submit([command0, command1, command2, command3]);
-          await this.device.queue.onSubmittedWorkDone();
-          this.moveAgentAndSwapEmptyCell(
-            this.data.grid,
-            this.data.emptyCellIndices,
-            this.data.emptyCellIndicesLength,
-            this.data.movingAgentIndices,
-            this.data.movingAgentIndicesLength,
-          );
-        }
-        this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
-      } else {
-        this.device.queue.submit([command0, command1, command2]);
-        await this.device.queue.onSubmittedWorkDone();
-        const movingAgentLengthArray = new Uint32Array(1);
-        await this.copyBufferToUint32Array(
-          this.movingAgentIndicesBuffer,
-          movingAgentLengthArray,
-          this.targetBuffers.get('workItems'),
-          this.data.movingAgentIndices.byteLength -
-            Uint32Array.BYTES_PER_ELEMENT,
-          Uint32Array.BYTES_PER_ELEMENT,
-        );
-        const movingAgentIndicesLength = movingAgentLengthArray[0];
-
-        this.moveAgentAndSwapEmptyCell(
-          this.data.grid,
-          this.data.emptyCellIndices,
-          this.data.emptyCellIndicesLength,
-          this.data.movingAgentIndices,
-          movingAgentIndicesLength,
-        );
-        this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
-      }
+      this.moveAgentAndSwapEmptyCell(
+        this.data.grid,
+        this.data.emptyCellIndices,
+        this.data.emptyCellIndicesLength,
+        this.data.movingAgentIndices,
+        movingAgentIndicesLength,
+      );
     } else {
+      this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
+
       const sources = [
         {
           key: 'cells',
@@ -455,7 +461,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
           0,
           this.data.movingAgentIndicesLength,
         );
-        console.log(this.data.movingAgentIndices);
       }
 
       shuffleUint32Array(
@@ -476,146 +481,8 @@ export class GPUSegregationKernel extends JSSegregationKernel {
         this.data.movingAgentIndices,
         this.data.movingAgentIndicesLength,
       );
-      this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
     }
 
-    return this.data.grid;
-  }
-
-  private createBindGroupLayout() {
-    const types: Array<'uniform' | 'storage' | 'read-only-storage'> = [
-      'uniform',
-      'read-only-storage',
-      'storage',
-      'storage',
-      'storage',
-      'storage',
-      'storage',
-    ];
-    return this.device.createBindGroupLayout({
-      entries: types.map((type, index) => {
-        return {
-          binding: index,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: {
-            type,
-          },
-        };
-      }),
-    });
-  }
-
-  private createBindGroup(bindGroupLayout: GPUBindGroupLayout) {
-    return this.device.createBindGroup({
-      layout: bindGroupLayout,
-      entries: [
-        {
-          binding: 0,
-          resource: {
-            label: 'params',
-            buffer: this.paramsBuffer,
-          },
-        },
-        {
-          binding: 1,
-          resource: {
-            label: 'random',
-            buffer: this.randomBuffer,
-          },
-        },
-        {
-          binding: 2,
-          resource: {
-            label: 'grid',
-            buffer: this.gridBuffer,
-          },
-        },
-        {
-          binding: 3,
-          resource: {
-            label: 'emptyIndices',
-            buffer: this.emptyCellIndicesBuffer,
-          },
-        },
-        {
-          binding: 4,
-          resource: {
-            label: 'agentIndices',
-            buffer: this.agentIndicesBuffer,
-          },
-        },
-        {
-          binding: 5,
-          resource: {
-            label: 'agentIndicesLength',
-            buffer: this.agentIndicesLengthBuffer,
-          },
-        },
-        {
-          binding: 6,
-          resource: {
-            label: 'movingAgentIndices',
-            buffer: this.movingAgentIndicesBuffer,
-          },
-        },
-      ],
-    });
-  }
-
-  private async copyBufferToUint32Array(
-    sourceBuffer: GPUBuffer,
-    array: Uint32Array,
-    _targetBuffer?: GPUBuffer,
-    offset = 0,
-    size = array.byteLength,
-  ) {
-    const targetBuffer: GPUBuffer =
-      _targetBuffer ||
-      this.device.createBuffer({
-        size: array.byteLength,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-      });
-    const copyEncoder = this.device.createCommandEncoder();
-    copyEncoder.copyBufferToBuffer(sourceBuffer, offset, targetBuffer, 0, size);
-    this.device.queue.submit([copyEncoder.finish()]);
-    await this.device.queue.onSubmittedWorkDone();
-    await targetBuffer.mapAsync(GPUMapMode.READ);
-    array.set(new Uint32Array(targetBuffer.getMappedRange(0, size)));
-    await this.device.queue.onSubmittedWorkDone();
-
-    targetBuffer.unmap();
-    if (!_targetBuffer) {
-      targetBuffer.destroy();
-    }
-  }
-
-  private async copyBufferToFloat32Array(
-    sourceBuffer: GPUBuffer,
-    array: Float32Array,
-    _targetBuffer?: GPUBuffer,
-  ) {
-    const targetBuffer: GPUBuffer =
-      _targetBuffer ||
-      this.device.createBuffer({
-        size: array.byteLength,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-      });
-    const copyEncoder = this.device.createCommandEncoder();
-    copyEncoder.copyBufferToBuffer(
-      sourceBuffer,
-      0,
-      targetBuffer,
-      0,
-      array.byteLength,
-    );
-    this.device.queue.submit([copyEncoder.finish()]);
-    await this.device.queue.onSubmittedWorkDone();
-    await targetBuffer.mapAsync(GPUMapMode.READ);
-    array.set(new Float32Array(targetBuffer.getMappedRange()));
-
-    targetBuffer.unmap();
-    if (!_targetBuffer) {
-      targetBuffer.destroy();
-    }
+    return;
   }
 }

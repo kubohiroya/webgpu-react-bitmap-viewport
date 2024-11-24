@@ -10,10 +10,17 @@ export class ASSegregationKernel extends SegregationKernel {
   grid!: Uint32Array;
   width!: number;
   height!: number;
-  agentShares!: number[];
-
+  movingAgentIndicesLength!: number;
   constructor(uiState: SegregationUIState, seed: string | undefined) {
     super(uiState, seed);
+  }
+
+  createGridUint32Array(width: number, height: number): Uint32Array {
+    return new Uint32Array(
+      SegregationKernelFunctions.memory.buffer,
+      SegregationKernelFunctions.getASGrid(this.asData),
+      width * height,
+    );
   }
 
   updateGridSize(
@@ -29,11 +36,15 @@ export class ASSegregationKernel extends SegregationKernel {
       tolerance,
       EMPTY_VALUE,
     );
-    this.grid = new Uint32Array(width * height);
+    this.grid = this.createGridUint32Array(width, height);
+    console.log('ASSegregationKernel.updateGridSize', width, height);
     this.width = width;
     this.height = height;
-    this.agentShares = agentShares;
     this.uiState.updateSize(width, height);
+  }
+
+  setTolerance(newTolerance: number) {
+    SegregationKernelFunctions.setASTolerance(this.asData, newTolerance);
   }
 
   getWidth(): number {
@@ -44,25 +55,19 @@ export class ASSegregationKernel extends SegregationKernel {
     return this.height;
   }
 
-  getAgentShares(): number[] {
-    return this.agentShares;
-  }
-
-  setTolerance(newTolerance: number) {
-    SegregationKernelFunctions.setASTolerance(this.asData, newTolerance);
-  }
-
   shuffleGridContent() {
     shuffleUint32Array(this.grid, this.width * this.height, this.rng);
   }
 
   updateEmptyCellIndices() {
-    SegregationKernelFunctions.updateASEmptyCellIndicesArray(this.asData);
+    // do nothing
   }
 
-  syncGridContent(grid: Uint32Array): void {
+  setGridContent(grid: Uint32Array): void {
+    if (this.grid.byteLength === 0) {
+      this.grid = this.createGridUint32Array(this.width, this.height);
+    }
     this.grid.set(grid);
-    SegregationKernelFunctions.setASGrid(this.asData, Array.from(grid));
   }
 
   getGrid(): Uint32Array {
@@ -70,16 +75,13 @@ export class ASSegregationKernel extends SegregationKernel {
   }
 
   getMovingAgentCount() {
-    return SegregationKernelFunctions.getASMovingAgentIndicesLength(
-      this.asData,
-    );
+    return this.movingAgentIndicesLength;
   }
 
   tick() {
-    const grid = Uint32Array.from(
-      SegregationKernelFunctions.tickAS(this.asData),
+    this.movingAgentIndicesLength = SegregationKernelFunctions.tickAS(
+      this.asData,
     );
-    this.grid.set(grid);
-    return Promise.resolve(this.grid);
+    return Promise.resolve();
   }
 }

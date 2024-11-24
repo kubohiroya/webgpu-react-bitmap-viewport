@@ -2,7 +2,7 @@ import { ASSegregationKernelData } from './ASSegregationKernelData';
 
 @inline
 function shuffleUint32Array(
-  data: StaticArray<u32>,
+  data: Uint32Array,
   length: i32,
 ): void {
   for (let i: i32 = 0; i < length; i++) {
@@ -15,7 +15,7 @@ function shuffleUint32Array(
 
 @inline
 function shuffleInt32Array(
-  data: StaticArray<i32>,
+  data: Uint32Array,
   length: i32,
 ): void {
   for (let i: i32 = 0; i < length; i++) {
@@ -48,8 +48,8 @@ function calcSimilarity(
   y: i32,
   width: i32,
   height: i32,
-  data: StaticArray<u32>,
-  convolutionMembers: StaticArray<u32>,
+  data: Uint32Array,
+  convolutionMembers: Uint32Array,
   EMPTY_VALUE: i32,
 ): f32 {
   // x, y の周囲の相対的な位置
@@ -92,15 +92,15 @@ export function getAgentShares(data: ASSegregationKernelData): Array<f32> {
   return data.agentShares;
 }
 
-export function getGrid(data: ASSegregationKernelData): StaticArray<u32> {
-  return data.grid;
+export function getGrid(data: ASSegregationKernelData): usize {
+  return data.grid.dataStart;
 }
 
 export function setGrid(
   data: ASSegregationKernelData,
   grid: Array<u32>,
 ): void {
-  data.grid = StaticArray.fromArray<u32>(grid);
+  data.grid.set(grid);
 }
 
 export function setTolerance(
@@ -112,17 +112,20 @@ export function setTolerance(
 
 export function getEmptyCellIndices(
   data: ASSegregationKernelData,
-): StaticArray<i32> {
-  return data.emptyCellIndices;
+): usize {
+  return data.emptyCellIndices.dataStart;
 }
+
 export function getMovingAgentIndices(
   data: ASSegregationKernelData,
-): StaticArray<i32> {
-  return data.movingAgentIndices;
+): usize {
+  return data.movingAgentIndices.dataStart;
 }
+
 export function getEmptyCellIndicesLength(data: ASSegregationKernelData): i32 {
   return data.emptyCellIndicesLength;
 }
+
 export function getMovingAgentIndicesLength(
   data: ASSegregationKernelData,
 ): i32 {
@@ -148,8 +151,10 @@ export function createSegregationKernelData(
 export function updateEmptyCellIndicesArray(
   data: ASSegregationKernelData,
 ): void {
+  if(data.emptyCellIndicesLength !== 0){
+    return;
+  }
   const dataLength = data.width * data.height;
-  data.emptyCellIndicesLength = 0;
   for (let i: i32 = 0; i < dataLength; i++) {
     if (unchecked(data.grid[i]) === data.EMPTY_VALUE) {
       unchecked((data.emptyCellIndices[data.emptyCellIndicesLength] = i));
@@ -162,7 +167,7 @@ export function updateMovingAgentIndicesArray(
   data: ASSegregationKernelData,
 ): void {
   data.movingAgentIndicesLength = 0;
-  const convolutionMembers = new StaticArray<u32>(8);
+  const convolutionMembers = new Uint32Array(8);
   for (let y: i32 = 0; y < data.height; y++) {
     for (let x: i32 = 0; x < data.width; x++) {
       const currentIndex = x + y * data.width;
@@ -218,12 +223,12 @@ export function moveAgentAndSwapEmptyCell(data: ASSegregationKernelData): void {
   }
 }
 
-export function tick(data: ASSegregationKernelData,
-                     ): StaticArray<u32> {
+export function tick(data: ASSegregationKernelData): i32 {
   updateEmptyCellIndicesArray(data);
   updateMovingAgentIndicesArray(data);
   shuffleCellIndices(data);
   shuffleMovingAgents(data);
   moveAgentAndSwapEmptyCell(data);
-  return data.grid;
+  return data.movingAgentIndicesLength;
 }
+

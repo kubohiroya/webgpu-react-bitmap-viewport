@@ -38,7 +38,7 @@ const SubPlayButton = styled(PlayButton)`
   padding: 2px 8px 2px 4px;
 `;
 const MainPlayButton = styled(PlayButton)``;
-export const PlayController = (props: PlayControllerProps) => {
+export const PlayControllerPanel = (props: PlayControllerProps) => {
   const [speed, setSpeed] = useState<number>(props.speed);
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [fps, setFps] = useState<string | null>(null);

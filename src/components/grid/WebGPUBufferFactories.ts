@@ -6,7 +6,7 @@ export const createVertexBuffer = (
   return device.createBuffer({
     label,
     size: byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
   });
 };
 export const createUniformBuffer = (
@@ -17,7 +17,7 @@ export const createUniformBuffer = (
   return device.createBuffer({
     label,
     size: byteLength,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 };
 export const createStorageBuffer = (
@@ -28,7 +28,7 @@ export const createStorageBuffer = (
   return device.createBuffer({
     label,
     size: byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
 };
 export const updateBuffer = (

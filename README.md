@@ -186,11 +186,11 @@ graph TD;
     GridUI --> F32UniformBufferSource --> GPUBuffer
     GridUI --> U32UniformBufferSource --> GPUBuffer
     GridUI --> data --> GPUBuffer
-    GridUI --> focusedStates --> GPUBuffer
+    GridUI --> focusedCellPosition --> GPUBuffer
     GridUI --> selectedStates --> GPUBuffer
     GPUBindGroupLayout --> GPUPipelineLayout
     GPUPipelineLayout --> GPURenderPipeline
-    WGSL[[WGSL\nGridShader]] --> GPUShaderModule
+    WGSL[[WGSLGridShader]] --> GPUShaderModule
     GPUShaderModule --> GPURenderPipeline
     Vertices --> GPUBuffer
     GPUBuffer --> GPUBindGroup

@@ -43,9 +43,9 @@ export abstract class SegregationKernel {
   ): void;
   abstract setTolerance(newTolerance: number): void;
   abstract shuffleGridContent(): void;
-  abstract syncGridContent(grid: Uint32Array): void;
+  abstract setGridContent(grid: Uint32Array): void;
   abstract updateEmptyCellIndices(): void;
-  abstract tick(): Promise<Uint32Array>;
+  abstract tick(): Promise<void>;
   abstract getGrid(): Uint32Array;
   abstract getMovingAgentCount(): number;
 }

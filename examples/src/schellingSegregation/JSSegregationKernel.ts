@@ -30,7 +30,7 @@ export class JSSegregationKernel extends SegregationKernel {
     this.uiState.updateSize(width, height);
   }
 
-  syncGridContent(grid: Uint32Array) {
+  setGridContent(grid: Uint32Array) {
     this.data.grid.set(grid);
   }
 
@@ -146,7 +146,7 @@ export class JSSegregationKernel extends SegregationKernel {
       this.data.movingAgentIndices,
       this.data.movingAgentIndicesLength,
     );
-    return this.data.grid;
+    return;
   }
 
   getGrid(): Uint32Array {
@@ -159,10 +159,6 @@ export class JSSegregationKernel extends SegregationKernel {
 
   getHeight(): number {
     return this.data.height;
-  }
-
-  getAgentShares(): number[] {
-    return this.data.agentShares;
   }
 
   getMovingAgentCount() {
