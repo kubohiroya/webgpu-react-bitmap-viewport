@@ -2,8 +2,8 @@
   "entries": ["./src/as/assembly/index.ts"],
   "options": {
     "bindings": "esm",
-    "exportRuntime": true,
-    "enable": ["reference-types", "gc"]
+    "enable": ["simd"],
+    "runtime": "stub"
   },
   "targets": {
     "release": {
