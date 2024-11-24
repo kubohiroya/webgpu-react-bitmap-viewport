@@ -10,22 +10,25 @@ import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 
 const WORKGROUP_SIZE_MAX = 64;
 
-const SCHELLING_APPS_FULL = [
-  [SegregationModes.JS, SegregationModes.AS],
-  [SegregationModes.GPU, SegregationModes.ASGPU],
+const SCHELLING_APPS = [
+  SegregationModes.JS,
+  SegregationModes.AS,
+  SegregationModes.GPU,
+  SegregationModes.ASGPU,
 ];
-// const SCHELLING_APPS_HALF = [[SegregationModes.JS, SegregationModes.GPU]];
-// const SCHELLING_APPS_GPU_ONLY = [[SegregationModes.GPU]];
-// const SCHELLING_APPS_ASGPU_ONLY = [[SegregationModes.ASGPU]];
-const SCHELLING_APPS = SCHELLING_APPS_FULL;
-// const SCHELLING_APPS = SCHELLING_APPS_HALF;
-// const SCHELLING_APPS = SCHELLING_APPS_GPU_ONLY;
-// const SCHELLING_APPS = SCHELLING_APPS_ASGPU_ONLY;
 
 const urlParams = new URLSearchParams(window.location.search);
 const seed = urlParams.get('seed') || undefined;
 const gridSizeValue = urlParams.get('gridSize');
 const gridSize = gridSizeValue ? parseInt(gridSizeValue) : 1024;
+const apps = (urlParams.get('apps') || '1111')
+  .split('')
+  .map((value) => value === '1');
+const _shellingApps = SCHELLING_APPS.filter((_, index) => apps[index]);
+const schellingApps = [
+  [_shellingApps[0], _shellingApps[1]],
+  [_shellingApps[2], _shellingApps[3]],
+];
 
 const SynchronizedHokusaiImage = () => {
   return (
@@ -185,38 +188,38 @@ export const App = () => {
                 Viewport of Multi Agent Simulation: Schelling's model of
                 segregation
               </h2>
-              {SCHELLING_APPS.map(
-                (modes: SegregationModes[], index: number) => (
+              {schellingApps.map((modes: SegregationModes[], index: number) => (
+                <div
+                  key={index}
+                  style={{
+                    background: '#ddd',
+                    padding: '8px',
+                    borderRadius: '8px',
+                  }}
+                >
                   <div
-                    key={index}
                     style={{
-                      background: '#ddd',
-                      padding: '8px',
-                      borderRadius: '8px',
+                      display: 'flex',
+                      columnGap: '16px',
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        columnGap: '16px',
-                      }}
-                    >
-                      {modes.map((mode: SegregationModes, index: number) => (
-                        <div
-                          key={index}
-                          style={{
-                            background: '#eee',
-                            padding: '8px',
-                            borderRadius: '8px',
-                          }}
-                        >
+                    {modes.map((mode: SegregationModes, index: number) => (
+                      <div
+                        key={index}
+                        style={{
+                          background: '#eee',
+                          padding: '8px',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        {mode && (
                           <Schelling mode={mode} index={index}></Schelling>
-                        </div>
-                      ))}
-                    </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ),
-              )}
+                </div>
+              ))}
             </TabPanel>
           </Box>
         </TabContext>
