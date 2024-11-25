@@ -354,7 +354,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     if (this.mode & USE_GPU.REDUCE) {
       this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
 
-      const command1 = this.createCommandBuffer(this.computePipelines[1], 1); // totalize
+      const command1 = this.createCommandBuffer(this.computePipelines[1], 1);
       const command2 = this.createCommandBuffer(
         this.computePipelines[2],
         this.gpuData.dispatchSize,

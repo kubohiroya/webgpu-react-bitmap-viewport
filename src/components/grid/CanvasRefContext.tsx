@@ -1,7 +1,6 @@
 import React, {
   createContext,
   ReactNode,
-  RefObject,
   useContext,
   useEffect,
   useRef,

@@ -34,35 +34,35 @@ import { GridShaderMode } from './GridShaderMode';
 import { CanvasContextType } from './CanvasContext';
 
 export class RenderBundleBuilder {
-  private canvasContext: CanvasContextType;
+  private readonly canvasContext: CanvasContextType;
 
-  private device: GPUDevice;
-  private textureFormat: GPUTextureFormat;
-  private gpuCanvasContext: GPUCanvasContext;
+  private readonly device: GPUDevice;
+  private readonly textureFormat: GPUTextureFormat;
+  private readonly gpuCanvasContext: GPUCanvasContext;
 
-  private bindGroup: GPUBindGroup;
+  private readonly bindGroup: GPUBindGroup;
 
-  private f32UniformBufferSource: Float32Array;
-  private u32UniformBufferSource: Uint32Array;
-  private drawIndirectBufferSource: Uint32Array;
+  private readonly f32UniformBufferSource: Float32Array;
+  private readonly u32UniformBufferSource: Uint32Array;
+  private readonly drawIndirectBufferSource: Uint32Array;
 
-  private vertexBuffer: GPUBuffer;
-  private f32UniformBuffer: GPUBuffer;
-  private u32UniformBuffer: GPUBuffer;
-  private viewportStateStorage: GPUBuffer;
-  private gridDataBufferStorage: GPUBuffer;
-  private focusedCellPositionStorage: GPUBuffer;
-  private selectedStateStorage: GPUBuffer;
-  private drawIndirectBuffer: GPUBuffer;
+  private readonly vertexBuffer: GPUBuffer;
+  private readonly f32UniformBuffer: GPUBuffer;
+  private readonly u32UniformBuffer: GPUBuffer;
+  private readonly viewportStateStorage: GPUBuffer;
+  private readonly gridDataBufferStorage: GPUBuffer;
+  private readonly focusedCellPositionStorage: GPUBuffer;
+  private readonly selectedStateStorage: GPUBuffer;
+  private readonly drawIndirectBuffer: GPUBuffer;
 
-  private columnFocusRenderBundle: GPURenderBundle;
-  private rowFocusRenderBundle: GPURenderBundle;
-  private bodyRenderBundle: GPURenderBundle;
-  private viewportShadowRenderBundle: GPURenderBundle;
-  private topHeaderRenderBundle: GPURenderBundle;
-  private leftHeaderRenderBundle: GPURenderBundle;
-  private scrollBarBackgroundRenderBundle: GPURenderBundle;
-  private scrollBarBodyRenderBundle: GPURenderBundle;
+  private readonly columnFocusRenderBundle: GPURenderBundle;
+  private readonly rowFocusRenderBundle: GPURenderBundle;
+  private readonly bodyRenderBundle: GPURenderBundle;
+  private readonly viewportShadowRenderBundle: GPURenderBundle;
+  private readonly topHeaderRenderBundle: GPURenderBundle;
+  private readonly leftHeaderRenderBundle: GPURenderBundle;
+  private readonly scrollBarBackgroundRenderBundle: GPURenderBundle;
+  private readonly scrollBarBodyRenderBundle: GPURenderBundle;
 
   public constructor(
     mode: GridShaderMode,

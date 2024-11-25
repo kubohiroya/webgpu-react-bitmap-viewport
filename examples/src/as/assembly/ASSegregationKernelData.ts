@@ -1,4 +1,3 @@
-// <reference path="../../node_modules/assemblyscript/index.d.ts" />
 export class ASSegregationKernelData {
   width: i32;
   height: i32;

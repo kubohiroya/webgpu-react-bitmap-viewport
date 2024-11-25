@@ -1,4 +1,3 @@
-// <reference path="../../node_modules/assemblyscript/index.d.ts" />
 export class ASGPUSegregationKernelData /* extends ASSegregationKernelData*/ {
   width: i32;
   height: i32;
@@ -26,8 +25,6 @@ export class ASGPUSegregationKernelData /* extends ASSegregationKernelData*/ {
     EMPTY_VALUE: i32,
     workgroupSizeMax: i32,
   ) {
-    // super(width, height, agentShares, tolerance, EMPTY_VALUE);
-
     this.width = width;
     this.height = height;
     this.tolerance = tolerance;

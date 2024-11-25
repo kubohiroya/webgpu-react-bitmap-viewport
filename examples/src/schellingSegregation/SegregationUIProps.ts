@@ -20,6 +20,7 @@ export type SegregationUIProps = {
   iterations?: number;
   autoStart?: boolean;
 
+  gridSize: number;
   agentTypeShares: number[];
   tolerance: number;
 };

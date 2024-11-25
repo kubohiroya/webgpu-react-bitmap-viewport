@@ -45,7 +45,7 @@ export function SegregationUI(
   const [playControllerState, setPlayControllerState] =
     useState<PlayControllerState>(PlayControllerState.INITIALIZING);
 
-  const [gridSize, setGridSize] = useState(Math.max(props.width, props.height));
+  const [gridSize, setGridSize] = useState(props.gridSize);
   const [gridSizeSource, setGridSizeSource] = useState(10);
 
   const [tolerance, setTolerance] = useState<number>(

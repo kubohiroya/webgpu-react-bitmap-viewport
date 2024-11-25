@@ -56,7 +56,5 @@ export default function Segregation(
 
   kernel.updateGridSize(width, height, props.agentTypeShares, props.tolerance);
 
-  return (
-    <SegregationUI {...props} width={width} height={height} kernel={kernel} />
-  );
+  return <SegregationUI {...props} kernel={kernel} />;
 }

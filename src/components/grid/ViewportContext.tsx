@@ -16,10 +16,8 @@ export const ViewportContextProvider = (
     children: ReactNode;
   }
 ) => {
-  const value = props;
-
   return (
-    <ViewportContext.Provider value={value}>
+    <ViewportContext.Provider value={props}>
       {props.children}
     </ViewportContext.Provider>
   );
