@@ -34,9 +34,10 @@ export const SynchronizedMultiStaticImage = (
       const { data, width, height } = await loadImage(props.src);
       const numColumns = width;
       const numRows = height;
-      const gridSizeMax: number = Math.max(numColumns, numRows);
-      const focusedStates: Uint32Array = new Uint32Array(gridSizeMax);
-      const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
+      const focusedStates: Uint32Array = new Uint32Array([-1, -1]);
+      const selectedStates: Uint32Array = new Uint32Array(
+        Math.ceil((width * height) / 32),
+      );
       const viewportStates: Float32Array = new Float32Array([
         //0.0,0.0,1074.0,706.0,//
         0,
@@ -75,6 +76,7 @@ export const SynchronizedMultiStaticImage = (
       <GridGroup
         id={'rgba'}
         mode={GridShaderMode.RGBA}
+        numGroups={3}
         numColumns={state.numColumns}
         numRows={state.numRows}
         headerOffset={props.headerOffset}

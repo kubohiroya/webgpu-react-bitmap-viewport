@@ -1,6 +1,4 @@
-import { SegregationKernelDataHandler } from './SegregationKernelDataHandler';
-
-export class SegregationUIState implements SegregationKernelDataHandler {
+export class SegregationUIState {
   frameCount: number;
   focusedCellPosition!: Uint32Array;
   selectedStates!: Uint32Array;

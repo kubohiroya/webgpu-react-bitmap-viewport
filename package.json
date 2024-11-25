@@ -1,7 +1,7 @@
 {
   "name": "webgpu-react-bitmap-viewport",
   "description": "a React component that uses WebGPU to render bitmap data within a set of viewports synchronously",
-  "version": "1.0.1b2",
+  "version": "1.0.1b3",
   "license": "MIT",
   "projectType": "library",
   "repository": {
@@ -13,7 +13,10 @@
     "webgpu",
     "react",
     "bitmap",
-    "viewport"
+    "viewport",
+    "assemblyscript",
+    "gpgpu",
+    "simulation"
   ],
   "author": {
     "name": "Hiroya Kubo",

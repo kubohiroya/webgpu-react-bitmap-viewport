@@ -3,10 +3,10 @@ import { SegregationModes, SegregationUIProps } from './SegregationUIProps';
 import { SegregationUIState } from './SegregationUIState';
 import { SegregationUI } from './SegregationUI';
 import { useWebGPUDeviceContext } from 'webgpu-react-bitmap-viewport';
-import { JSSegregationKernel } from './JSSegregationKernel';
-import { ASSegregationKernel } from './ASSegregationKernel';
-import { GPUSegregationKernel } from './GPUSegregationKernel';
-import { ASGPUSegregationKernel } from './ASGPUSegregationKernel';
+import { JSSegregationKernel } from './kernels/JSSegregationKernel';
+import { ASSegregationKernel } from './kernels/ASSegregationKernel';
+import { GPUSegregationKernel } from './kernels/GPUSegregationKernel';
+import { ASGPUSegregationKernel } from './kernels/ASGPUSegregationKernel';
 import { SegregationProps } from './SegregationProps';
 
 export default function Segregation(

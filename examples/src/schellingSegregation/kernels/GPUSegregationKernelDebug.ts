@@ -1,9 +1,6 @@
 import { createInitialGridData } from './SegregationKernelService';
-import {
-  cumulativeSum,
-  printGrid,
-  shuffleUint32Array,
-} from './utils/arrayUtil';
+import { cumulativeSum, printGrid } from '../utils/arrayUtil';
+import { shuffleUint32ArrayWithSeed } from '../utils/shuffleUtil';
 const EMPTY_VALUE: number = 999;
 
 const width: number = 8;
@@ -28,9 +25,6 @@ type Params = {
 let params: Params = {
   tolerance: 0.5,
 };
-let random: Float32Array;
-let emptyCellIndices: Uint32Array;
-let movingAgentIndices: Uint32Array;
 
 let grid = createInitialGridData(
   width,
@@ -254,7 +248,7 @@ function main(workgroupId: number, localId: number) {
   }
 }
 
-shuffleUint32Array(grid, width * height);
+shuffleUint32ArrayWithSeed(grid, width * height);
 printGrid(grid, width, height);
 
 for (let i = 0; i < workgroupSize; i++) {

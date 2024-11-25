@@ -1,13 +1,13 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
-import { SegregationUIState } from './SegregationUIState';
+import { SegregationUIState } from '../SegregationUIState';
 import { GPUSegregationKernelData } from './GPUSegregationKernelData';
 import { JSSegregationKernel } from './JSSegregationKernel';
-import { sortUint32ArrayRange } from './utils/arrayUtil';
+import { sortUint32ArrayRange } from '../utils/arrayUtil';
 
 // @ts-ignore
 import shader from './GPUSegregationKernel.wgsl?raw';
-import { replaceConstValue } from './utils/shaderUtil';
-import { shuffleUint32ArrayWithSeed } from './utils/shuffleUtil';
+import { replaceConstValue } from '../utils/shaderUtil';
+import { shuffleUint32ArrayWithSeed } from '../utils/shuffleUtil';
 
 enum USE_GPU {
   CONVOLUTION = 2 << 0,

@@ -20,6 +20,7 @@ export function createSegregationKernelData(
 export function getAgentIndices(data: ASGPUSegregationKernelData): usize {
   return data.agentIndices.dataStart;
 }
+
 export function getAgentIndicesLength(data: ASGPUSegregationKernelData): usize {
   return data.agentIndicesLength.dataStart;
 }

@@ -1,4 +1,4 @@
-import { SegregationUIState } from './SegregationUIState';
+import { SegregationUIState } from '../SegregationUIState';
 import { createInitialGridData } from './SegregationKernelService';
 import seedrandom from 'seedrandom';
 

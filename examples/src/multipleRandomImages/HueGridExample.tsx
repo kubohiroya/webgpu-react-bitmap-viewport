@@ -35,19 +35,21 @@ export const HueGridExample = (props: HueGridExampleProps) => {
     return data;
   }
 
-  const gridSizeMax: number = Math.max(props.numColumns, props.numRows);
   const data: Float32Array = createHueRandomGridData(
     props.numRows,
     props.numColumns,
     0.1,
   );
-  const focusedStates: Uint32Array = new Uint32Array(gridSizeMax);
-  const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
+  const focusedStates: Uint32Array = new Uint32Array([-1, -1]);
+  const selectedStates: Uint32Array = new Uint32Array(
+    Math.ceil((props.numColumns * props.numRows) / 32),
+  );
 
   return (
     <GridGroup
       id={'hue-grid'}
       mode={GridShaderMode.HUE}
+      numGroups={3}
       numColumns={props.numColumns}
       numRows={props.numRows}
       scrollBar={{

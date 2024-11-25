@@ -19,4 +19,7 @@ export type SegregationUIProps = {
   speed: number;
   iterations?: number;
   autoStart?: boolean;
+
+  agentTypeShares: number[];
+  tolerance: number;
 };

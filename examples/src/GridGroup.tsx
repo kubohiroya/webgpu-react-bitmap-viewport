@@ -5,9 +5,11 @@ import {
 } from 'webgpu-react-bitmap-viewport';
 import { useRef } from 'react';
 import { KeyboardModifier } from 'dist/types/src/components/grid/KeyboardModifier';
+import { range } from './schellingSegregation/utils/arrayUtil';
 
 type GridGroupProps = {
   id: string;
+  numGroups: number;
   mode: GridShaderMode;
   numColumns: number;
   numRows: number;
@@ -30,11 +32,9 @@ type GridGroupProps = {
 };
 
 export const GridGroup = (props: GridGroupProps) => {
-  const gridRefs = [
+  const gridRefs = range(props.numGroups).map((_: number) =>
     useRef<GridHandles>(null),
-    useRef<GridHandles>(null),
-    useRef<GridHandles>(null),
-  ];
+  );
 
   return gridRefs.map((ref, _index) => (
     <Grid

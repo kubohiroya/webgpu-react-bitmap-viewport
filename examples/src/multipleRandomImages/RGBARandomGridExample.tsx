@@ -42,18 +42,20 @@ export const RGBARandomGridExample = (props: RGBARandomGridExampleProps) => {
   }
 
   const gridSize = { numColumns: 200, numRows: 200 };
-  const gridSizeMax: number = Math.max(gridSize.numColumns, gridSize.numRows);
   const data: Uint32Array = createRGBARandomGridData(
     gridSize.numRows,
     gridSize.numColumns,
     0.1,
   );
-  const focusedStates: Uint32Array = new Uint32Array(gridSizeMax);
-  const selectedStates: Uint32Array = new Uint32Array(gridSizeMax);
+  const focusedStates: Uint32Array = new Uint32Array([-1, -1]);
+  const selectedStates: Uint32Array = new Uint32Array(
+    Math.ceil((gridSize.numColumns * gridSize.numRows) / 32),
+  );
 
   return (
     <GridGroup
       id={'random'}
+      numGroups={3}
       mode={GridShaderMode.RGBA}
       numColumns={props.numColumns}
       numRows={props.numRows}

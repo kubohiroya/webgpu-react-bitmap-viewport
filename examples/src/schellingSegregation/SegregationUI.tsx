@@ -1,5 +1,4 @@
 import { SegregationUIProps } from './SegregationUIProps';
-import { SegregationKernelDataProps } from './SegregationKernelDataProps';
 import React, {
   SyntheticEvent,
   useCallback,
@@ -20,7 +19,7 @@ import {
   PlayControllerPanel,
   PlayControllerState,
 } from './components/PlayControllerPanel';
-import { SegregationKernel } from './SegregationKernel';
+import { SegregationKernel } from './kernels/SegregationKernel';
 import { cumulativeSum } from './utils/arrayUtil';
 import { hsvToRgb } from './utils/colorUtil';
 
@@ -34,10 +33,9 @@ const SCROLLBAR = {
 };
 
 export function SegregationUI(
-  props: SegregationUIProps &
-    SegregationKernelDataProps & {
-      kernel: SegregationKernel;
-    },
+  props: SegregationUIProps & {
+    kernel: SegregationKernel;
+  },
 ) {
   const locked = useRef<boolean>(false);
   const gridHandlesRefs = [useRef<GridHandles>(null)];

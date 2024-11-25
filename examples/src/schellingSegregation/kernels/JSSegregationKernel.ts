@@ -1,9 +1,9 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationKernel } from './SegregationKernel';
-import { SegregationUIState } from './SegregationUIState';
+import { SegregationUIState } from '../SegregationUIState';
 import { JSSegregationKernelData } from './JSSegregationKernelData';
-import { processConvolution, sortUint32ArrayRange } from './utils/arrayUtil';
-import { shuffleUint32ArrayWithSeed } from './utils/shuffleUtil';
+import { processConvolution, sortUint32ArrayRange } from '../utils/arrayUtil';
+import { shuffleUint32ArrayWithSeed } from '../utils/shuffleUtil';
 
 export class JSSegregationKernel extends SegregationKernel {
   protected data!: JSSegregationKernelData;

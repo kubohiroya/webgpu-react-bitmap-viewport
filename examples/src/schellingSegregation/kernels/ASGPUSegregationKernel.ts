@@ -1,8 +1,8 @@
-import * as SegregationKernelFunctions from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release/index';
+import * as SegregationKernelFunctions from '../../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release/index';
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
-import { SegregationUIState } from './SegregationUIState';
+import { SegregationUIState } from '../SegregationUIState';
 import { GPUSegregationKernel } from './GPUSegregationKernel';
-import { __Internref6 } from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
+import { __Internref6 } from '../../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
 
 export class ASGPUSegregationKernel extends GPUSegregationKernel {
   protected asGpuData!: __Internref6;

@@ -1,4 +1,4 @@
-import { reverseCumulativeSum } from './utils/arrayUtil';
+import { reverseCumulativeSum } from '../utils/arrayUtil';
 
 export function findAgentTypeIndex(
   agentTypeValues: number[],
