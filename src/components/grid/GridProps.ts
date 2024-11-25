@@ -38,7 +38,7 @@ export type GridProps = {
   numRows: number;
 
   /** The data to be displayed in the grid, stored in a Float32Array for SingleValueGrid or Uint32Array for RGBAGrid. */
-  data: Float32Array | Uint32Array;
+  data: Float32Array | Uint32Array | GPUBuffer;
 
   /** The focused states of the grid, stored in a Uint32Array: notFocused=0, verticalFocused=1, horizontalFocused=2, verticalAndHorizontalFocused=3*/
   focusedCellPosition: Uint32Array;

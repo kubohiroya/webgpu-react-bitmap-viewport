@@ -2,11 +2,8 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationKernel } from './SegregationKernel';
 import { SegregationUIState } from './SegregationUIState';
 import { JSSegregationKernelData } from './JSSegregationKernelData';
-import {
-  processConvolution,
-  shuffleUint32Array,
-  sortUint32ArrayRange,
-} from './utils/arrayUtil';
+import { processConvolution, sortUint32ArrayRange } from './utils/arrayUtil';
+import { shuffleUint32ArrayWithSeed } from './utils/shuffleUtil';
 
 export class JSSegregationKernel extends SegregationKernel {
   protected data!: JSSegregationKernelData;
@@ -35,7 +32,7 @@ export class JSSegregationKernel extends SegregationKernel {
   }
 
   shuffleGridContent() {
-    shuffleUint32Array(
+    shuffleUint32ArrayWithSeed(
       this.data.grid,
       this.data.width * this.data.height,
       this.rng,
@@ -125,13 +122,13 @@ export class JSSegregationKernel extends SegregationKernel {
       );
     }
 
-    shuffleUint32Array(
+    shuffleUint32ArrayWithSeed(
       this.data.emptyCellIndices,
       this.data.emptyCellIndicesLength,
       this.rng,
     );
 
-    shuffleUint32Array(
+    shuffleUint32ArrayWithSeed(
       this.data.movingAgentIndices,
       this.data.movingAgentIndicesLength,
       this.rng,
@@ -148,6 +145,10 @@ export class JSSegregationKernel extends SegregationKernel {
   }
 
   getGrid(): Uint32Array {
+    return this.data.grid;
+  }
+
+  getGridImpl(): Uint32Array | GPUBuffer {
     return this.data.grid;
   }
 

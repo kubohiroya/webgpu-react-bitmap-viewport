@@ -1,5 +1,3 @@
-import seedrandom from 'seedrandom';
-
 export function sortUint32ArrayRange(
   array: Uint32Array,
   start: number,
@@ -8,31 +6,6 @@ export function sortUint32ArrayRange(
   const subArray = Array.from(array.slice(start, end));
   subArray.sort((a, b) => a - b);
   array.set(subArray, start);
-}
-
-export function shuffleUint32Array(
-  data: Uint32Array,
-  length: number,
-  rng?: seedrandom.PRNG,
-): void {
-  // シャッフル関数 (Fisher–Yates shuffle)
-  const random = rng ? rng : Math.random;
-  for (let i = 0; i < length; i++) {
-    const j = Math.floor(random() * (i + 1));
-    const tmp = data[i];
-    data[i] = data[j];
-    data[j] = tmp;
-  }
-}
-
-export function shuffle(data: Array<number>, rng?: seedrandom.PRNG): void {
-  const random = rng ? rng : Math.random;
-  for (let i = 0; i < data.length; i++) {
-    const j = Math.floor(random() * (i + 1));
-    const tmp = data[i];
-    data[i] = data[j];
-    data[j] = tmp;
-  }
 }
 
 export function createHistogram(array: Uint32Array): { [key: number]: number } {
@@ -53,10 +26,7 @@ export function findIndices(
   inputArray: Uint32Array,
   target: number,
 ): Uint32Array {
-  // 0の値を持つインデックスを一時的に保存するための配列
   const indices: number[] = [];
-
-  // 配列をループし、EMPTY_VALUEの要素のインデックスを収集
   for (let i = 0; i < inputArray.length; i++) {
     if (inputArray[i] === target) {
       indices.push(i);
@@ -103,7 +73,7 @@ export function processConvolution(
   callback: (index: number) => void,
 ): void {
   // x, y の周囲の相対的な位置
-  [
+  const convolution = [
     [-1, -1],
     [0, -1],
     [1, -1], // 上の行
@@ -112,20 +82,22 @@ export function processConvolution(
     [-1, 1],
     [0, 1],
     [1, 1], // 下の行
-  ].forEach(([dx, dy]) => {
+  ];
+  for (let i = 0; i < convolution.length; i++) {
+    const xy = convolution[i];
     // xとyの上下左右ループを考慮して、座標を計算
-    const newX = (x + dx + width) % width;
-    const newY = (y + dy + height) % height;
+    const newX = (x + xy[0] + width) % width;
+    const newY = (y + xy[1] + height) % height;
     // インデックスを計算
     callback(newY * width + newX);
-  });
+  }
 }
 
 export function printGrid(
   grid: ArrayLike<number>,
   width: number,
   height: number,
-) {
+): void {
   for (let i = 0; i < height; i++) {
     let line = '';
     for (let j = 0; j < width; j++) {
@@ -140,7 +112,7 @@ export function print2DMatrix(
   grid: Array<Array<number>>,
   width: number,
   height: number,
-) {
+): void {
   console.log(`[`);
   for (let i = 0; i < height; i++) {
     let line = '';

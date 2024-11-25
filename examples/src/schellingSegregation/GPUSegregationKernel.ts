@@ -2,10 +2,12 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationUIState } from './SegregationUIState';
 import { GPUSegregationKernelData } from './GPUSegregationKernelData';
 import { JSSegregationKernel } from './JSSegregationKernel';
-import { shuffleUint32Array, sortUint32ArrayRange } from './utils/arrayUtil';
+import { sortUint32ArrayRange } from './utils/arrayUtil';
+
 // @ts-ignore
 import shader from './GPUSegregationKernel.wgsl?raw';
 import { replaceConstValue } from './utils/shaderUtil';
+import { shuffleUint32ArrayWithSeed } from './utils/shuffleUtil';
 
 enum USE_GPU {
   CONVOLUTION = 2 << 0,
@@ -50,7 +52,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // Create a bind group layout
     this.bindGroupLayout = this.createBindGroupLayout();
     this.mode = USE_GPU.CONVOLUTION;
   }
@@ -95,7 +96,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
 
     this.gpuData = this.createKernelData(width, height);
 
-    // Create GPUBuffer for input grid data
     this.gridBuffer = this.device.createBuffer({
       label: 'gridBuffer',
       size: totalCells * Uint32Array.BYTES_PER_ELEMENT,
@@ -115,7 +115,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     });
 
     const totalItems = this.gpuData.workgroupSize * this.gpuData.dispatchSize;
-    // Create GPUBuffer for output data (agentIndices, agentIndicesLength)
     this.agentIndicesBuffer = this.device.createBuffer({
       label: 'agentIndicesBuffer',
       size: (totalCells + 1) * Uint32Array.BYTES_PER_ELEMENT,
@@ -190,7 +189,6 @@ export class GPUSegregationKernel extends JSSegregationKernel {
       code: modifiedShaderCode,
     });
 
-    // Set up compute pipeline
     this.computePipelines = [
       {
         label: 'pipeline0',
@@ -210,6 +208,15 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     );
   }
 
+  getGridImpl(): Uint32Array | GPUBuffer {
+    return this.gridBuffer;
+  }
+
+  setGridContent(grid: Uint32Array) {
+    super.setGridContent(grid);
+    this.device.queue.writeBuffer(this.gridBuffer, 0, grid);
+  }
+
   updateEmptyCellIndices() {
     super.updateEmptyCellIndices();
     this.data.emptyCellIndices[this.data.emptyCellIndices.length - 1] =
@@ -219,6 +226,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
       0,
       this.data.emptyCellIndices,
     );
+    this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
   }
 
   protected createCommandBuffer(
@@ -341,7 +349,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     const command0 = this.createCommandBuffer(
       this.computePipelines[0],
       this.gpuData.dispatchSize,
-    ); // convolution
+    ); // process convolution
 
     if (this.mode & USE_GPU.REDUCE) {
       this.device.queue.writeBuffer(this.gridBuffer, 0, this.data.grid);
@@ -435,12 +443,12 @@ export class GPUSegregationKernel extends JSSegregationKernel {
         );
       }
 
-      shuffleUint32Array(
+      shuffleUint32ArrayWithSeed(
         this.data.emptyCellIndices,
         this.data.emptyCellIndicesLength,
         this.rng,
       );
-      shuffleUint32Array(
+      shuffleUint32ArrayWithSeed(
         this.data.movingAgentIndices,
         this.data.movingAgentIndicesLength,
         this.rng,

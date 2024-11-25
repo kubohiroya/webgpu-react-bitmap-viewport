@@ -2,10 +2,10 @@ import * as SegregationKernelFunctions from '../../build/webgpu-react-bitmap-vie
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationUIState } from './SegregationUIState';
 import { GPUSegregationKernel } from './GPUSegregationKernel';
-import { __Internref8 } from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
+import { __Internref6 } from '../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
 
 export class ASGPUSegregationKernel extends GPUSegregationKernel {
-  protected asGpuData!: __Internref8;
+  protected asGpuData!: __Internref6;
   grid!: Uint32Array;
   agentIndices!: Uint32Array;
   agentIndicesLength!: Uint32Array;
@@ -21,7 +21,7 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
     super(uiState, seed, device, workgroupSizeMax);
   }
 
-  createGridUint32Array(width: number, height: number): Uint32Array {
+  private createGridUint32Array(width: number, height: number): Uint32Array {
     return new Uint32Array(
       SegregationKernelFunctions.memory.buffer,
       SegregationKernelFunctions.getASGPUGrid(this.asGpuData),
@@ -41,7 +41,6 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
       SegregationKernelFunctions.createASGPUSegregationKernelData(
         width,
         height,
-        agentShares,
         tolerance,
         EMPTY_VALUE,
         this.workgroupSizeMax,
@@ -73,10 +72,7 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
       this.grid = this.createGridUint32Array(this.data.width, this.data.height);
     }
     this.grid.set(grid);
-  }
-
-  getGrid(): Uint32Array {
-    return this.grid;
+    this.device.queue.writeBuffer(this.gridBuffer, 0, grid);
   }
 
   shuffleGridContent() {
@@ -86,6 +82,7 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
   updateEmptyCellIndices() {
     super.updateEmptyCellIndices();
     SegregationKernelFunctions.updateASGPUEmptyCellIndicesArray(this.asGpuData);
+    this.device.queue.writeBuffer(this.gridBuffer, 0, this.grid);
   }
 
   getMovingAgentCount(): number {
@@ -93,10 +90,12 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
   }
 
   async tick(): Promise<void> {
+    this.device.queue.writeBuffer(this.gridBuffer, 0, this.grid);
+
     const command0 = this.createCommandBuffer(
       this.computePipelines[0],
       this.gpuData.dispatchSize,
-    ); // convolution
+    ); // process convolution
 
     const sources = [
       {
@@ -129,9 +128,8 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
       return commandEncoder.finish();
     });
 
-    this.device.queue.writeBuffer(this.gridBuffer, 0, this.grid);
-
     this.device.queue.submit([command0, ...copyEncoders]);
+
     await Promise.all(
       sources.map(async (entry) => {
         const targetBuffer = this.targetBuffers.get(entry.key);

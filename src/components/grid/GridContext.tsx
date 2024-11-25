@@ -3,7 +3,7 @@ import { GridShaderMode } from './GridShaderMode';
 
 export type GridContextProps = {
   mode: GridShaderMode;
-  data: Float32Array | Uint32Array;
+  data: Float32Array | Uint32Array | GPUBuffer;
   numColumns: number;
   numRows: number;
 };

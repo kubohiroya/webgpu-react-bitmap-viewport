@@ -30,7 +30,7 @@ type GridUIProps = {
   selectedStates: Uint32Array;
   onDataChanged?: (
     sourceIndex: number,
-    gridData: Float32Array | Uint32Array
+    gridData: Float32Array | Uint32Array | GPUBuffer
   ) => void;
   onFocusedCellPositionChange?: (
     sourceIndex: number,
@@ -1265,7 +1265,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       canvasContext,
       webGpuDisplayContext.texture,
       gridContext,
-      viewportContext.numViewports
+      viewportContext.numViewports,
+      gridContext.data instanceof GPUBuffer ? gridContext.data : null
     );
 
     canvas.addEventListener('mousedown', onMouseDown, { passive: true });

@@ -31,7 +31,6 @@ export class ASSegregationKernel extends SegregationKernel {
     this.asData = SegregationKernelFunctions.createASSegregationKernelData(
       width,
       height,
-      agentShares,
       tolerance,
       EMPTY_VALUE,
     );
@@ -69,6 +68,10 @@ export class ASSegregationKernel extends SegregationKernel {
   }
 
   getGrid(): Uint32Array {
+    return this.grid;
+  }
+
+  getGridImpl(): Uint32Array {
     return this.grid;
   }
 

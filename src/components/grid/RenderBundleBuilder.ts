@@ -72,7 +72,8 @@ export class RenderBundleBuilder {
     canvasContext: CanvasContextType,
     texture: GPUTexture,
     gridSize: { numColumns: number; numRows: number },
-    numViewports: number
+    numViewports: number,
+    gridDataBufferStorage: GPUBuffer | null
   ) {
     this.device = device;
     this.textureFormat = textureFormat;
@@ -268,13 +269,16 @@ export class RenderBundleBuilder {
       device,
       Math.ceil((gridSize.numColumns * gridSize.numRows) / 4)
     );
-    this.gridDataBufferStorage = createStorageBuffer(
-      'GridDataBuffer',
-      device,
-      gridSize.numColumns *
-        gridSize.numRows *
-        (mode === GridShaderMode.RGBA ? U32LEN : F32LEN)
-    );
+    this.gridDataBufferStorage =
+      gridDataBufferStorage != null
+        ? gridDataBufferStorage
+        : createStorageBuffer(
+            'GridDataBuffer',
+            device,
+            gridSize.numColumns *
+              gridSize.numRows *
+              (mode === GridShaderMode.RGBA ? U32LEN : F32LEN)
+          );
 
     this.bindGroup = this.createBindGroup(
       'Grid BindGroup',
@@ -347,8 +351,10 @@ export class RenderBundleBuilder {
     );
   }
 
-  public updateDataBufferStorage(data: Float32Array | Uint32Array) {
-    updateBuffer(this.device, this.gridDataBufferStorage, data);
+  public updateDataBufferStorage(data: Float32Array | Uint32Array | GPUBuffer) {
+    if (data instanceof Float32Array || data instanceof Uint32Array) {
+      updateBuffer(this.device, this.gridDataBufferStorage, data);
+    }
   }
 
   public updateFocusedCellPositionStorage(focusedCellPosition: Uint32Array) {

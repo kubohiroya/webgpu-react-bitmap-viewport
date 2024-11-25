@@ -1,26 +1,13 @@
 import { ASSegregationKernelData } from './ASSegregationKernelData';
 
 @inline
-function shuffleUint32Array(
+export function shuffleUint32Array(
   data: Uint32Array,
   length: i32,
 ): void {
   for (let i: i32 = 0; i < length; i++) {
     const j: i32 = Mathf.floor(Mathf.random() * f32(i + 1)) as i32;
     const tmp: u32 = unchecked(data[i]);
-    unchecked((data[i] = data[j]));
-    unchecked((data[j] = tmp));
-  }
-}
-
-@inline
-function shuffleInt32Array(
-  data: Uint32Array,
-  length: i32,
-): void {
-  for (let i: i32 = 0; i < length; i++) {
-    const j: i32 = Mathf.floor(Mathf.random() * f32(i + 1)) as i32;
-    const tmp: i32 = unchecked(data[i]);
     unchecked((data[i] = data[j]));
     unchecked((data[j] = tmp));
   }
@@ -43,7 +30,7 @@ function getIndex(
 }
 
 @inline
-function calcSimilarity(
+export function calcSimilarity(
   x: i32,
   y: i32,
   width: i32,
@@ -81,28 +68,22 @@ function calcSimilarity(
   }
 }
 
-export function getWidth(data: ASSegregationKernelData): i32 {
-  return data.width;
-}
-export function getHeight(data: ASSegregationKernelData): i32 {
-  return data.height;
-}
-
-export function getAgentShares(data: ASSegregationKernelData): Array<f32> {
-  return data.agentShares;
+export function createSegregationKernelData(
+  width: i32,
+  height: i32,
+  tolerance: f32,
+  EMPTY_VALUE: i32,
+): ASSegregationKernelData {
+  return new ASSegregationKernelData(
+    width,
+    height,
+    tolerance,
+    EMPTY_VALUE,
+  );
 }
 
 export function getGrid(data: ASSegregationKernelData): usize {
   return data.grid.dataStart;
-}
-
-export function setGrid(
-  data: ASSegregationKernelData,
-  grid: Array<u32>,
-): void {
-  data.grid.set(grid);
-  data.emptyCellIndicesLength = 0;
-  updateEmptyCellIndicesArray(data);
 }
 
 export function setTolerance(
@@ -110,44 +91,6 @@ export function setTolerance(
   tolerance: f32,
 ): void {
   data.tolerance = tolerance;
-}
-
-export function getEmptyCellIndices(
-  data: ASSegregationKernelData,
-): usize {
-  return data.emptyCellIndices.dataStart;
-}
-
-export function getMovingAgentIndices(
-  data: ASSegregationKernelData,
-): usize {
-  return data.movingAgentIndices.dataStart;
-}
-
-export function getEmptyCellIndicesLength(data: ASSegregationKernelData): i32 {
-  return data.emptyCellIndicesLength;
-}
-
-export function getMovingAgentIndicesLength(
-  data: ASSegregationKernelData,
-): i32 {
-  return data.movingAgentIndicesLength;
-}
-
-export function createSegregationKernelData(
-  width: i32,
-  height: i32,
-  agentShares: f32[],
-  tolerance: f32,
-  EMPTY_VALUE: i32,
-): ASSegregationKernelData {
-  return new ASSegregationKernelData(
-    width,
-    height,
-    agentShares,
-    tolerance,
-    EMPTY_VALUE,
-  );
 }
 
 export function updateEmptyCellIndicesArray(
@@ -165,7 +108,7 @@ export function updateEmptyCellIndicesArray(
   }
 }
 
-export function updateMovingAgentIndicesArray(
+function updateMovingAgentIndicesArray(
   data: ASSegregationKernelData,
 ): void {
   data.movingAgentIndicesLength = 0;
@@ -196,20 +139,21 @@ export function updateMovingAgentIndicesArray(
   }
 }
 
+// !
 export function shuffleGridData(data: ASSegregationKernelData): void {
   shuffleUint32Array(data.grid, data.width * data.height);
   data.emptyCellIndicesLength = 0;
 }
 
-export function shuffleCellIndices(data: ASSegregationKernelData): void {
-  shuffleInt32Array(data.emptyCellIndices, data.emptyCellIndicesLength);
+function shuffleCellIndices(data: ASSegregationKernelData): void {
+  shuffleUint32Array(data.emptyCellIndices, data.emptyCellIndicesLength);
 }
 
-export function shuffleMovingAgents(data: ASSegregationKernelData): void {
-  shuffleInt32Array(data.movingAgentIndices, data.movingAgentIndicesLength);
+function shuffleMovingAgents(data: ASSegregationKernelData): void {
+  shuffleUint32Array(data.movingAgentIndices, data.movingAgentIndicesLength);
 }
 
-export function moveAgentAndSwapEmptyCell(data: ASSegregationKernelData): void {
+function moveAgentAndSwapEmptyCell(data: ASSegregationKernelData): void {
   const moveCount =
     data.emptyCellIndicesLength < data.movingAgentIndicesLength
       ? data.emptyCellIndicesLength
@@ -226,6 +170,7 @@ export function moveAgentAndSwapEmptyCell(data: ASSegregationKernelData): void {
   }
 }
 
+// !
 export function tick(data: ASSegregationKernelData): i32 {
   updateEmptyCellIndicesArray(data);
   updateMovingAgentIndicesArray(data);

@@ -47,5 +47,6 @@ export abstract class SegregationKernel {
   abstract updateEmptyCellIndices(): void;
   abstract tick(): Promise<void>;
   abstract getGrid(): Uint32Array;
+  abstract getGridImpl(): Uint32Array | GPUBuffer;
   abstract getMovingAgentCount(): number;
 }

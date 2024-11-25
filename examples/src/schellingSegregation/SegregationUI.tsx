@@ -14,9 +14,8 @@ import {
   GridHandles,
   GridShaderMode,
 } from 'webgpu-react-bitmap-viewport';
-import { Box, CircularProgress, Slider, Tooltip } from '@mui/material';
-import { GridOn, PieChart } from '@mui/icons-material';
-import SplitSlider from './components/SplitSlider';
+import { Box, CircularProgress, Slider } from '@mui/material';
+import { GridOn } from '@mui/icons-material';
 import {
   PlayControllerPanel,
   PlayControllerState,
@@ -27,6 +26,7 @@ import { hsvToRgb } from './utils/colorUtil';
 
 import { TolerancePanel, TolerancePanelHandle } from './TolerancePanel';
 import { KeyboardModifier } from 'dist/types/src/components/grid/KeyboardModifier';
+import { AgentSharePanel } from './AgentSharePanel';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -136,19 +136,6 @@ export function SegregationUI(
       );
     },
     [update, agentTypeCumulativeShares],
-  );
-
-  const onAgentTypeCumulativeSharesChange = useCallback(
-    (values: number[]) => {
-      const newAgentTypeCumulativeShares = values;
-      setAgentTypeCumulativeShares(newAgentTypeCumulativeShares);
-      update(
-        PlayControllerState.INITIALIZING,
-        gridSize,
-        newAgentTypeCumulativeShares,
-      );
-    },
-    [update, gridSize],
   );
 
   const onToleranceChange = useCallback(
@@ -308,73 +295,6 @@ export function SegregationUI(
     return 2 ** value;
   }, []);
 
-  const rgbValueEntries = useMemo(() => {
-    return agentTypeCumulativeShares.map((value: number) => {
-      return [Math.floor(255 * value), hsvToRgb(1 - value, 0.9, 0.9)];
-    });
-  }, [agentTypeCumulativeShares]);
-
-  const rgbValues = useMemo(() => {
-    return rgbValueEntries.map(([_, rgb]) => rgb as [number, number, number]);
-  }, [rgbValueEntries]);
-
-  const rgbValueMap = useMemo(() => {
-    return new Map<number, [number, number, number]>(
-      rgbValueEntries as [number, [number, number, number]][],
-    );
-  }, [rgbValueEntries]);
-
-  const valueToRGB = useCallback(
-    (value: number) => {
-      const rgb = rgbValueMap.get(Math.floor(255 * value));
-      return rgb || [255, 255, 255];
-    },
-    [rgbValueMap],
-  );
-
-  const splitSliderSx = useMemo(
-    () => ({
-      '& .MuiSlider-thumb': rgbValues
-        .map((rgbValue, index) => {
-          //rgb[0] = Math.floor(rgb[0]);
-          return [
-            `&[data-index='${index}']`,
-            {
-              color: `rgb(${rgbValue.join(' ')})`,
-            },
-          ];
-        })
-        .reduce<Record<string, { color: string }>>(
-          (acc: Record<string, { color: string }>, [key, value]: any) => {
-            acc[key] = value;
-            return acc;
-          },
-          {},
-        ),
-    }),
-    [agentTypeCumulativeShares],
-  );
-
-  const valueLabelFormat = useCallback(
-    (value: number, index: number) => {
-      const format = (value: number) => `${(value * 100).toFixed(1)}%`;
-      if (index === 0 || index === -1) {
-        return format(value); // 最初のサムはそのままの値を表示
-      }
-      return format(value - agentTypeCumulativeShares[index - 1]); // 直前の値との差を表示
-    },
-    [agentTypeCumulativeShares],
-  );
-
-  const empty = useMemo(
-    () =>
-      (
-        (1 - agentTypeCumulativeShares[agentTypeCumulativeShares.length - 1]) *
-        100
-      ).toFixed(1),
-    [agentTypeCumulativeShares],
-  );
-
   const gridSizeMarks = useMemo(
     () =>
       [3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((value) => ({
@@ -384,7 +304,10 @@ export function SegregationUI(
     [],
   );
 
-  const grid = kernelRef.current.getGrid();
+  const rgbValues = useMemo(
+    () => calculateRGBValues(agentTypeCumulativeShares),
+    [agentTypeCumulativeShares],
+  );
 
   return (
     <>
@@ -423,23 +346,13 @@ export function SegregationUI(
           />
         </Box>
 
-        <Tooltip title={`AgentShares (${empty}% empty)`} placement={'right'}>
-          <Box
-            style={{
-              display: 'flex',
-              columnGap: '18px',
-              alignItems: 'center',
-            }}
-          >
-            <PieChart style={{ marginTop: '8px', marginRight: '8px' }} />
-            <SplitSlider
-              splitValues={agentTypeCumulativeShares}
-              onChange={onAgentTypeCumulativeSharesChange}
-              sx={splitSliderSx}
-              valueLabelFormat={valueLabelFormat}
-            />
-          </Box>
-        </Tooltip>
+        <AgentSharePanel
+          agentTypeCumulativeShares={agentTypeCumulativeShares}
+          setAgentTypeCumulativeShares={setAgentTypeCumulativeShares}
+          gridSize={gridSize}
+          update={update}
+          rgbValues={rgbValues.rgbValues}
+        />
       </Box>
       <Box
         style={{
@@ -467,14 +380,14 @@ export function SegregationUI(
 
       <TolerancePanel
         ref={tolerancePanelRef}
-        grid={grid}
+        grid={kernelRef.current.getGrid()}
         width={gridSize}
         height={gridSize}
         x={selectedCell[0] >= 0 ? selectedCell[0] : focusedCell[0]}
         y={selectedCell[1] >= 0 ? selectedCell[1] : focusedCell[1]}
         tolerance={tolerance}
         onToleranceChange={onToleranceChange}
-        valueToRGB={valueToRGB}
+        valueToRGB={rgbValues.valueToRGB}
         canvasWidth={48}
         canvasHeight={32}
         torus={true}
@@ -510,7 +423,7 @@ export function SegregationUI(
               headerOffset={props.headerOffset}
               scrollBar={SCROLLBAR}
               canvasSize={props.canvasSize}
-              data={grid}
+              data={kernelRef.current.getGridImpl()}
               focusedCellPosition={
                 kernelRef.current.getUIState().focusedCellPosition
               }
@@ -526,3 +439,24 @@ export function SegregationUI(
     </>
   );
 }
+
+const calculateRGBValues = (agentTypeCumulativeShares: number[]) => {
+  const rgbValueEntries = agentTypeCumulativeShares.map((value: number) => {
+    return [Math.floor(255 * value), hsvToRgb(1 - value, 0.9, 0.9)];
+  });
+
+  const rgbValues: Array<[number, number, number]> = rgbValueEntries.map(
+    ([_, rgb]) => rgb as [number, number, number],
+  );
+
+  const rgbValueMap = new Map<number, [number, number, number]>(
+    rgbValueEntries as [number, [number, number, number]][],
+  );
+
+  const valueToRGB = (value: number) => {
+    const rgb = rgbValueMap.get(Math.floor(255 * value));
+    return rgb || [255, 255, 255];
+  };
+
+  return { rgbValues, valueToRGB };
+};
