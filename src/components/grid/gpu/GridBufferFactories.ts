@@ -1,6 +1,6 @@
-import { GridContextProps } from './GridContext';
+import { GridContextProps } from '../GridContext';
 import { createStorageBuffer } from './BufferFactories';
-import { CanvasContextType } from './ViewportContext';
+import { CanvasContextType } from '../ViewportContext';
 
 export const F32UNIFORMS_LENGTH = 8;
 export const F32UNIFORMS_BYTE_LENGTH =

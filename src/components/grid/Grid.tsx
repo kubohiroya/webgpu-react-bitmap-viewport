@@ -7,7 +7,7 @@ import { GridProps } from './GridProps';
 import { GridHandles } from './GridHandles';
 import { WebGPUDisplayContextProvider } from './WebGPUDisplayContext';
 import { ViewportContextProvider } from './ViewportContext';
-import { KeyboardModifier } from './KeyboardModifier';
+import { KeyboardModifier } from './types/KeyboardModifier';
 
 /**
  * A React component that renders a grid with the specified properties.
@@ -59,7 +59,10 @@ export const Grid = React.memo(
         scrollBar={props.scrollBar}
         initialOverscroll={props.initialOverscroll}
       >
-        <CanvasRefProvider>
+        <CanvasRefProvider
+          width={props.canvasSize.width}
+          height={props.canvasSize.height}
+        >
           <GridContextProvider
             mode={props.mode}
             numColumns={props.numColumns}

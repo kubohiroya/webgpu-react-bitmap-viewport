@@ -1,5 +1,5 @@
-import { GridShaderMode } from './GridShaderMode';
-import { KeyboardModifier } from './KeyboardModifier';
+import { GridShaderMode } from './types/GridShaderMode';
+import { KeyboardModifier } from './types/KeyboardModifier';
 
 /**
  * Properties for the Grid component.

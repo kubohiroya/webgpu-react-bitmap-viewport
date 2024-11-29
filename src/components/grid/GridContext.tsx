@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { GridShaderMode } from './GridShaderMode';
+import { GridShaderMode } from './types/GridShaderMode';
 
 export type GridContextProps = {
   mode: GridShaderMode;

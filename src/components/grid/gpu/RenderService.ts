@@ -7,7 +7,7 @@ import {
   F32UNIFORMS_BYTE_LENGTH,
   U32UNIFORMS_BYTE_LENGTH,
 } from './GridBufferFactories';
-import { GridContextProps } from './GridContext';
+import { GridContextProps } from '../GridContext';
 
 import GRID_SHADER_RGBA_CODE from './GridShaderRGBA.wgsl?raw';
 import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
@@ -28,11 +28,11 @@ import {
   createVertexBuffer,
   updateBuffer,
 } from './BufferFactories';
-import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridParamsDefault';
-import { GridShaderMode } from './GridShaderMode';
-import { CanvasContextType } from './ViewportContext';
+import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from '../types/GridParamsDefault';
+import { GridShaderMode } from '../types/GridShaderMode';
+import { CanvasContextType } from '../ViewportContext';
 
-export class RenderBundleBuilder {
+export class RenderService {
   private readonly canvasContext: CanvasContextType;
 
   private readonly device: GPUDevice;

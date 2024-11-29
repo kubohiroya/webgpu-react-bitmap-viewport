@@ -5,13 +5,20 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
-import { useViewportContext } from './ViewportContext';
+
 export type CanvasRefType = HTMLCanvasElement;
 
 export const CanvasRefContext = createContext<CanvasRefType | null>(null);
 
-export const CanvasRefProvider = ({ children }: { children?: ReactNode }) => {
-  const canvasContext = useViewportContext();
+export const CanvasRefProvider = ({
+  width,
+  height,
+  children,
+}: {
+  width: number;
+  height: number;
+  children?: ReactNode;
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 
@@ -23,11 +30,7 @@ export const CanvasRefProvider = ({ children }: { children?: ReactNode }) => {
 
   return (
     <>
-      <canvas
-        ref={canvasRef}
-        width={canvasContext?.canvasSize.width}
-        height={canvasContext?.canvasSize.height}
-      ></canvas>
+      <canvas ref={canvasRef} width={width} height={height}></canvas>
       {canvas && (
         <CanvasRefContext.Provider value={canvas}>
           {children}

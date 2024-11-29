@@ -1,4 +1,4 @@
-import { KeyboardModifier } from './KeyboardModifier';
+import { KeyboardModifier } from './types/KeyboardModifier';
 
 export type GridUIProps = {
   numColumns: number;

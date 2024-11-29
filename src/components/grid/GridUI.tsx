@@ -5,26 +5,26 @@ import { useGridContext } from './GridContext';
 import { useWebGPUDeviceContext } from './WebGPUDeviceContext';
 import { useWebGPUDisplayContext } from './WebGPUDisplayContext';
 import { GridHandles } from './GridHandles';
-import { RenderBundleBuilder } from './RenderBundleBuilder';
+import { RenderService } from './gpu/RenderService';
 import {
   EDGE_FRICTION,
   SCROLLBAR_MARGIN,
   SCROLLBAR_RADIUS,
   TRANSLATE_FRICTION,
-} from './GridParamsDefault';
+} from './types/GridParamsDefault';
 import {
   POINTER_CONTEXT_HEADER,
   POINTER_CONTEXT_SCROLLBAR_HANDLE,
   POINTER_CONTEXT_SCROLLBAR_HIGHER,
   POINTER_CONTEXT_SCROLLBAR_LOWER,
   POINTER_CONTEXT_SCROLLBAR_OTHER,
-} from './GridConstatns';
-import { ScrollBarStateValues } from './ScrollBarStateValues';
+} from './types/GridConstatns';
+import { ScrollBarStates } from './types/ScrollBarStates';
 import { useViewportContext } from './ViewportContext';
-import { KeyboardModifier } from './KeyboardModifier';
+import { KeyboardModifier } from './types/KeyboardModifier';
 import { GridUIProps } from './GridUIProps';
-import { Rectangle } from './Rectangle';
-import { CellPosition } from './CellPosition';
+import { Rectangle } from './types/Rectangle';
+import { CellPosition } from './types/CellPosition';
 
 function regulateRectangleTranslate(
   gridSize: { numColumns: number; numRows: number },
@@ -144,7 +144,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
 
   const prevFocusedCellPosition = useRef<CellPosition | null>(null);
   const prevClickedCellPosition = useRef<CellPosition | null>(null);
-  const renderBundleBuilder = useRef<RenderBundleBuilder>();
+  const rendererService = useRef<RenderService>();
 
   useImperativeHandle(ref, () => ({
     refreshData: (sourceIndex: number) => {
@@ -298,7 +298,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const velocity = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const eventHandlersInitialized = useRef<boolean>(false);
 
-  const scrollBarState = useRef<number>(ScrollBarStateValues.OutOfFrame);
+  const scrollBarState = useRef<number>(ScrollBarStates.OutOfFrame);
   const offset = viewportGroupContext.viewportIndex * 4;
   const getViewport = () => ({
     left: viewportGroupContext.viewportStates[offset],
@@ -326,7 +326,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     const verticalUnderflow = newViewport.top < 0;
     const verticalOverflow = newViewport.bottom > gridContext.numRows;
     const enableOverscroll =
-      scrollBarState.current === ScrollBarStateValues.NotFocused;
+      scrollBarState.current === ScrollBarStates.NotFocused;
 
     if (horizontalUnderflow) {
       velocity.current.y = 0;
@@ -408,14 +408,14 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
         pointerState.current.startViewport.top;
 
       const [dx, dy] =
-        scrollBarState.current === ScrollBarStateValues.HorizontalFocused
+        scrollBarState.current === ScrollBarStates.HorizontalFocused
           ? [
               (-1 * (gridContext.numColumns * pointerState.current.delta.x)) /
                 (viewportContext.canvasSize.width -
                   viewportContext.headerOffset.left),
               0,
             ]
-          : scrollBarState.current === ScrollBarStateValues.VerticalFocused
+          : scrollBarState.current === ScrollBarStates.VerticalFocused
           ? [
               0,
               (-1 * (gridContext.numRows * pointerState.current.delta.y)) /
@@ -476,8 +476,8 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
               viewportContext.headerOffset.top) /
             startViewportSize.height,
         },
-        scrollBarState.current === ScrollBarStateValues.HorizontalFocused ||
-          scrollBarState.current === ScrollBarStateValues.VerticalFocused
+        scrollBarState.current === ScrollBarStates.HorizontalFocused ||
+          scrollBarState.current === ScrollBarStates.VerticalFocused
           ? { left, top, right, bottom }
           : newViewport
       );
@@ -485,7 +485,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const updateU32UniformBuffer = () => {
-    renderBundleBuilder.current?.updateU32UniformBuffer(
+    rendererService.current?.updateU32UniformBuffer(
       gridContext,
       numCellsToShow.current,
       scrollBarState.current,
@@ -494,7 +494,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const refreshData = (sourceIndex: number) => {
-    renderBundleBuilder.current?.updateDataBufferStorage(gridContext.data);
+    rendererService.current?.updateDataBufferStorage(gridContext.data);
     startInertia();
     if (sourceIndex === viewportGroupContext.viewportIndex) {
       props.onDataChanged?.(sourceIndex, gridContext.data);
@@ -525,7 +525,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
 
     prevFocusedCellPosition.current = null;
 
-    renderBundleBuilder.current?.updateFocusedCellPositionStorage(
+    rendererService.current?.updateFocusedCellPositionStorage(
       focusedCellPosition
     );
     startInertia();
@@ -602,7 +602,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       selectCell(currentCellPosition.columnIndex, currentCellPosition.rowIndex);
     }
 
-    renderBundleBuilder.current?.updateSelectedStateStorage(selectedStates);
+    rendererService.current?.updateSelectedStateStorage(selectedStates);
     // 選択後、セルの位置を更新（次のShift操作に備える）
     prevClickedCellPosition.current = currentCellPosition;
 
@@ -630,33 +630,33 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   const executeRenderBundles = () => {
-    if (!renderBundleBuilder.current) {
+    if (!rendererService.current) {
       return;
     }
 
-    renderBundleBuilder.current.updateF32UniformBuffer(
+    rendererService.current.updateF32UniformBuffer(
       gridContext,
       overscroll.current
     );
 
-    renderBundleBuilder.current.updateU32UniformBuffer(
+    rendererService.current.updateU32UniformBuffer(
       gridContext,
       numCellsToShow.current,
       scrollBarState.current,
       viewportGroupContext.viewportIndex
     );
 
-    renderBundleBuilder.current?.updateViewportStateStorage(
+    rendererService.current?.updateViewportStateStorage(
       viewportGroupContext.viewportStates
     );
 
-    renderBundleBuilder.current?.updateDrawIndirectBuffer(
+    rendererService.current?.updateDrawIndirectBuffer(
       numCellsToShow.current.numColumnsToShow,
       numCellsToShow.current.numRowsToShow,
       viewportGroupContext.numViewports
     );
 
-    renderBundleBuilder.current?.execute();
+    rendererService.current?.execute();
   };
 
   const refreshViewportState = (sourceIndex: number) => {
@@ -985,7 +985,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     }
     if (event.buttons === 0) {
       canvas.style.cursor = 'default';
-      scrollBarState.current = ScrollBarStateValues.OutOfFrame;
+      scrollBarState.current = ScrollBarStates.OutOfFrame;
       if (pointerState.current) {
         pointerState.current.isMouseOut = true;
       }
@@ -1004,7 +1004,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       velocity.current = { x: 0, y: 0 };
       return;
     }
-    scrollBarState.current = ScrollBarStateValues.NotFocused;
+    scrollBarState.current = ScrollBarStates.NotFocused;
     updateU32UniformBuffer();
     update();
   };
@@ -1046,32 +1046,31 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     ) {
       canvas.style.cursor = 'pointer';
       scrollBarState.current =
-        ScrollBarStateValues.HorizontalFocused |
-        ScrollBarStateValues.VerticalFocused;
+        ScrollBarStates.HorizontalFocused | ScrollBarStates.VerticalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
       canvas.style.cursor = 'pointer';
-      scrollBarState.current = ScrollBarStateValues.HorizontalFocused;
+      scrollBarState.current = ScrollBarStates.HorizontalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HANDLE) {
       canvas.style.cursor = 'pointer';
-      scrollBarState.current = ScrollBarStateValues.VerticalFocused;
+      scrollBarState.current = ScrollBarStates.VerticalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
       canvas.style.cursor = 'w-resize';
-      scrollBarState.current = ScrollBarStateValues.HorizontalFocused;
+      scrollBarState.current = ScrollBarStates.HorizontalFocused;
     } else if (cellPosition.columnIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
       canvas.style.cursor = 'e-resize';
-      scrollBarState.current = ScrollBarStateValues.HorizontalFocused;
+      scrollBarState.current = ScrollBarStates.HorizontalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_LOWER) {
       canvas.style.cursor = 'n-resize';
-      scrollBarState.current = ScrollBarStateValues.VerticalFocused;
+      scrollBarState.current = ScrollBarStates.VerticalFocused;
     } else if (cellPosition.rowIndex === POINTER_CONTEXT_SCROLLBAR_HIGHER) {
       canvas.style.cursor = 's-resize';
-      scrollBarState.current = ScrollBarStateValues.VerticalFocused;
+      scrollBarState.current = ScrollBarStates.VerticalFocused;
     } else {
       canvas.style.cursor = 'cell';
-      scrollBarState.current = ScrollBarStateValues.NotFocused;
+      scrollBarState.current = ScrollBarStates.NotFocused;
     }
 
-    renderBundleBuilder.current?.updateU32UniformBuffer(
+    rendererService.current?.updateU32UniformBuffer(
       gridContext,
       numCellsToShow.current,
       scrollBarState.current,
@@ -1169,7 +1168,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     );
 
     setViewport(newViewport);
-    renderBundleBuilder.current?.updateViewportStateStorage(
+    rendererService.current?.updateViewportStateStorage(
       viewportGroupContext.viewportStates
     );
     update();
@@ -1236,7 +1235,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   };
 
   useEffect(() => {
-    renderBundleBuilder.current = new RenderBundleBuilder(
+    rendererService.current = new RenderService(
       gridContext.mode,
       device,
       webGpuDisplayContext.textureFormat,
@@ -1265,9 +1264,9 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     });
     eventHandlersInitialized.current = true;
 
-    renderBundleBuilder.current.updateDataBufferStorage(gridContext.data);
-    renderBundleBuilder.current.updateSelectedStateStorage(selectedStates);
-    renderBundleBuilder.current.updateFocusedCellPositionStorage(
+    rendererService.current.updateDataBufferStorage(gridContext.data);
+    rendererService.current.updateSelectedStateStorage(selectedStates);
+    rendererService.current.updateFocusedCellPositionStorage(
       focusedCellPosition
     );
 
