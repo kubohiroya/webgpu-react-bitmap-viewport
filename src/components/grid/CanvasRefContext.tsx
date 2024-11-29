@@ -5,13 +5,13 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
-import { useCanvasContext } from './CanvasContext';
+import { useViewportContext } from './ViewportContext';
 export type CanvasRefType = HTMLCanvasElement;
 
 export const CanvasRefContext = createContext<CanvasRefType | null>(null);
 
 export const CanvasRefProvider = ({ children }: { children?: ReactNode }) => {
-  const canvasContext = useCanvasContext();
+  const canvasContext = useViewportContext();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 

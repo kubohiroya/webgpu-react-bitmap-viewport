@@ -1,30 +1,44 @@
-import React, { ReactNode } from 'react';
+import { createContext, ReactNode, useContext } from 'react';
 
-export type ViewportContextProps = {
-  viewportIndex: number;
-  numViewports: number;
-  viewportStates: Float32Array;
+export type CanvasContextType = {
+  canvasSize: {
+    width: number;
+    height: number;
+  };
+  headerOffset: {
+    top: number;
+    left: number;
+  };
+  scrollBar?: {
+    radius: number;
+    margin: number;
+  };
   initialOverscroll?: {
     x: number;
     y: number;
   };
+  multisample?: number | undefined;
 };
-const ViewportContext = React.createContext<ViewportContextProps | null>(null);
+
+export const ViewportContext = createContext<CanvasContextType | null>(null);
 
 export const ViewportContextProvider = (
-  props: ViewportContextProps & {
-    children: ReactNode;
+  props: CanvasContextType & {
+    children?: ReactNode;
   }
 ) => {
+  const canvasContextValue = {
+    ...props,
+  };
   return (
-    <ViewportContext.Provider value={props}>
+    <ViewportContext.Provider value={canvasContextValue}>
       {props.children}
     </ViewportContext.Provider>
   );
 };
 
 export const useViewportContext = () => {
-  const context = React.useContext(ViewportContext);
+  const context = useContext(ViewportContext);
   if (!context) {
     throw new Error(
       'useViewportContext must be used within a ViewportContextProvider'
@@ -32,5 +46,3 @@ export const useViewportContext = () => {
   }
   return context;
 };
-
-export default ViewportContext;

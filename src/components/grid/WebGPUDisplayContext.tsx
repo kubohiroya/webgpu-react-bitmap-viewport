@@ -1,7 +1,7 @@
 import React, { ReactNode, useContext, useEffect } from 'react';
 import { CanvasRefContext } from './CanvasRefContext';
 import { useWebGPUDeviceContext } from './WebGPUDeviceContext';
-import { useCanvasContext } from './CanvasContext';
+import { useViewportContext } from './ViewportContext';
 
 export type WebGPUDisplayContextType = {
   gpuCanvasContext: GPUCanvasContext;
@@ -18,7 +18,7 @@ export const WebGPUDisplayContextProvider = ({
   children?: ReactNode;
 }) => {
   const device = useWebGPUDeviceContext();
-  const canvasContext = useCanvasContext();
+  const canvasContext = useViewportContext();
   const canvas = useContext(CanvasRefContext);
 
   const [displayContextValue, setDisplayContextValue] =
@@ -29,7 +29,7 @@ export const WebGPUDisplayContextProvider = ({
       throw new Error('device is not configured.');
     }
     if (!canvasContext) {
-      throw new Error('CanvasContext not found.');
+      throw new Error('ViewportContext not found.');
     }
     if (!canvas) {
       throw new Error('CanvasRef not found.');

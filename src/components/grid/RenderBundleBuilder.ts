@@ -30,7 +30,7 @@ import {
 } from './BufferFactories';
 import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridParamsDefault';
 import { GridShaderMode } from './GridShaderMode';
-import { CanvasContextType } from './CanvasContext';
+import { CanvasContextType } from './ViewportContext';
 
 export class RenderBundleBuilder {
   private readonly canvasContext: CanvasContextType;

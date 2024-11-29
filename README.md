@@ -169,7 +169,7 @@ graph TD;
     CanvasElementContext --> |width,height|canvas
     Grid --> |refreshFocusedState,refreshSelectedState,refreshViewportState|GridUI
     Grid --> |gridSize|GridContext --> GridUI
-    Grid --> |viewportStates|ViewportContext --> GridUI     
+    Grid --> |viewportStates|ViewportGroupContext --> GridUI     
     Grid --> WebGPUContext --> |device,canvasContext,format,texture| GridUI
     GridContext --> GridUI
     CanvasElementContext --> WebGPUContext

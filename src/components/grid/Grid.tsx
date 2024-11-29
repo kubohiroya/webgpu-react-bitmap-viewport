@@ -1,12 +1,12 @@
 import { CanvasRefProvider } from './CanvasRefContext';
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { GridContextProvider } from './GridContext';
-import { ViewportContextProvider } from './ViewportContext';
+import { ViewportGroupContextProvider } from './ViewportGroupContext';
 import GridUI from './GridUI';
 import { GridProps } from './GridProps';
 import { GridHandles } from './GridHandles';
 import { WebGPUDisplayContextProvider } from './WebGPUDisplayContext';
-import { CanvasContextProvider } from './CanvasContext';
+import { ViewportContextProvider } from './ViewportContext';
 import { KeyboardModifier } from './KeyboardModifier';
 
 /**
@@ -53,10 +53,11 @@ export const Grid = React.memo(
     }));
 
     return (
-      <CanvasContextProvider
+      <ViewportContextProvider
         headerOffset={props.headerOffset}
         canvasSize={props.canvasSize}
         scrollBar={props.scrollBar}
+        initialOverscroll={props.initialOverscroll}
       >
         <CanvasRefProvider>
           <GridContextProvider
@@ -65,11 +66,10 @@ export const Grid = React.memo(
             numRows={props.numRows}
             data={props.data}
           >
-            <ViewportContextProvider
+            <ViewportGroupContextProvider
               viewportIndex={props.viewportIndex}
               numViewports={props.numViewports}
               viewportStates={props.viewportStates}
-              initialOverscroll={props.initialOverscroll}
             >
               <WebGPUDisplayContextProvider>
                 <GridUI
@@ -85,10 +85,10 @@ export const Grid = React.memo(
                   onViewportStatesChange={props.onViewportStateChange}
                 />
               </WebGPUDisplayContextProvider>
-            </ViewportContextProvider>
+            </ViewportGroupContextProvider>
           </GridContextProvider>
         </CanvasRefProvider>
-      </CanvasContextProvider>
+      </ViewportContextProvider>
     );
   })
 );
