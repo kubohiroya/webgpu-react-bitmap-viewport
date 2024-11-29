@@ -22,36 +22,9 @@ import {
 import { ScrollBarStateValues } from './ScrollBarStateValues';
 import { useCanvasContext } from './CanvasContext';
 import { KeyboardModifier } from './KeyboardModifier';
-
-type GridUIProps = {
-  numColumns: number;
-  numRows: number;
-  focusedCellPosition: Uint32Array;
-  selectedStates: Uint32Array;
-  onDataChanged?: (
-    sourceIndex: number,
-    gridData: Float32Array | Uint32Array | GPUBuffer
-  ) => void;
-  onFocusedCellPositionChange?: (
-    sourceIndex: number,
-    columnIndex: number,
-    rowIndex: number
-  ) => void;
-  onSelectedStatesChange?: (
-    sourceIndex: number,
-    columnIndex: number,
-    rowIndex: number,
-    keyboardModifier: KeyboardModifier
-  ) => void;
-  onViewportStateChange?: (sourceIndex: number) => void;
-};
-
-interface Rectangle {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-}
+import { GridUIProps } from './GridUIProps';
+import { Rectangle } from './Rectangle';
+import { CellPosition } from './CellPosition';
 
 function regulateRectangleTranslate(
   gridSize: { numColumns: number; numRows: number },
@@ -159,14 +132,9 @@ function regulateRectangleTranslate(
   return regulatedTarget;
 }
 
-type CellPosition = {
-  columnIndex: number;
-  rowIndex: number;
-};
-
 export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const { focusedCellPosition, selectedStates } = props;
-  const webGpuDeviceContext = useWebGPUDeviceContext();
+  const device = useWebGPUDeviceContext();
   const viewportContext = useViewportContext();
   const gridContext = useGridContext();
   const webGpuDisplayContext = useWebGPUDisplayContext();
@@ -700,7 +668,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
     updateNumCellsToShow();
     executeRenderBundles();
 
-    props.onViewportStateChange?.(viewportContext.viewportIndex);
+    props.onViewportStatesChange?.(viewportContext.viewportIndex);
   };
 
   const calculateCellPosition = (
@@ -1259,7 +1227,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   useEffect(() => {
     renderBundleBuilder.current = new RenderBundleBuilder(
       gridContext.mode,
-      webGpuDeviceContext,
+      device,
       webGpuDisplayContext.textureFormat,
       webGpuDisplayContext.gpuCanvasContext,
       canvasContext,
@@ -1311,7 +1279,7 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
       }
     };
   }, [
-    webGpuDeviceContext,
+    device,
     webGpuDisplayContext.textureFormat,
     webGpuDisplayContext.gpuCanvasContext,
     webGpuDisplayContext.texture,

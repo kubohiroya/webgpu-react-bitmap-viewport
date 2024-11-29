@@ -1,7 +1,7 @@
 import {
   createF32UniformBufferSource,
   createUint32BufferSource,
-  createViewportBuffer,
+  createViewportStateBuffer,
   F32UNIFORMS_LENGTH,
   U32UNIFORMS_LENGTH,
   F32UNIFORMS_BYTE_LENGTH,
@@ -14,13 +14,12 @@ import GRID_SHADER_CODE from './GridShaderBase.wgsl?raw';
 import GRID_SHADER_HUE_CODE from './GridShaderHue.wgsl?raw';
 import GRID_SHADER_CUSTOM_CODE from './GridShaderCustom.wgsl?raw';
 
-import { vertices, VERTICES_BYTE_LENGTH } from './Vertices';
-import { F32LEN, U32LEN } from './Constants';
 import {
   DRAW_INDIRECT_BUFFER_BYTE_INDEX,
   DRAW_INDIRECT_BUFFER_SOURCE,
-  updateDrawIndirectBufferSource,
-} from './DrawIndirectBufferFactory';
+  VERTICES,
+} from './DrawIndirectBufferSource';
+import { updateDrawIndirectBufferSource } from './DrawIndirectBufferSource';
 import { BIND_GROUP_LAYOUT_DESCRIPTOR } from './BindGroupLayoutDescriptor';
 
 import {
@@ -28,7 +27,7 @@ import {
   createUniformBuffer,
   createVertexBuffer,
   updateBuffer,
-} from './WebGPUBufferFactories';
+} from './BufferFactories';
 import { SCROLLBAR_MARGIN, SCROLLBAR_RADIUS } from './GridParamsDefault';
 import { GridShaderMode } from './GridShaderMode';
 import { CanvasContextType } from './CanvasContext';
@@ -59,6 +58,7 @@ export class RenderBundleBuilder {
   private readonly rowFocusRenderBundle: GPURenderBundle;
   private readonly bodyRenderBundle: GPURenderBundle;
   private readonly viewportShadowRenderBundle: GPURenderBundle;
+  private readonly headerBackgroundRenderBundle: GPURenderBundle;
   private readonly topHeaderRenderBundle: GPURenderBundle;
   private readonly leftHeaderRenderBundle: GPURenderBundle;
   private readonly scrollBarBackgroundRenderBundle: GPURenderBundle;
@@ -188,6 +188,13 @@ export class RenderBundleBuilder {
       'fragmentViewportShadow'
     );
 
+    const headerBackgroundPipeline = createRenderPipeline(
+      'headerBackground',
+      device,
+      'vertexHeaderBackground',
+      'fragmentHeaderBackground'
+    );
+
     const leftHeaderPipeline = createRenderPipeline(
       'leftHeader',
       device,
@@ -228,18 +235,18 @@ export class RenderBundleBuilder {
     this.vertexBuffer = createVertexBuffer(
       'Vertices',
       device,
-      VERTICES_BYTE_LENGTH
+      VERTICES.length * Float32Array.BYTES_PER_ELEMENT
     );
 
-    updateBuffer(this.device, this.vertexBuffer, new Float32Array(vertices));
+    updateBuffer(this.device, this.vertexBuffer, Float32Array.from(VERTICES));
 
     this.drawIndirectBuffer = device.createBuffer({
       label: 'DrawIndirect',
-      size: DRAW_INDIRECT_BUFFER_SOURCE.length * U32LEN,
+      size: DRAW_INDIRECT_BUFFER_SOURCE.length * Uint32Array.BYTES_PER_ELEMENT,
       usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
     });
 
-    this.updateDrawIndirectBuffer(1, 1, numViewports);
+    // this.updateDrawIndirectBuffer(1, 1, numViewports);
 
     this.f32UniformBuffer = createUniformBuffer(
       'F32Uniforms',
@@ -252,13 +259,15 @@ export class RenderBundleBuilder {
       U32UNIFORMS_BYTE_LENGTH
     );
 
-    this.viewportStateStorage = createViewportBuffer(
-      'ViewportBuffer',
+    this.viewportStateStorage = createViewportStateBuffer(
+      'ViewportStateBuffer',
       device,
       numViewports
     );
 
-    const numCells = Math.max(gridSize.numColumns, gridSize.numRows) * F32LEN;
+    const numCells =
+      Math.max(gridSize.numColumns, gridSize.numRows) *
+      Float32Array.BYTES_PER_ELEMENT;
     this.focusedCellPositionStorage = createStorageBuffer(
       'FocusedCellPositionBuffer',
       device,
@@ -277,7 +286,9 @@ export class RenderBundleBuilder {
             device,
             gridSize.numColumns *
               gridSize.numRows *
-              (mode === GridShaderMode.RGBA ? U32LEN : F32LEN)
+              (mode === GridShaderMode.RGBA
+                ? Uint32Array.BYTES_PER_ELEMENT
+                : Float32Array.BYTES_PER_ELEMENT)
           );
 
     this.bindGroup = this.createBindGroup(
@@ -300,6 +311,9 @@ export class RenderBundleBuilder {
     this.bodyRenderBundle = this.createBodyRenderBundle(bodyPipeline);
     this.viewportShadowRenderBundle = this.createViewportShadowRenderBundle(
       viewportShadowPipeline
+    );
+    this.headerBackgroundRenderBundle = this.createHeaderBackgroundRenderBundle(
+      headerBackgroundPipeline
     );
     this.topHeaderRenderBundle =
       this.createTopHeaderRenderBundle(topHeaderPipeline);
@@ -479,6 +493,14 @@ export class RenderBundleBuilder {
     );
   }
 
+  private createHeaderBackgroundRenderBundle(pipeline: GPURenderPipeline) {
+    return this.createRenderBundle(
+      'headerBackground',
+      pipeline,
+      DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('HEADER_BACKGROUND')!
+    );
+  }
+
   private createTopHeaderRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'topHeader',
@@ -526,9 +548,10 @@ export class RenderBundleBuilder {
     });
 
     const renderBundles: GPURenderBundle[] = [
-      this.columnFocusRenderBundle,
-      this.rowFocusRenderBundle,
+      //this.columnFocusRenderBundle,
+      //this.rowFocusRenderBundle,
       this.bodyRenderBundle,
+      this.headerBackgroundRenderBundle,
       this.viewportShadowRenderBundle,
       this.topHeaderRenderBundle,
       this.leftHeaderRenderBundle,

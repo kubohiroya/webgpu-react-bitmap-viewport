@@ -1,10 +1,10 @@
 import { GridContextProps } from './GridContext';
-import { F32LEN, U32LEN } from './Constants';
-import { createStorageBuffer } from './WebGPUBufferFactories';
+import { createStorageBuffer } from './BufferFactories';
 import { CanvasContextType } from './CanvasContext';
 
 export const F32UNIFORMS_LENGTH = 8;
-export const F32UNIFORMS_BYTE_LENGTH = F32UNIFORMS_LENGTH * F32LEN;
+export const F32UNIFORMS_BYTE_LENGTH =
+  F32UNIFORMS_LENGTH * Uint32Array.BYTES_PER_ELEMENT;
 
 export const createF32UniformBufferSource = (
   source: Float32Array,
@@ -24,7 +24,9 @@ export const createF32UniformBufferSource = (
 };
 
 export const U32UNIFORMS_LENGTH = 6;
-export const U32UNIFORMS_BYTE_LENGTH = U32UNIFORMS_LENGTH * U32LEN;
+export const U32UNIFORMS_BYTE_LENGTH =
+  U32UNIFORMS_LENGTH * Uint32Array.BYTES_PER_ELEMENT;
+
 export const createUint32BufferSource = (
   source: Uint32Array,
   gridContext: GridContextProps,
@@ -41,10 +43,16 @@ export const createUint32BufferSource = (
   return source;
 };
 
-export const createViewportBuffer = (
+const VIEWPORT_STATE_ITEM_LENGTH = 4; // left, top, right, bottom
+
+export const createViewportStateBuffer = (
   label: string,
   device: GPUDevice,
   numViewports: number
 ) => {
-  return createStorageBuffer(label, device, numViewports * 4 * F32LEN);
+  return createStorageBuffer(
+    label,
+    device,
+    numViewports * VIEWPORT_STATE_ITEM_LENGTH * Float32Array.BYTES_PER_ELEMENT
+  );
 };

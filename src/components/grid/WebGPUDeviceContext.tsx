@@ -6,11 +6,18 @@ export const WebGPUDeviceContext =
   React.createContext<WebGPUDeviceContextType>(null);
 
 export const WebGPUDeviceContextProvider = ({
+  loadingMessage,
+  notSupportedMessage,
   children,
 }: {
+  loadingMessage?: ReactNode;
+  notSupportedMessage?: ReactNode;
   children?: ReactNode;
 }) => {
   const [device, setDevice] = useState<GPUDevice | null>(null);
+  const [isWebGPUSupported, setIsWebGPUSupported] = useState<boolean | null>(
+    null
+  );
 
   useLayoutEffect(() => {
     (async () => {
@@ -18,9 +25,14 @@ export const WebGPUDeviceContextProvider = ({
         callback: (device: GPUDevice | undefined) => void
       ) {
         const requestDevice = async (): Promise<GPUDevice | undefined> => {
+          if (!navigator.gpu || !navigator.gpu.requestAdapter) {
+            setIsWebGPUSupported(false);
+            return;
+          }
           try {
             const adapter = await navigator.gpu.requestAdapter();
             if (!adapter) {
+              setIsWebGPUSupported(false);
               return;
             }
 
@@ -39,7 +51,7 @@ export const WebGPUDeviceContextProvider = ({
             });
             return device;
           } catch (ex: any) {
-            console.error('Trying to recreate the device...');
+            console.error('Trying to recreate the device...' + ex);
             return await requestDevice();
           }
         };
@@ -47,10 +59,12 @@ export const WebGPUDeviceContextProvider = ({
         callback(await requestDevice());
       };
       await initWebGPU((device: GPUDevice | undefined) => {
-        if (!navigator.gpu) {
-          throw new Error('WebGPU not supported on this browser.');
+        if (!navigator.gpu || !device) {
+          setIsWebGPUSupported(false);
+          return;
         }
-        device && setDevice(device);
+        setIsWebGPUSupported(true);
+        setDevice(device);
       });
     })();
 
@@ -58,6 +72,18 @@ export const WebGPUDeviceContextProvider = ({
       device?.destroy();
     };
   }, []);
+
+  if (isWebGPUSupported === null) {
+    return loadingMessage ? loadingMessage : <p>Loading...</p>;
+  }
+
+  if (!isWebGPUSupported) {
+    return notSupportedMessage ? (
+      notSupportedMessage
+    ) : (
+      <p>WebGPU is not supported on this browser.</p>
+    );
+  }
 
   return !device ? null : (
     <WebGPUDeviceContext.Provider value={device}>

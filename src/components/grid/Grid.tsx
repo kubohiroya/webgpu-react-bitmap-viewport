@@ -82,7 +82,7 @@ export const Grid = React.memo(
                     props.onFocusedCellPositionChange
                   }
                   onSelectedStatesChange={props.onSelectedStateChange}
-                  onViewportStateChange={props.onViewportStateChange}
+                  onViewportStatesChange={props.onViewportStateChange}
                 />
               </WebGPUDisplayContextProvider>
             </ViewportContextProvider>
