@@ -19,7 +19,6 @@ export type PlayControllerProps = {
   onStep: () => void;
   onReset: () => void;
   tick: () => Promise<boolean>;
-  updateFrameCount(frameCount: number): void;
 };
 const StyledButtonGroup = styled(ButtonGroup)`
   margin: 4px;
@@ -34,7 +33,7 @@ const PlayButton = styled(Button)`
   border-color: lightgrey;
   border-width: 1px;
 `;
-const SubPlayButton = styled(PlayButton)`
+const PaddedPlayButton = styled(PlayButton)`
   padding: 2px 8px 2px 4px;
 `;
 const MainPlayButton = styled(PlayButton)``;
@@ -116,11 +115,6 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
   };
 
   const step = () => {
-    /*
-    props.tick().then((result: boolean) => {
-      result && updateFPS();
-    });
-     */
     props.tick();
   };
 
@@ -180,7 +174,7 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
   return (
     <>
       <StyledButtonGroup color={color}>
-        <SubPlayButton
+        <PaddedPlayButton
           title="Restart"
           variant="contained"
           size="small"
@@ -194,8 +188,8 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
         >
           <RestartAlt />
           Reset
-        </SubPlayButton>
-        <SubPlayButton
+        </PaddedPlayButton>
+        <PaddedPlayButton
           title="Pause"
           variant="contained"
           size="small"
@@ -209,8 +203,8 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
         >
           <Pause />
           Pause
-        </SubPlayButton>
-        <SubPlayButton
+        </PaddedPlayButton>
+        <PaddedPlayButton
           title="Step"
           variant="contained"
           size="small"
@@ -223,7 +217,7 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
         >
           <SkipNext />
           Step
-        </SubPlayButton>
+        </PaddedPlayButton>
         <MainPlayButton
           title="Play"
           variant="contained"

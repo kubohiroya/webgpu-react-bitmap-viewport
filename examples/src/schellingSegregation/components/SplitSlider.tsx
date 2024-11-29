@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useState } from 'react';
+import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import {
   Select,
   MenuItem,
@@ -12,7 +12,7 @@ import styled from '@emotion/styled';
 type SplitSliderProps = {
   splitValues: number[];
   onChange: (values: number[]) => void;
-  sx: any;
+  rgbValues: [number, number, number][];
   valueLabelFormat: (value: number, index: number) => ReactNode;
 };
 
@@ -27,6 +27,29 @@ const SplitSlider = (props: SplitSliderProps) => {
   ); // デフォルトの分割数を2に設定
 
   const [splitValues, setSplitValues] = useState<number[]>(props.splitValues); // デフォルトの分割位置
+
+  const sx = useMemo(
+    () => ({
+      '& .MuiSlider-thumb': props.rgbValues
+        .map((rgbValue, index) => {
+          //rgb[0] = Math.floor(rgb[0]);
+          return [
+            `&[data-index='${index}']`,
+            {
+              color: `rgb(${rgbValue.join(' ')})`,
+            },
+          ];
+        })
+        .reduce<Record<string, { color: string }>>(
+          (acc: Record<string, { color: string }>, [key, value]: any) => {
+            acc[key] = value;
+            return acc;
+          },
+          {},
+        ),
+    }),
+    [props.rgbValues],
+  );
 
   // 分割数を変更したときの処理
   const handleSplitCountChange = useCallback(
@@ -88,7 +111,7 @@ const SplitSlider = (props: SplitSliderProps) => {
         max={1}
         track={false}
         disableSwap
-        sx={props.sx}
+        sx={sx}
         valueLabelFormat={props.valueLabelFormat}
       />
     </Box>

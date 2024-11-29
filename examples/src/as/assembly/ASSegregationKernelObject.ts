@@ -1,4 +1,4 @@
-export class ASSegregationKernelData {
+export class ASSegregationKernelObject {
   width: i32;
   height: i32;
   tolerance: f32;
@@ -21,3 +21,21 @@ export class ASSegregationKernelData {
     this.emptyCellIndicesLength = 0;
   }
 }
+/*
+export class MyObject {
+  a: f32;
+  b: f32;
+  constructor(a: f32, b: f32) {
+    this.a = a;
+    this.b = b;
+  }
+}
+
+export function createObject(a: f32, b: f32): MyObject {
+  return new MyObject(a, b);
+}
+
+export function average(target: MyObject): f32 {
+  return (target.a + target.b) / 2.0;
+}
+*/

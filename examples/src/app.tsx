@@ -154,7 +154,10 @@ export const App = () => {
 
   return (
     <>
-      <WebGPUDeviceContextProvider>
+      <WebGPUDeviceContextProvider
+        loadingMessage={<p>Loading...</p>}
+        notSupportedMessage={<p>WebGPU is not supported on this browser.</p>}
+      >
         <TabContext value={value}>
           <Box sx={{ display: 'flex' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider', width: '20%' }}>

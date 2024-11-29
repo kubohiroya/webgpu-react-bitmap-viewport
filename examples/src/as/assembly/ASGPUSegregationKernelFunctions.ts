@@ -1,14 +1,14 @@
-import { ASGPUSegregationKernelData } from './ASGPUSegregationKernelData';
+import { ASGPUSegregationKernelObject } from './ASGPUSegregationKernelObject';
 import { shuffleUint32Array } from './ASSegregationKernelFunctions';
 
-export function createSegregationKernelData(
+export function createSegregationKernelObject(
   width: i32,
   height: i32,
   tolerance: f32,
   EMPTY_VALUE: i32,
   workgroupSizeMax: i32,
-): ASGPUSegregationKernelData {
-  return new ASGPUSegregationKernelData(
+): ASGPUSegregationKernelObject {
+  return new ASGPUSegregationKernelObject(
     width,
     height,
     tolerance,
@@ -17,86 +17,88 @@ export function createSegregationKernelData(
   );
 }
 
-export function getAgentIndices(data: ASGPUSegregationKernelData): usize {
-  return data.agentIndices.dataStart;
+export function getAgentIndices(target: ASGPUSegregationKernelObject): usize {
+  return target.agentIndices.dataStart;
 }
 
-export function getAgentIndicesLength(data: ASGPUSegregationKernelData): usize {
-  return data.agentIndicesLength.dataStart;
+export function getAgentIndicesLength(
+  target: ASGPUSegregationKernelObject,
+): usize {
+  return target.agentIndicesLength.dataStart;
 }
 
-export function getGrid(data: ASGPUSegregationKernelData): usize {
-  return data.grid.dataStart;
+export function getGrid(target: ASGPUSegregationKernelObject): usize {
+  return target.grid.dataStart;
 }
 
 export function setTolerance(
-  data: ASGPUSegregationKernelData,
+  target: ASGPUSegregationKernelObject,
   tolerance: f32,
 ): void {
-  data.tolerance = tolerance;
+  target.tolerance = tolerance;
 }
 
 export function updateEmptyCellIndicesArray(
-  data: ASGPUSegregationKernelData,
+  target: ASGPUSegregationKernelObject,
 ): void {
-  if (data.emptyCellIndicesLength !== 0) {
+  if (target.emptyCellIndicesLength !== 0) {
     return;
   }
-  const dataLength = data.width * data.height;
-  data.emptyCellIndicesLength = 0;
+  const dataLength = target.width * target.height;
+  target.emptyCellIndicesLength = 0;
   for (let i: i32 = 0; i < dataLength; i++) {
-    if (unchecked(data.grid[i]) == data.EMPTY_VALUE) {
-      unchecked((data.emptyCellIndices[data.emptyCellIndicesLength] = i));
-      data.emptyCellIndicesLength++;
+    if (unchecked(target.grid[i]) == target.EMPTY_VALUE) {
+      unchecked((target.emptyCellIndices[target.emptyCellIndicesLength] = i));
+      target.emptyCellIndicesLength++;
     }
   }
 }
 
-function compactIndicesArray(data: ASGPUSegregationKernelData): void {
-  data.movingAgentIndicesLength = 0;
+function compactIndicesArray(target: ASGPUSegregationKernelObject): void {
+  target.movingAgentIndicesLength = 0;
   for (
     let blockIndex: i32 = 0;
-    blockIndex < data.agentIndicesLength.length;
+    blockIndex < target.agentIndicesLength.length;
     blockIndex++
   ) {
-    if (data.agentIndicesLength[blockIndex] > 0) {
-      const start = blockIndex * data.blockSize;
-      const end = start + data.agentIndicesLength[blockIndex];
+    if (target.agentIndicesLength[blockIndex] > 0) {
+      const start = blockIndex * target.blockSize;
+      const end = start + target.agentIndicesLength[blockIndex];
       for (let i: i32 = start; i < end; i++) {
         unchecked(
-          (data.movingAgentIndices[data.movingAgentIndicesLength] =
-            data.agentIndices[i]),
+          (target.movingAgentIndices[target.movingAgentIndicesLength] =
+            target.agentIndices[i]),
         );
-        data.movingAgentIndicesLength++;
+        target.movingAgentIndicesLength++;
       }
     }
   }
 }
 
 /*
-function updateMovingAgentIndicesArray(data: ASGPUSegregationKernelData): void {
-  data.movingAgentIndicesLength = 0;
+function updateMovingAgentIndicesArray(target: ASGPUSegregationKernelData): void {
+  target.movingAgentIndicesLength = 0;
   const convolutionMembers = new Uint32Array(8);
-  for (let y: i32 = 0; y < data.height; y++) {
-    for (let x: i32 = 0; x < data.width; x++) {
-      const currentIndex = x + y * data.width;
-      const agentType = unchecked(data.grid[currentIndex]);
-      if (agentType !== data.EMPTY_VALUE) {
+  for (let y: i32 = 0; y < target.height; y++) {
+    for (let x: i32 = 0; x < target.width; x++) {
+      const currentIndex = x + y * target.width;
+      const agentType = unchecked(target.grid[currentIndex]);
+      if (agentType !== target.EMPTY_VALUE) {
         const similarity = calcSimilarity(
           x,
           y,
-          data.width,
-          data.height,
-          data.grid,
+          target.width,
+          target.height,
+          target.grid,
           convolutionMembers,
-          data.EMPTY_VALUE,
+          target.EMPTY_VALUE,
         );
-        if (similarity < data.tolerance) {
+        if (similarity < target.tolerance) {
           unchecked(
-            (data.movingAgentIndices[data.movingAgentIndicesLength] =
+            (target.movingAgentIndices[target.movingAgentIndicesLength] =
               currentIndex),
           );
-          data.movingAgentIndicesLength++;
+          target.movingAgentIndicesLength++;
         }
       }
     }
@@ -104,41 +106,44 @@ function updateMovingAgentIndicesArray(data: ASGPUSegregationKernelData): void {
 }
  */
 
-export function shuffleGridData(data: ASGPUSegregationKernelData): void {
-  shuffleUint32Array(data.grid, data.width * data.height);
-  data.emptyCellIndicesLength = 0;
+export function shuffleGridData(target: ASGPUSegregationKernelObject): void {
+  shuffleUint32Array(target.grid, target.width * target.height);
+  target.emptyCellIndicesLength = 0;
 }
 
-function shuffleCellIndices(data: ASGPUSegregationKernelData): void {
-  shuffleUint32Array(data.emptyCellIndices, data.emptyCellIndicesLength);
+function shuffleCellIndices(target: ASGPUSegregationKernelObject): void {
+  shuffleUint32Array(target.emptyCellIndices, target.emptyCellIndicesLength);
 }
 
-function shuffleMovingAgents(data: ASGPUSegregationKernelData): void {
-  shuffleUint32Array(data.movingAgentIndices, data.movingAgentIndicesLength);
+function shuffleMovingAgents(target: ASGPUSegregationKernelObject): void {
+  shuffleUint32Array(
+    target.movingAgentIndices,
+    target.movingAgentIndicesLength,
+  );
 }
 
-function moveAgentAndSwapEmptyCell(data: ASGPUSegregationKernelData): void {
+function moveAgentAndSwapEmptyCell(target: ASGPUSegregationKernelObject): void {
   const moveCount =
-    data.emptyCellIndicesLength < data.movingAgentIndicesLength
-      ? data.emptyCellIndicesLength
-      : data.movingAgentIndicesLength;
+    target.emptyCellIndicesLength < target.movingAgentIndicesLength
+      ? target.emptyCellIndicesLength
+      : target.movingAgentIndicesLength;
 
   for (let i: i32 = 0; i < moveCount; i++) {
-    const emptyIndex: i32 = unchecked(data.emptyCellIndices[i]);
-    const agentIndex: i32 = unchecked(data.movingAgentIndices[i]);
+    const emptyIndex: i32 = unchecked(target.emptyCellIndices[i]);
+    const agentIndex: i32 = unchecked(target.movingAgentIndices[i]);
     if (emptyIndex !== agentIndex) {
-      unchecked((data.grid[emptyIndex] = data.grid[agentIndex]));
-      unchecked((data.grid[agentIndex] = data.EMPTY_VALUE));
-      unchecked((data.emptyCellIndices[i] = agentIndex));
+      unchecked((target.grid[emptyIndex] = target.grid[agentIndex]));
+      unchecked((target.grid[agentIndex] = target.EMPTY_VALUE));
+      unchecked((target.emptyCellIndices[i] = agentIndex));
     }
   }
 }
 
-export function tick(data: ASGPUSegregationKernelData): number {
-  updateEmptyCellIndicesArray(data);
-  compactIndicesArray(data);
-  shuffleCellIndices(data);
-  shuffleMovingAgents(data);
-  moveAgentAndSwapEmptyCell(data);
-  return data.movingAgentIndicesLength;
+export function tick(target: ASGPUSegregationKernelObject): number {
+  updateEmptyCellIndicesArray(target);
+  compactIndicesArray(target);
+  shuffleCellIndices(target);
+  shuffleMovingAgents(target);
+  moveAgentAndSwapEmptyCell(target);
+  return target.movingAgentIndicesLength;
 }

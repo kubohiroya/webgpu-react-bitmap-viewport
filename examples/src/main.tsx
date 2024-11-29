@@ -1,12 +1,12 @@
 import { createRoot } from 'react-dom/client';
-import WebGPUApp from './WebGPUApp';
-//import App from './app';
+import App from './app';
 
 const root = createRoot(document.getElementById('root') as HTMLElement);
 
 const render = () => {
-  root.render(<WebGPUApp />);
-  //root.render(<App />);
+  root.render(<App />);
 };
 
 render();
+
+// ReactDOM.createRoot(document.getElementById('root')).render(<App />);

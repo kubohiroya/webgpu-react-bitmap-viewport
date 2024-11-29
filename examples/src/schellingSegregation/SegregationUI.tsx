@@ -21,11 +21,11 @@ import {
 } from './components/PlayControllerPanel';
 import { SegregationKernel } from './kernels/SegregationKernel';
 import { cumulativeSum } from './utils/arrayUtil';
-import { hsvToRgb } from './utils/colorUtil';
 
 import { TolerancePanel, TolerancePanelHandle } from './TolerancePanel';
 import { KeyboardModifier } from 'dist/types/src/components/grid/KeyboardModifier';
 import { AgentSharePanel } from './AgentSharePanel';
+import { calculateRGBValues } from './CalculateRGBValues';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -57,10 +57,6 @@ export function SegregationUI(
 
   const [focusedCell, setFocusedCell] = useState<[number, number]>([-1, -1]);
   const [selectedCell, setSelectedCell] = useState<[number, number]>([-1, -1]);
-
-  const updateFrameCount = useCallback((frameCount: number) => {
-    kernelRef.current.getUIState().setFrameCount(frameCount);
-  }, []);
 
   const update = useCallback(
     async (
@@ -302,7 +298,7 @@ export function SegregationUI(
     [],
   );
 
-  const rgbValues = useMemo(
+  const { valueToRGB } = useMemo(
     () => calculateRGBValues(agentTypeCumulativeShares),
     [agentTypeCumulativeShares],
   );
@@ -349,7 +345,6 @@ export function SegregationUI(
           setAgentTypeCumulativeShares={setAgentTypeCumulativeShares}
           gridSize={gridSize}
           update={update}
-          rgbValues={rgbValues.rgbValues}
         />
       </Box>
       <Box
@@ -372,7 +367,6 @@ export function SegregationUI(
           onStep={onStep}
           onPlay={onPlay}
           tick={tick}
-          updateFrameCount={updateFrameCount}
         />
       </Box>
 
@@ -385,7 +379,7 @@ export function SegregationUI(
         y={selectedCell[1] >= 0 ? selectedCell[1] : focusedCell[1]}
         tolerance={tolerance}
         onToleranceChange={onToleranceChange}
-        valueToRGB={rgbValues.valueToRGB}
+        valueToRGB={valueToRGB}
         canvasWidth={48}
         canvasHeight={32}
         torus={true}
@@ -437,24 +431,3 @@ export function SegregationUI(
     </>
   );
 }
-
-const calculateRGBValues = (agentTypeCumulativeShares: number[]) => {
-  const rgbValueEntries = agentTypeCumulativeShares.map((value: number) => {
-    return [Math.floor(255 * value), hsvToRgb(1 - value, 0.9, 0.9)];
-  });
-
-  const rgbValues: Array<[number, number, number]> = rgbValueEntries.map(
-    ([_, rgb]) => rgb as [number, number, number],
-  );
-
-  const rgbValueMap = new Map<number, [number, number, number]>(
-    rgbValueEntries as [number, [number, number, number]][],
-  );
-
-  const valueToRGB = (value: number) => {
-    const rgb = rgbValueMap.get(Math.floor(255 * value));
-    return rgb || [255, 255, 255];
-  };
-
-  return { rgbValues, valueToRGB };
-};

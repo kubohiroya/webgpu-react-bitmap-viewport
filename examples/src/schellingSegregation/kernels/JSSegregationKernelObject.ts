@@ -1,6 +1,6 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 
-export class JSSegregationKernelData {
+export class JSSegregationKernelObject {
   width: number;
   height: number;
   agentShares: number[];

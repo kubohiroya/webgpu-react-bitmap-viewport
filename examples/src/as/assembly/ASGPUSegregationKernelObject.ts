@@ -1,4 +1,4 @@
-export class ASGPUSegregationKernelData /* extends ASSegregationKernelData*/ {
+export class ASGPUSegregationKernelObject {
   width: i32;
   height: i32;
   tolerance: f32;
@@ -15,8 +15,8 @@ export class ASGPUSegregationKernelData /* extends ASSegregationKernelData*/ {
   blockHeight: i32;
   blockSize: i32;
 
-  agentIndices!: Uint32Array;
-  agentIndicesLength!: Uint32Array;
+  agentIndices: Uint32Array;
+  agentIndicesLength: Uint32Array;
 
   constructor(
     width: i32,
@@ -37,10 +37,11 @@ export class ASGPUSegregationKernelData /* extends ASSegregationKernelData*/ {
 
     const workgroupSize = width < workgroupSizeMax ? width : workgroupSizeMax;
     const dispatchSize = height < workgroupSizeMax ? height : workgroupSizeMax;
-    this.blockWidth = i32(Math.ceil(f32(width) / f32(dispatchSize)));
-    this.blockHeight = i32(Math.ceil(f32(height) / f32(workgroupSize)));
-    this.blockSize = this.blockWidth * this.blockHeight;
-
+    const blockWidth = i32(Math.ceil(f32(width) / f32(dispatchSize)));
+    const blockHeight = i32(Math.ceil(f32(height) / f32(workgroupSize)));
+    this.blockWidth = blockWidth;
+    this.blockHeight = blockHeight;
+    this.blockSize = blockWidth * blockHeight;
     this.workgroupSize = workgroupSize;
     this.dispatchSize = dispatchSize;
 

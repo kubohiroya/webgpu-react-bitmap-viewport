@@ -1,4 +1,4 @@
-export class GPUSegregationKernelData {
+export class GPUSegregationKernelObject {
   workgroupSize: number;
   dispatchSize: number;
   blockWidth: number;

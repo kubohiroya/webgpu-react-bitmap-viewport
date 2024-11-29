@@ -3,12 +3,12 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Tooltip } from '@mui/material';
 import { PieChart } from '@mui/icons-material';
 import SplitSlider from './components/SplitSlider';
+import { calculateRGBValues } from './CalculateRGBValues';
 
 type AgentSharePanelProps = {
   agentTypeCumulativeShares: number[];
   setAgentTypeCumulativeShares: (agentTypeCumulativeShares: number[]) => void;
   gridSize: number;
-  rgbValues: Array<[number, number, number]>;
   update: (
     playControllerState: PlayControllerState,
     _gridSize?: number,
@@ -20,27 +20,8 @@ export const AgentSharePanel = (props: AgentSharePanelProps) => {
     number[]
   >(props.agentTypeCumulativeShares);
 
-  const splitSliderSx = useMemo(
-    () => ({
-      '& .MuiSlider-thumb': props.rgbValues
-        .map((rgbValue, index) => {
-          //rgb[0] = Math.floor(rgb[0]);
-          return [
-            `&[data-index='${index}']`,
-            {
-              color: `rgb(${rgbValue.join(' ')})`,
-            },
-          ];
-        })
-        .reduce<Record<string, { color: string }>>(
-          (acc: Record<string, { color: string }>, [key, value]: any) => {
-            acc[key] = value;
-            return acc;
-          },
-          {},
-        ),
-    }),
-    [agentTypeCumulativeShares],
+  const [rgbValues, setRGBValues] = useState<Array<[number, number, number]>>(
+    calculateRGBValues(agentTypeCumulativeShares).rgbValues,
   );
 
   const valueLabelFormat = useCallback(
@@ -67,6 +48,8 @@ export const AgentSharePanel = (props: AgentSharePanelProps) => {
     (values: number[]) => {
       const newAgentTypeCumulativeShares = values;
       setAgentTypeCumulativeShares(newAgentTypeCumulativeShares);
+      const { rgbValues } = calculateRGBValues(newAgentTypeCumulativeShares);
+      setRGBValues(rgbValues);
       props.update(
         PlayControllerState.INITIALIZING,
         props.gridSize,
@@ -89,7 +72,7 @@ export const AgentSharePanel = (props: AgentSharePanelProps) => {
         <SplitSlider
           splitValues={agentTypeCumulativeShares}
           onChange={onAgentTypeCumulativeSharesChange}
-          sx={splitSliderSx}
+          rgbValues={rgbValues}
           valueLabelFormat={valueLabelFormat}
         />
       </Box>

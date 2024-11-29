@@ -1,4 +1,4 @@
-import { ASSegregationKernelData } from './ASSegregationKernelData';
+import { ASSegregationKernelObject } from './ASSegregationKernelObject';
 
 @inline
 export function shuffleUint32Array(
@@ -68,13 +68,13 @@ export function calcSimilarity(
   }
 }
 
-export function createSegregationKernelData(
+export function createSegregationKernelObject(
   width: i32,
   height: i32,
   tolerance: f32,
   EMPTY_VALUE: i32,
-): ASSegregationKernelData {
-  return new ASSegregationKernelData(
+): ASSegregationKernelObject {
+  return new ASSegregationKernelObject(
     width,
     height,
     tolerance,
@@ -82,101 +82,98 @@ export function createSegregationKernelData(
   );
 }
 
-export function getGrid(data: ASSegregationKernelData): usize {
-  return data.grid.dataStart;
+export function getGrid(target: ASSegregationKernelObject): usize {
+  return target.grid.dataStart;
 }
 
 export function setTolerance(
-  data: ASSegregationKernelData,
+  target: ASSegregationKernelObject,
   tolerance: f32,
 ): void {
-  data.tolerance = tolerance;
+  target.tolerance = tolerance;
 }
 
 export function updateEmptyCellIndicesArray(
-  data: ASSegregationKernelData
+  target: ASSegregationKernelObject
 ): void {
-  if(data.emptyCellIndicesLength !== 0){
+  if(target.emptyCellIndicesLength !== 0){
     return;
   }
-  const dataLength = data.width * data.height;
+  const dataLength = target.width * target.height;
   for (let i: i32 = 0; i < dataLength; i++) {
-    if (unchecked(data.grid[i]) === data.EMPTY_VALUE) {
-      unchecked((data.emptyCellIndices[data.emptyCellIndicesLength] = i));
-      data.emptyCellIndicesLength++;
+    if (unchecked(target.grid[i]) === target.EMPTY_VALUE) {
+      unchecked((target.emptyCellIndices[target.emptyCellIndicesLength] = i));
+      target.emptyCellIndicesLength++;
     }
   }
 }
 
 function updateMovingAgentIndicesArray(
-  data: ASSegregationKernelData,
+  target: ASSegregationKernelObject,
 ): void {
-  data.movingAgentIndicesLength = 0;
+  target.movingAgentIndicesLength = 0;
   const convolutionMembers = new Uint32Array(8);
-  for (let y: i32 = 0; y < data.height; y++) {
-    for (let x: i32 = 0; x < data.width; x++) {
-      const currentIndex = x + y * data.width;
-      const agentType = unchecked(data.grid[currentIndex]);
-      if (agentType !== data.EMPTY_VALUE) {
+  for (let y: i32 = 0; y < target.height; y++) {
+    for (let x: i32 = 0; x < target.width; x++) {
+      const currentIndex = x + y * target.width;
+      const agentType = unchecked(target.grid[currentIndex]);
+      if (agentType !== target.EMPTY_VALUE) {
         const similarity = calcSimilarity(
           x,
           y,
-          data.width,
-          data.height,
-          data.grid,
+          target.width,
+          target.height,
+          target.grid,
           convolutionMembers,
-          data.EMPTY_VALUE,
+          target.EMPTY_VALUE,
       );
-        if (similarity < data.tolerance) {
+        if (similarity < target.tolerance) {
           unchecked(
-            (data.movingAgentIndices[data.movingAgentIndicesLength] =
+            (target.movingAgentIndices[target.movingAgentIndicesLength] =
               currentIndex),
           );
-          data.movingAgentIndicesLength++;
+          target.movingAgentIndicesLength++;
         }
       }
     }
   }
 }
 
-// !
-export function shuffleGridData(data: ASSegregationKernelData): void {
-  shuffleUint32Array(data.grid, data.width * data.height);
-  data.emptyCellIndicesLength = 0;
+export function shuffleGridData(target: ASSegregationKernelObject): void {
+  shuffleUint32Array(target.grid, target.width * target.height);
+  target.emptyCellIndicesLength = 0;
 }
 
-function shuffleCellIndices(data: ASSegregationKernelData): void {
-  shuffleUint32Array(data.emptyCellIndices, data.emptyCellIndicesLength);
+function shuffleCellIndices(target: ASSegregationKernelObject): void {
+  shuffleUint32Array(target.emptyCellIndices, target.emptyCellIndicesLength);
 }
 
-function shuffleMovingAgents(data: ASSegregationKernelData): void {
-  shuffleUint32Array(data.movingAgentIndices, data.movingAgentIndicesLength);
+function shuffleMovingAgents(target: ASSegregationKernelObject): void {
+  shuffleUint32Array(target.movingAgentIndices, target.movingAgentIndicesLength);
 }
 
-function moveAgentAndSwapEmptyCell(data: ASSegregationKernelData): void {
+function moveAgentAndSwapEmptyCell(target: ASSegregationKernelObject): void {
   const moveCount =
-    data.emptyCellIndicesLength < data.movingAgentIndicesLength
-      ? data.emptyCellIndicesLength
-      : data.movingAgentIndicesLength;
+    target.emptyCellIndicesLength < target.movingAgentIndicesLength
+      ? target.emptyCellIndicesLength
+      : target.movingAgentIndicesLength;
 
   for (let i: i32 = 0; i < moveCount; i++) {
-    const emptyIndex: i32 = unchecked(data.emptyCellIndices[i]);
-    const agentIndex: i32 = unchecked(data.movingAgentIndices[i]);
+    const emptyIndex: i32 = unchecked(target.emptyCellIndices[i]);
+    const agentIndex: i32 = unchecked(target.movingAgentIndices[i]);
     if (emptyIndex !== agentIndex) {
-      unchecked((data.grid[emptyIndex] = data.grid[agentIndex]));
-      unchecked((data.grid[agentIndex] = data.EMPTY_VALUE));
-      unchecked((data.emptyCellIndices[i] = agentIndex));
+      unchecked((target.grid[emptyIndex] = target.grid[agentIndex]));
+      unchecked((target.grid[agentIndex] = target.EMPTY_VALUE));
+      unchecked((target.emptyCellIndices[i] = agentIndex));
     }
   }
 }
 
-// !
-export function tick(data: ASSegregationKernelData): i32 {
-  updateEmptyCellIndicesArray(data);
-  updateMovingAgentIndicesArray(data);
-  shuffleCellIndices(data);
-  shuffleMovingAgents(data);
-  moveAgentAndSwapEmptyCell(data);
-  return data.movingAgentIndicesLength;
+export function tick(target: ASSegregationKernelObject): i32 {
+  updateEmptyCellIndicesArray(target);
+  updateMovingAgentIndicesArray(target);
+  shuffleCellIndices(target);
+  shuffleMovingAgents(target);
+  moveAgentAndSwapEmptyCell(target);
+  return target.movingAgentIndicesLength;
 }
-

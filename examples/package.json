@@ -1,15 +1,21 @@
 {
   "name": "webgpu-react-bitmap-viewport-examples",
-  "version": "2.2.1",
-  "description": "WebGPU React Bitmap Viewport Examples: A Set of Synchronized Viewports/Dynamic Viewport of Schelling Segregation Model",
+  "version": "2.2.2",
+  "description": "WebGPU React Bitmap Viewport Examples: A Set of Synchronized Viewports/Dynamic Viewport of Schelling's Segregation Model",
   "main": "src/main.tsx",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "vite build",
     "dev": "vite dev",
     "deploy": "gh-pages -d dist/webgpu-react-bitmap-viewport -r git@github.com:kubohiroya/webgpu-react-bitmap-viewport.git"
   },
-  "keywords": [],
+  "keywords": [
+    "Schelling's Segregation Model",
+    "Multi Agent Simulation",
+    "WebGPU",
+    "AssemblyScript",
+    "WGSL",
+    "viewport"
+  ],
   "author": "hiroya@cuc.ac.jp",
   "license": "MIT",
   "dependencies": {

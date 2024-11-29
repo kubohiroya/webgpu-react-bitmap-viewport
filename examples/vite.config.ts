@@ -5,19 +5,11 @@ import { resolve } from 'path';
 
 export default defineConfig({
   root: __dirname,
-  cacheDir: './node_modules/.vite/.',
 
   server: {
     port: 4200,
     host: 'localhost',
   },
-
-  preview: {
-    port: 4300,
-    host: 'localhost',
-  },
-
-  publicDir: './public',
 
   base: '/webgpu-react-bitmap-viewport/examples/',
 
@@ -38,16 +30,6 @@ export default defineConfig({
         'build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release/index.wasm',
       distFolder: 'dist',
     }) as any,
-    {
-      name: 'configure-response-headers',
-      configureServer: (server) => {
-        server.middlewares.use((_req, res, next) => {
-          res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-          next();
-        });
-      },
-    },
   ],
   build: {
     target: 'esnext',
@@ -61,7 +43,7 @@ export default defineConfig({
         },
       },
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: 'index.html',
       },
     },
   },

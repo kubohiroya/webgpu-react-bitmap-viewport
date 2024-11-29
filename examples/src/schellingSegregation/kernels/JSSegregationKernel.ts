@@ -1,12 +1,12 @@
 import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationKernel } from './SegregationKernel';
 import { SegregationUIState } from '../SegregationUIState';
-import { JSSegregationKernelData } from './JSSegregationKernelData';
+import { JSSegregationKernelObject } from './JSSegregationKernelObject';
 import { processConvolution, sortUint32ArrayRange } from '../utils/arrayUtil';
 import { shuffleUint32ArrayWithSeed } from '../utils/shuffleUtil';
 
 export class JSSegregationKernel extends SegregationKernel {
-  protected data!: JSSegregationKernelData;
+  protected jsObject!: JSSegregationKernelObject;
 
   constructor(uiState: SegregationUIState, seed: string | undefined) {
     super(uiState, seed);
@@ -18,7 +18,7 @@ export class JSSegregationKernel extends SegregationKernel {
     agentShares: number[],
     tolerance: number,
   ) {
-    this.data = new JSSegregationKernelData(
+    this.jsObject = new JSSegregationKernelObject(
       width,
       height,
       agentShares,
@@ -28,27 +28,27 @@ export class JSSegregationKernel extends SegregationKernel {
   }
 
   setGridContent(grid: Uint32Array) {
-    this.data.grid.set(grid);
+    this.jsObject.grid.set(grid);
   }
 
   shuffleGridContent() {
     shuffleUint32ArrayWithSeed(
-      this.data.grid,
-      this.data.width * this.data.height,
+      this.jsObject.grid,
+      this.jsObject.width * this.jsObject.height,
       this.rng,
     );
   }
 
   updateEmptyCellIndices() {
-    this.data.emptyCellIndicesLength = 0;
-    for (let y = 0; y < this.data.height; y++) {
-      for (let x = 0; x < this.data.width; x++) {
-        const currentIndex = y * this.data.width + x;
-        const agentType = this.data.grid[currentIndex];
+    this.jsObject.emptyCellIndicesLength = 0;
+    for (let y = 0; y < this.jsObject.height; y++) {
+      for (let x = 0; x < this.jsObject.width; x++) {
+        const currentIndex = y * this.jsObject.width + x;
+        const agentType = this.jsObject.grid[currentIndex];
         if (agentType === EMPTY_VALUE) {
-          this.data.emptyCellIndices[this.data.emptyCellIndicesLength] =
+          this.jsObject.emptyCellIndices[this.jsObject.emptyCellIndicesLength] =
             currentIndex;
-          this.data.emptyCellIndicesLength++;
+          this.jsObject.emptyCellIndicesLength++;
         }
       }
     }
@@ -79,22 +79,22 @@ export class JSSegregationKernel extends SegregationKernel {
   }
 
   async tick() {
-    this.data.movingAgentIndicesLength = 0;
+    this.jsObject.movingAgentIndicesLength = 0;
 
-    for (let y = 0; y < this.data.height; y++) {
-      for (let x = 0; x < this.data.width; x++) {
-        const currentIndex = y * this.data.width + x;
-        const currentAgentType = this.data.grid[currentIndex];
+    for (let y = 0; y < this.jsObject.height; y++) {
+      for (let x = 0; x < this.jsObject.width; x++) {
+        const currentIndex = y * this.jsObject.width + x;
+        const currentAgentType = this.jsObject.grid[currentIndex];
         if (currentAgentType !== EMPTY_VALUE) {
           let neighborCount = 0;
           let similarCount = 0;
           processConvolution(
             x,
             y,
-            this.data.width,
-            this.data.height,
+            this.jsObject.width,
+            this.jsObject.height,
             (index) => {
-              const agentType = this.data.grid[index];
+              const agentType = this.jsObject.grid[index];
               if (agentType !== EMPTY_VALUE) {
                 neighborCount++;
                 if (agentType === currentAgentType) {
@@ -105,66 +105,67 @@ export class JSSegregationKernel extends SegregationKernel {
           );
           if (
             neighborCount === 0 ||
-            similarCount / neighborCount < this.data.tolerance
+            similarCount / neighborCount < this.jsObject.tolerance
           ) {
-            this.data.movingAgentIndices[this.data.movingAgentIndicesLength] =
-              currentIndex;
-            this.data.movingAgentIndicesLength++;
+            this.jsObject.movingAgentIndices[
+              this.jsObject.movingAgentIndicesLength
+            ] = currentIndex;
+            this.jsObject.movingAgentIndicesLength++;
           }
         }
       }
     }
     if (this.rng) {
       sortUint32ArrayRange(
-        this.data.movingAgentIndices,
+        this.jsObject.movingAgentIndices,
         0,
-        this.data.movingAgentIndicesLength,
+        this.jsObject.movingAgentIndicesLength,
       );
     }
 
     shuffleUint32ArrayWithSeed(
-      this.data.emptyCellIndices,
-      this.data.emptyCellIndicesLength,
+      this.jsObject.emptyCellIndices,
+      this.jsObject.emptyCellIndicesLength,
       this.rng,
     );
 
     shuffleUint32ArrayWithSeed(
-      this.data.movingAgentIndices,
-      this.data.movingAgentIndicesLength,
+      this.jsObject.movingAgentIndices,
+      this.jsObject.movingAgentIndicesLength,
       this.rng,
     );
 
     this.moveAgentAndSwapEmptyCell(
-      this.data.grid,
-      this.data.emptyCellIndices,
-      this.data.emptyCellIndicesLength,
-      this.data.movingAgentIndices,
-      this.data.movingAgentIndicesLength,
+      this.jsObject.grid,
+      this.jsObject.emptyCellIndices,
+      this.jsObject.emptyCellIndicesLength,
+      this.jsObject.movingAgentIndices,
+      this.jsObject.movingAgentIndicesLength,
     );
     return;
   }
 
   getGrid(): Uint32Array {
-    return this.data.grid;
+    return this.jsObject.grid;
   }
 
   getGridImpl(): Uint32Array | GPUBuffer {
-    return this.data.grid;
+    return this.jsObject.grid;
   }
 
   getWidth(): number {
-    return this.data.width;
+    return this.jsObject.width;
   }
 
   getHeight(): number {
-    return this.data.height;
+    return this.jsObject.height;
   }
 
   getMovingAgentCount() {
-    return this.data.movingAgentIndicesLength;
+    return this.jsObject.movingAgentIndicesLength;
   }
 
   setTolerance(newTolerance: number) {
-    this.data.tolerance = newTolerance;
+    this.jsObject.tolerance = newTolerance;
   }
 }

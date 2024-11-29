@@ -2,10 +2,10 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationKernel } from './SegregationKernel';
 import { SegregationUIState } from '../SegregationUIState';
 import * as SegregationKernelFunctions from '../../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
-import { __Internref4 } from '../../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
+// import { __Internref4 } from '../../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
 
 export class ASSegregationKernel extends SegregationKernel {
-  asData!: __Internref4;
+  asObject!: any; // __Internref4;
   grid!: Uint32Array;
   width!: number;
   height!: number;
@@ -17,7 +17,7 @@ export class ASSegregationKernel extends SegregationKernel {
   createGridUint32Array(width: number, height: number): Uint32Array {
     return new Uint32Array(
       SegregationKernelFunctions.memory.buffer,
-      SegregationKernelFunctions.getASGrid(this.asData),
+      SegregationKernelFunctions.getASGrid(this.asObject),
       width * height,
     );
   }
@@ -28,7 +28,7 @@ export class ASSegregationKernel extends SegregationKernel {
     agentShares: number[],
     tolerance: number,
   ) {
-    this.asData = SegregationKernelFunctions.createASSegregationKernelData(
+    this.asObject = SegregationKernelFunctions.createASSegregationKernelData(
       width,
       height,
       tolerance,
@@ -41,7 +41,7 @@ export class ASSegregationKernel extends SegregationKernel {
   }
 
   setTolerance(newTolerance: number) {
-    SegregationKernelFunctions.setASTolerance(this.asData, newTolerance);
+    SegregationKernelFunctions.setASTolerance(this.asObject, newTolerance);
   }
 
   getWidth(): number {
@@ -53,11 +53,11 @@ export class ASSegregationKernel extends SegregationKernel {
   }
 
   shuffleGridContent() {
-    SegregationKernelFunctions.shuffleASGridData(this.asData);
+    SegregationKernelFunctions.shuffleASGridData(this.asObject);
   }
 
   updateEmptyCellIndices() {
-    SegregationKernelFunctions.updateASEmptyCellIndicesArray(this.asData);
+    SegregationKernelFunctions.updateASEmptyCellIndicesArray(this.asObject);
   }
 
   setGridContent(grid: Uint32Array): void {
@@ -81,7 +81,7 @@ export class ASSegregationKernel extends SegregationKernel {
 
   tick() {
     this.movingAgentIndicesLength = SegregationKernelFunctions.tickAS(
-      this.asData,
+      this.asObject,
     );
     return Promise.resolve();
   }
