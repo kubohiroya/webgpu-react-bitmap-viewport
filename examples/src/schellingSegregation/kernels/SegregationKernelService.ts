@@ -1,6 +1,6 @@
 import { reverseCumulativeSum } from '../utils/arrayUtil';
 
-export function findAgentTypeIndex(
+function findAgentTypeIndex(
   agentTypeValues: number[],
   value: number,
   EMPTY_VALUE = 0,
@@ -10,7 +10,7 @@ export function findAgentTypeIndex(
   );
 }
 
-export function createAgentTypeValues(
+function createAgentTypeValues(
   agentTypeCumulativeShares: number[],
   EMPTY_VALUE = 0,
 ): number[] {

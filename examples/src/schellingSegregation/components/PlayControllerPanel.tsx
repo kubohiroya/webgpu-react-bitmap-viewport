@@ -47,10 +47,11 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
   const frameCountRef = useRef<number>(0);
   const [frameCount, setFrameCount] = useState<number>(0);
 
-  //const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<number | null>(null);
+  const handleRef = useRef<number | null>(null);
   const sessionStartedAt = useRef<number>(0);
   const timeTotal = useRef<number>(0);
+
+  const requestStop = useRef<boolean>(false);
 
   const onSpeedChange = useCallback(
     (_: Event, value: number[] | number) => {
@@ -60,13 +61,12 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
   );
 
   const start = () => {
-    if (intervalRef.current) {
-      // clearInterval(intervalRef.current);
-      cancelAnimationFrame(intervalRef.current);
-    }
+    handleRef.current !== null && cancelAnimationFrame(handleRef.current);
+    handleRef.current = null;
+    requestStop.current = false;
+
     sessionStartedAt.current = Date.now();
     const delay = Math.pow(1.0 - speed, 2) * 1000 + 1;
-
     let loopStartedAt = Date.now();
 
     const loop = async () => {
@@ -78,35 +78,30 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
           frameCountRef.current++;
           setFrameCount(frameCountRef.current);
           updateFPS();
-          intervalRef.current = requestAnimationFrame(loop);
+          handleRef.current = requestAnimationFrame(loop);
         } else {
-          intervalRef.current && cancelAnimationFrame(intervalRef.current);
-          intervalRef.current = null;
+          handleRef.current !== null && cancelAnimationFrame(handleRef.current);
+          handleRef.current = null;
+          requestStop.current = true;
           return;
         }
       } else {
-        if (intervalRef.current) {
-          intervalRef.current = requestAnimationFrame(loop);
-        }
+        !requestStop.current &&
+          (handleRef.current = requestAnimationFrame(loop));
       }
     };
-
-    intervalRef.current = requestAnimationFrame(loop);
+    handleRef.current = requestAnimationFrame(loop);
   };
 
   const pause = useCallback(() => {
-    intervalRef.current && cancelAnimationFrame(intervalRef.current);
-    intervalRef.current = null;
+    handleRef.current !== null && cancelAnimationFrame(handleRef.current);
+    handleRef.current = null;
+    requestStop.current = true;
     if (sessionStartedAt.current > 0) {
       timeTotal.current += Date.now() - sessionStartedAt.current;
       sessionStartedAt.current = 0;
     }
   }, []);
-
-  const restart = () => {
-    pause();
-    start();
-  };
 
   const reset = () => {
     sessionStartedAt.current = 0;
@@ -153,9 +148,7 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
         reset();
         break;
       case PlayControllerState.RUNNING:
-        if (!intervalRef.current) {
-          start();
-        }
+        start();
         break;
       case PlayControllerState.STEP_RUNNING:
         step();
@@ -176,7 +169,8 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
 
   useEffect(() => {
     if (props.speed !== speed) {
-      restart();
+      pause();
+      start();
     }
   }, [speed, start]);
 

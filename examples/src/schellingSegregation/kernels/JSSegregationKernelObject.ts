@@ -3,7 +3,6 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 export class JSSegregationKernelObject {
   width: number;
   height: number;
-  agentShares: number[];
   tolerance: number = 0.0;
   EMPTY_VALUE: number;
 
@@ -13,15 +12,9 @@ export class JSSegregationKernelObject {
   movingAgentIndices!: Uint32Array;
   movingAgentIndicesLength!: number;
 
-  constructor(
-    width: number,
-    height: number,
-    agentShares: number[],
-    tolerance: number,
-  ) {
+  constructor(width: number, height: number, tolerance: number) {
     this.width = width;
     this.height = height;
-    this.agentShares = agentShares;
     this.tolerance = tolerance;
 
     this.grid = new Uint32Array(width * height);

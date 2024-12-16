@@ -18,7 +18,7 @@ export const WebGPUDisplayContextProvider = ({
   children?: ReactNode;
 }) => {
   const device = useWebGPUDeviceContext();
-  const canvasContext = useViewportContext();
+  const viewportContext = useViewportContext();
   const canvas = useContext(CanvasRefContext);
 
   const [displayContextValue, setDisplayContextValue] =
@@ -28,7 +28,7 @@ export const WebGPUDisplayContextProvider = ({
     if (!device) {
       throw new Error('device is not configured.');
     }
-    if (!canvasContext) {
+    if (!viewportContext) {
       throw new Error('ViewportContext not found.');
     }
     if (!canvas) {
@@ -59,7 +59,7 @@ export const WebGPUDisplayContextProvider = ({
     return () => {
       texture?.destroy();
     };
-  }, [device, canvasContext, canvas]);
+  }, [device, viewportContext, canvas]);
 
   return (
     displayContextValue && (

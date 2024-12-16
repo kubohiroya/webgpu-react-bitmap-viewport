@@ -246,8 +246,6 @@ export class RenderService {
       usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
     });
 
-    // this.updateDrawIndirectBuffer(1, 1, numViewports);
-
     this.f32UniformBuffer = createUniformBuffer(
       'F32Uniforms',
       device,
@@ -508,6 +506,7 @@ export class RenderService {
       DRAW_INDIRECT_BUFFER_BYTE_INDEX.get('TOP_HEADER')!
     );
   }
+
   private createLeftHeaderRenderBundle(pipeline: GPURenderPipeline) {
     return this.createRenderBundle(
       'leftHeader',

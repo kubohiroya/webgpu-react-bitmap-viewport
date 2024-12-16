@@ -3,15 +3,7 @@ import { EMPTY_VALUE } from 'webgpu-react-bitmap-viewport';
 import { SegregationUIState } from '../SegregationUIState';
 import { GPUSegregationKernel } from './GPUSegregationKernel';
 // import { __Internref6 } from '../../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
-/*
-import {
-  MyObject,
-  average,
-  createObject,
-} from '../../../build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release';
-const a: MyObject = createObject(10000.0, 20000.0);
-console.log('******************', average(a));
-*/
+
 export class ASGPUSegregationKernel extends GPUSegregationKernel {
   protected asGpuObject!: any; //__Internref6;
   grid!: Uint32Array;
@@ -32,17 +24,12 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
   private createGridUint32Array(width: number, height: number): Uint32Array {
     return new Uint32Array(
       SegregationKernelFunctions.memory.buffer,
-      SegregationKernelFunctions.getASGPUGrid(this.asGpuObject),
+      SegregationKernelFunctions.getASGPUGridPtr(this.asGpuObject),
       width * height,
     );
   }
 
-  updateGridSize(
-    width: number,
-    height: number,
-    agentShares: number[],
-    tolerance: number,
-  ): void {
+  updateGridSize(width: number, height: number, tolerance: number): void {
     const workgroupSize = Math.min(this.workgroupSizeMax, height);
     const dispatchSize = Math.min(this.workgroupSizeMax, width);
     this.asGpuObject =
@@ -56,15 +43,17 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
     this.grid = this.createGridUint32Array(width, height);
     this.agentIndices = new Uint32Array(
       SegregationKernelFunctions.memory.buffer,
-      SegregationKernelFunctions.getASGPUAgentIndices(this.asGpuObject),
+      SegregationKernelFunctions.getASGPUAgentIndicesPtr(this.asGpuObject),
       width * height,
     );
     this.agentIndicesLength = new Uint32Array(
       SegregationKernelFunctions.memory.buffer,
-      SegregationKernelFunctions.getASGPUAgentIndicesLength(this.asGpuObject),
+      SegregationKernelFunctions.getASGPUAgentIndicesLengthPtr(
+        this.asGpuObject,
+      ),
       workgroupSize * dispatchSize,
     );
-    super.updateGridSize(width, height, agentShares, tolerance);
+    super.updateGridSize(width, height, tolerance);
   }
 
   setTolerance(newTolerance: number) {
@@ -98,19 +87,13 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
     this.device.queue.writeBuffer(this.gridBuffer, 0, this.grid);
   }
 
-  getMovingAgentCount(): number {
-    return this.movingAgentIndicesLength;
-  }
-
-  async tick(): Promise<void> {
-    this.device.queue.writeBuffer(this.gridBuffer, 0, this.grid);
-
-    const command0 = this.createCommandBuffer(
-      this.computePipelines[0],
-      this.gpuObject.dispatchSize,
-    ); // process convolution
-
-    const sources = [
+  getSources(): {
+    key: string;
+    source: GPUBuffer;
+    size: number;
+    target: Uint32Array;
+  }[] {
+    return [
       {
         key: 'cells',
         source: this.agentIndicesBuffer,
@@ -130,8 +113,17 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
         target: this.agentIndicesLength,
       },
     ];
+  }
 
-    const copyEncoders = sources.map((entry) => {
+  createCopyEncoders(
+    sources: {
+      key: string;
+      source: GPUBuffer;
+      size: number;
+      target: Uint32Array;
+    }[],
+  ) {
+    return sources.map((entry) => {
       const commandEncoder = this.device.createCommandEncoder();
       commandEncoder.copyBufferToBuffer(
         entry.source,
@@ -142,8 +134,19 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
       );
       return commandEncoder.finish();
     });
+  }
 
-    this.device.queue.submit([command0, ...copyEncoders]);
+  async tick(): Promise<void> {
+    this.device.queue.writeBuffer(this.gridBuffer, 0, this.grid);
+
+    const command0 = this.createCommandBuffer(
+      this.computePipelines[0],
+      this.gpuObject.dispatchSize,
+    );
+
+    const sources = this.getSources();
+
+    this.device.queue.submit([command0, ...this.createCopyEncoders(sources)]);
 
     await Promise.all(
       sources.map(async (entry) => {
@@ -164,5 +167,9 @@ export class ASGPUSegregationKernel extends GPUSegregationKernel {
     );
 
     return Promise.resolve();
+  }
+
+  getMovingAgentCount(): number {
+    return this.movingAgentIndicesLength;
   }
 }

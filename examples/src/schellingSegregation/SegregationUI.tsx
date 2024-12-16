@@ -26,6 +26,7 @@ import { TolerancePanel, TolerancePanelHandle } from './TolerancePanel';
 import { KeyboardModifier } from 'dist/types/src/components/grid/KeyboardModifier';
 import { AgentSharePanel } from './AgentSharePanel';
 import { calculateRGBValues } from './CalculateRGBValues';
+import { createInitialGridData } from './kernels/SegregationKernelService';
 
 const SCROLLBAR = {
   radius: 5.0,
@@ -63,18 +64,26 @@ export function SegregationUI(
       playControllerState: PlayControllerState,
       _gridSize?: number,
       _agentTypeCumulativeShares?: number[],
-    ) => {
+    ): Promise<void> => {
       switch (playControllerState) {
         case PlayControllerState.INITIALIZING:
           const width = _gridSize || gridSize;
           const height = _gridSize || gridSize;
-          const grid = kernelRef.current.createInitialGridData(
+
+          if (
+            kernelRef.current.getWidth() !== width ||
+            kernelRef.current.getHeight() !== height
+          ) {
+            kernelRef.current.updateGridSize(width, height, tolerance);
+          }
+
+          const grid = createInitialGridData(
             width,
             height,
             _agentTypeCumulativeShares || agentTypeCumulativeShares,
-            tolerance,
             EMPTY_VALUE,
           );
+
           kernelRef.current.setGridContent(grid);
           tolerancePanelRef.current!.update(0);
           setPlayControllerState(PlayControllerState.INITIALIZED);
@@ -118,12 +127,15 @@ export function SegregationUI(
   );
 
   const onGridSizeChangeCommit = useCallback(
-    (_: Event | SyntheticEvent, newValueSource: number | number[]) => {
+    async (
+      event: Event | SyntheticEvent,
+      newValueSource: number | number[],
+    ) => {
       const newGridSizeSource = newValueSource as number;
       const newGridSize = 2 ** newGridSizeSource;
       setGridSizeSource(newGridSizeSource);
       setGridSize(newGridSize);
-      update(
+      await update(
         PlayControllerState.INITIALIZING,
         newGridSize,
         agentTypeCumulativeShares,
@@ -145,6 +157,7 @@ export function SegregationUI(
     if (playControllerState === PlayControllerState.PAUSED) {
       return false;
     }
+
     if (
       playControllerState === PlayControllerState.INITIALIZED ||
       playControllerState === PlayControllerState.RUNNING ||
@@ -153,12 +166,12 @@ export function SegregationUI(
       if (!locked.current) {
         locked.current = true;
         await update(playControllerState, gridSize, agentTypeCumulativeShares);
-
+        const newMovingAgentCount = kernelRef.current.getMovingAgentCount();
         gridHandlesRefs?.forEach((ref, index) => {
           ref.current?.refreshData(index);
         });
 
-        const newMovingAgentCount = kernelRef.current.getMovingAgentCount();
+        kernelRef.current.getMovingAgentCount();
         tolerancePanelRef.current!.update(newMovingAgentCount);
 
         if (
@@ -372,7 +385,7 @@ export function SegregationUI(
 
       <TolerancePanel
         ref={tolerancePanelRef}
-        grid={kernelRef.current.getGrid()}
+        grid={kernelRef.current.getGridContent()}
         width={gridSize}
         height={gridSize}
         x={selectedCell[0] >= 0 ? selectedCell[0] : focusedCell[0]}
@@ -415,7 +428,7 @@ export function SegregationUI(
               headerOffset={props.headerOffset}
               scrollBar={SCROLLBAR}
               canvasSize={props.canvasSize}
-              data={kernelRef.current.getGridImpl()}
+              data={kernelRef.current.getGrid()}
               focusedCellPosition={
                 kernelRef.current.getUIState().focusedCellPosition
               }

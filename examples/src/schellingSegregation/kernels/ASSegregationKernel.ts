@@ -14,42 +14,61 @@ export class ASSegregationKernel extends SegregationKernel {
     super(uiState, seed);
   }
 
-  createGridUint32Array(width: number, height: number): Uint32Array {
-    return new Uint32Array(
-      SegregationKernelFunctions.memory.buffer,
-      SegregationKernelFunctions.getASGrid(this.asObject),
-      width * height,
-    );
-  }
-
-  updateGridSize(
-    width: number,
-    height: number,
-    agentShares: number[],
-    tolerance: number,
-  ) {
-    this.asObject = SegregationKernelFunctions.createASSegregationKernelData(
-      width,
-      height,
-      tolerance,
-      EMPTY_VALUE,
-    );
-    this.grid = this.createGridUint32Array(width, height);
-    this.width = width;
-    this.height = height;
-    this.uiState.updateSize(width, height);
-  }
-
-  setTolerance(newTolerance: number) {
-    SegregationKernelFunctions.setASTolerance(this.asObject, newTolerance);
-  }
-
   getWidth(): number {
     return this.width;
   }
 
   getHeight(): number {
     return this.height;
+  }
+
+  private createGridUint32Array(width: number, height: number): Uint32Array {
+    const ptr = SegregationKernelFunctions.getASGridPtr(this.asObject);
+    //SegregationKernelFunctions.__pin(ptr);
+    return new Uint32Array(
+      SegregationKernelFunctions.memory.buffer,
+      ptr,
+      width * height,
+    );
+  }
+
+  updateGridSize(width: number, height: number, tolerance: number) {
+    /*
+    if (this.asObject) {
+      SegregationKernelFunctions.__unpin(this.asObject);
+      SegregationKernelFunctions.__collect();
+    }
+     */
+    this.asObject = SegregationKernelFunctions.createASSegregationKernelData(
+      width,
+      height,
+      tolerance,
+      EMPTY_VALUE,
+    );
+    // SegregationKernelFunctions.__pin(this.asObject);
+    this.grid = this.createGridUint32Array(width, height);
+    this.width = width;
+    this.height = height;
+    this.uiState.updateSize(width, height);
+  }
+
+  setGridContent(grid: Uint32Array): void {
+    if (this.grid.byteLength === 0) {
+      this.grid = this.createGridUint32Array(this.width, this.height);
+    }
+    this.grid.set(grid);
+  }
+
+  getGridContent(): Uint32Array {
+    return this.grid;
+  }
+
+  getGrid(): Uint32Array {
+    return this.grid;
+  }
+
+  setTolerance(newTolerance: number) {
+    SegregationKernelFunctions.setASTolerance(this.asObject, newTolerance);
   }
 
   shuffleGridContent() {
@@ -60,29 +79,14 @@ export class ASSegregationKernel extends SegregationKernel {
     SegregationKernelFunctions.updateASEmptyCellIndicesArray(this.asObject);
   }
 
-  setGridContent(grid: Uint32Array): void {
-    if (this.grid.byteLength === 0) {
-      this.grid = this.createGridUint32Array(this.width, this.height);
-    }
-    this.grid.set(grid);
-  }
-
-  getGrid(): Uint32Array {
-    return this.grid;
-  }
-
-  getGridImpl(): Uint32Array {
-    return this.grid;
-  }
-
-  getMovingAgentCount() {
-    return this.movingAgentIndicesLength;
-  }
-
   tick() {
     this.movingAgentIndicesLength = SegregationKernelFunctions.tickAS(
       this.asObject,
     );
     return Promise.resolve();
+  }
+
+  getMovingAgentCount() {
+    return this.movingAgentIndicesLength;
   }
 }

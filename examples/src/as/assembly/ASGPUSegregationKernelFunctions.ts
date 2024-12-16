@@ -8,26 +8,30 @@ export function createSegregationKernelObject(
   EMPTY_VALUE: i32,
   workgroupSizeMax: i32,
 ): ASGPUSegregationKernelObject {
-  return new ASGPUSegregationKernelObject(
+  const object = new ASGPUSegregationKernelObject(
     width,
     height,
     tolerance,
     EMPTY_VALUE,
     workgroupSizeMax,
   );
+  // __pin(object);
+  return object;
 }
 
-export function getAgentIndices(target: ASGPUSegregationKernelObject): usize {
+export function getAgentIndicesPtr(
+  target: ASGPUSegregationKernelObject,
+): usize {
   return target.agentIndices.dataStart;
 }
 
-export function getAgentIndicesLength(
+export function getAgentIndicesLengthPtr(
   target: ASGPUSegregationKernelObject,
 ): usize {
   return target.agentIndicesLength.dataStart;
 }
 
-export function getGrid(target: ASGPUSegregationKernelObject): usize {
+export function getGridPtr(target: ASGPUSegregationKernelObject): usize {
   return target.grid.dataStart;
 }
 

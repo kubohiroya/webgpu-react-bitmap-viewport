@@ -12,23 +12,33 @@ export class JSSegregationKernel extends SegregationKernel {
     super(uiState, seed);
   }
 
-  updateGridSize(
-    width: number,
-    height: number,
-    agentShares: number[],
-    tolerance: number,
-  ) {
-    this.jsObject = new JSSegregationKernelObject(
-      width,
-      height,
-      agentShares,
-      tolerance,
-    );
+  getWidth(): number {
+    return this.jsObject.width;
+  }
+
+  getHeight(): number {
+    return this.jsObject.height;
+  }
+
+  updateGridSize(width: number, height: number, tolerance: number) {
+    this.jsObject = new JSSegregationKernelObject(width, height, tolerance);
     this.uiState.updateSize(width, height);
+  }
+
+  getGridContent(): Uint32Array {
+    return this.jsObject.grid;
   }
 
   setGridContent(grid: Uint32Array) {
     this.jsObject.grid.set(grid);
+  }
+
+  getGrid(): Uint32Array | GPUBuffer {
+    return this.jsObject.grid;
+  }
+
+  setTolerance(newTolerance: number) {
+    this.jsObject.tolerance = newTolerance;
   }
 
   shuffleGridContent() {
@@ -50,30 +60,6 @@ export class JSSegregationKernel extends SegregationKernel {
             currentIndex;
           this.jsObject.emptyCellIndicesLength++;
         }
-      }
-    }
-  }
-
-  moveAgentAndSwapEmptyCell(
-    grid: Uint32Array,
-    emptyCellIndices: Uint32Array,
-    emptyCellIndicesLength: number,
-    movingAgentIndices: Uint32Array,
-    movingAgentIndicesLength: number,
-  ) {
-    // Perform moving based on movingAgentIndices and emptyCellIndices
-    const length = Math.min(emptyCellIndicesLength, movingAgentIndicesLength);
-
-    // Perform moving based on movingAgentIndices and emptyCellIndices
-    for (let i = 0; i < length; i++) {
-      const emptyIndex = emptyCellIndices[i];
-      const agentIndex = movingAgentIndices[i];
-      if (emptyIndex !== agentIndex) {
-        grid[emptyIndex] = grid[agentIndex];
-        grid[agentIndex] = EMPTY_VALUE;
-        emptyCellIndices[i] = agentIndex;
-      } else {
-        throw new Error(`${i} ${emptyIndex} == ${agentIndex}`);
       }
     }
   }
@@ -145,27 +131,31 @@ export class JSSegregationKernel extends SegregationKernel {
     return;
   }
 
-  getGrid(): Uint32Array {
-    return this.jsObject.grid;
-  }
+  protected moveAgentAndSwapEmptyCell(
+    grid: Uint32Array,
+    emptyCellIndices: Uint32Array,
+    emptyCellIndicesLength: number,
+    movingAgentIndices: Uint32Array,
+    movingAgentIndicesLength: number,
+  ) {
+    // Perform moving based on movingAgentIndices and emptyCellIndices
+    const length = Math.min(emptyCellIndicesLength, movingAgentIndicesLength);
 
-  getGridImpl(): Uint32Array | GPUBuffer {
-    return this.jsObject.grid;
-  }
-
-  getWidth(): number {
-    return this.jsObject.width;
-  }
-
-  getHeight(): number {
-    return this.jsObject.height;
+    // Perform moving based on movingAgentIndices and emptyCellIndices
+    for (let i = 0; i < length; i++) {
+      const emptyIndex = emptyCellIndices[i];
+      const agentIndex = movingAgentIndices[i];
+      if (emptyIndex !== agentIndex) {
+        grid[emptyIndex] = grid[agentIndex];
+        grid[agentIndex] = EMPTY_VALUE;
+        emptyCellIndices[i] = agentIndex;
+      } else {
+        throw new Error(`${i} ${emptyIndex} == ${agentIndex}`);
+      }
+    }
   }
 
   getMovingAgentCount() {
     return this.jsObject.movingAgentIndicesLength;
-  }
-
-  setTolerance(newTolerance: number) {
-    this.jsObject.tolerance = newTolerance;
   }
 }

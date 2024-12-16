@@ -54,7 +54,7 @@ export default function Segregation(
     throw new Error('Invalid mode:' + props.mode);
   }
 
-  kernel.updateGridSize(width, height, props.agentTypeShares, props.tolerance);
+  kernel.updateGridSize(width, height, props.tolerance);
 
   return <SegregationUI {...props} kernel={kernel} />;
 }

@@ -1,10 +1,7 @@
 import { ASSegregationKernelObject } from './ASSegregationKernelObject';
 
-@inline
-export function shuffleUint32Array(
-  data: Uint32Array,
-  length: i32,
-): void {
+// @inline
+export function shuffleUint32Array(data: Uint32Array, length: i32): void {
   for (let i: i32 = 0; i < length; i++) {
     const j: i32 = Mathf.floor(Mathf.random() * f32(i + 1)) as i32;
     const tmp: u32 = unchecked(data[i]);
@@ -13,7 +10,7 @@ export function shuffleUint32Array(
   }
 }
 
-@inline
+// @inline
 function getIndex(
   dx: i32,
   dy: i32,
@@ -22,14 +19,12 @@ function getIndex(
   width: i32,
   height: i32,
 ): i32 {
-  // xとyの上下左右ループを考慮して、座標を計算
   const newX = (x + dx + width) % width;
   const newY = (y + dy + height) % height;
-  // インデックスを計算
   return newY * width + newX;
 }
 
-@inline
+// @inline
 export function calcSimilarity(
   x: i32,
   y: i32,
@@ -40,14 +35,46 @@ export function calcSimilarity(
   EMPTY_VALUE: i32,
 ): f32 {
   // x, y の周囲の相対的な位置
-  unchecked(convolutionMembers[0] = unchecked(data[getIndex(-1, -1, x, y, width, height)]));
-  unchecked(convolutionMembers[1] = unchecked(data[getIndex(0, -1, x, y, width, height)]));
-  unchecked(convolutionMembers[2] = unchecked(data[getIndex(1, -1, x, y, width, height)]));
-  unchecked(convolutionMembers[3] = unchecked(data[getIndex(-1, 0, x, y, width, height)]));
-  unchecked(convolutionMembers[4] = unchecked(data[getIndex(1, 0, x, y, width, height)]));
-  unchecked(convolutionMembers[5] = unchecked(data[getIndex(-1, 1, x, y, width, height)]));
-  unchecked(convolutionMembers[6] = unchecked(data[getIndex(0, 1, x, y, width, height)]));
-  unchecked(convolutionMembers[7] = unchecked(data[getIndex(1, 1, x, y, width, height)]));
+  unchecked(
+    (convolutionMembers[0] = unchecked(
+      data[getIndex(-1, -1, x, y, width, height)],
+    )),
+  );
+  unchecked(
+    (convolutionMembers[1] = unchecked(
+      data[getIndex(0, -1, x, y, width, height)],
+    )),
+  );
+  unchecked(
+    (convolutionMembers[2] = unchecked(
+      data[getIndex(1, -1, x, y, width, height)],
+    )),
+  );
+  unchecked(
+    (convolutionMembers[3] = unchecked(
+      data[getIndex(-1, 0, x, y, width, height)],
+    )),
+  );
+  unchecked(
+    (convolutionMembers[4] = unchecked(
+      data[getIndex(1, 0, x, y, width, height)],
+    )),
+  );
+  unchecked(
+    (convolutionMembers[5] = unchecked(
+      data[getIndex(-1, 1, x, y, width, height)],
+    )),
+  );
+  unchecked(
+    (convolutionMembers[6] = unchecked(
+      data[getIndex(0, 1, x, y, width, height)],
+    )),
+  );
+  unchecked(
+    (convolutionMembers[7] = unchecked(
+      data[getIndex(1, 1, x, y, width, height)],
+    )),
+  );
   const targetAgent: u32 = unchecked(data[y * width + x]);
   let similarCount: i32 = 0;
   let neighborCount: i32 = 0;
@@ -74,15 +101,17 @@ export function createSegregationKernelObject(
   tolerance: f32,
   EMPTY_VALUE: i32,
 ): ASSegregationKernelObject {
-  return new ASSegregationKernelObject(
+  const object = new ASSegregationKernelObject(
     width,
     height,
     tolerance,
     EMPTY_VALUE,
   );
+  // __pin(object)
+  return object;
 }
 
-export function getGrid(target: ASSegregationKernelObject): usize {
+export function getGridPtr(target: ASSegregationKernelObject): usize {
   return target.grid.dataStart;
 }
 
@@ -94,9 +123,9 @@ export function setTolerance(
 }
 
 export function updateEmptyCellIndicesArray(
-  target: ASSegregationKernelObject
+  target: ASSegregationKernelObject,
 ): void {
-  if(target.emptyCellIndicesLength !== 0){
+  if (target.emptyCellIndicesLength !== 0) {
     return;
   }
   const dataLength = target.width * target.height;
@@ -126,7 +155,7 @@ function updateMovingAgentIndicesArray(
           target.grid,
           convolutionMembers,
           target.EMPTY_VALUE,
-      );
+        );
         if (similarity < target.tolerance) {
           unchecked(
             (target.movingAgentIndices[target.movingAgentIndicesLength] =
@@ -149,7 +178,10 @@ function shuffleCellIndices(target: ASSegregationKernelObject): void {
 }
 
 function shuffleMovingAgents(target: ASSegregationKernelObject): void {
-  shuffleUint32Array(target.movingAgentIndices, target.movingAgentIndicesLength);
+  shuffleUint32Array(
+    target.movingAgentIndices,
+    target.movingAgentIndicesLength,
+  );
 }
 
 function moveAgentAndSwapEmptyCell(target: ASSegregationKernelObject): void {

@@ -1,6 +1,6 @@
 export {
   createSegregationKernelObject as createASSegregationKernelData,
-  getGrid as getASGrid,
+  getGridPtr as getASGridPtr,
   setTolerance as setASTolerance,
   updateEmptyCellIndicesArray as updateASEmptyCellIndicesArray,
   shuffleGridData as shuffleASGridData,
@@ -9,9 +9,9 @@ export {
 
 export {
   createSegregationKernelObject as createASGPUSegregationKernelData,
-  getGrid as getASGPUGrid,
-  getAgentIndices as getASGPUAgentIndices,
-  getAgentIndicesLength as getASGPUAgentIndicesLength,
+  getGridPtr as getASGPUGridPtr,
+  getAgentIndicesPtr as getASGPUAgentIndicesPtr,
+  getAgentIndicesLengthPtr as getASGPUAgentIndicesLengthPtr,
   shuffleGridData as shuffleASGPUGridData,
   updateEmptyCellIndicesArray as updateASGPUEmptyCellIndicesArray,
   setTolerance as setASGPUTolerance,
@@ -20,4 +20,3 @@ export {
 
 // export { ASSegregationKernelObject } from './ASSegregationKernelObject'; // これをexportするとエラー
 // export { ASGPUSegregationKernelData } from './ASGPUSegregationKernelData'; //これをexportするとエラー
-// export { MyObject, createObject, average } from './ASSegregationKernelObject';

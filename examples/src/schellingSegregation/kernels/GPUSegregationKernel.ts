@@ -71,13 +71,8 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     return new GPUSegregationKernelObject(width, height, this.workgroupSizeMax);
   }
 
-  updateGridSize(
-    width: number,
-    height: number,
-    agentShares: number[],
-    tolerance: number,
-  ) {
-    super.updateGridSize(width, height, agentShares, tolerance);
+  updateGridSize(width: number, height: number, tolerance: number) {
+    super.updateGridSize(width, height, tolerance);
     this.setTolerance(tolerance);
     const totalCells = width * height;
     this.jsObject.emptyCellIndices = new Uint32Array(totalCells + 1); // last item is length of the array body
@@ -209,7 +204,7 @@ export class GPUSegregationKernel extends JSSegregationKernel {
     );
   }
 
-  getGridImpl(): Uint32Array | GPUBuffer {
+  getGrid(): Uint32Array | GPUBuffer {
     return this.gridBuffer;
   }
 
