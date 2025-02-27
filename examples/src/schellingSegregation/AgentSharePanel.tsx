@@ -16,12 +16,8 @@ type AgentSharePanelProps = {
   ) => Promise<void>;
 };
 export const AgentSharePanel = (props: AgentSharePanelProps) => {
-  const [agentTypeCumulativeShares, setAgentTypeCumulativeShares] = useState<
-    number[]
-  >(props.agentTypeCumulativeShares);
-
   const [rgbValues, setRGBValues] = useState<Array<[number, number, number]>>(
-    calculateRGBValues(agentTypeCumulativeShares).rgbValues,
+    calculateRGBValues(props.agentTypeCumulativeShares).rgbValues,
   );
 
   const valueLabelFormat = useCallback(
@@ -30,24 +26,27 @@ export const AgentSharePanel = (props: AgentSharePanelProps) => {
       if (index === 0 || index === -1) {
         return format(value); // 最初のサムはそのままの値を表示
       }
-      return format(value - agentTypeCumulativeShares[index - 1]); // 直前の値との差を表示
+      return format(value - props.agentTypeCumulativeShares[index - 1]); // 直前の値との差を表示
     },
-    [agentTypeCumulativeShares],
+    [props.agentTypeCumulativeShares],
   );
 
   const empty = useMemo(
     () =>
       (
-        (1 - agentTypeCumulativeShares[agentTypeCumulativeShares.length - 1]) *
+        (1 -
+          props.agentTypeCumulativeShares[
+            props.agentTypeCumulativeShares.length - 1
+          ]) *
         100
       ).toFixed(1),
-    [agentTypeCumulativeShares],
+    [props.agentTypeCumulativeShares],
   );
 
   const onAgentTypeCumulativeSharesChange = useCallback(
     (values: number[]) => {
       const newAgentTypeCumulativeShares = values;
-      setAgentTypeCumulativeShares(newAgentTypeCumulativeShares);
+      props.setAgentTypeCumulativeShares(newAgentTypeCumulativeShares);
       const { rgbValues } = calculateRGBValues(newAgentTypeCumulativeShares);
       setRGBValues(rgbValues);
       props.update(
@@ -56,7 +55,7 @@ export const AgentSharePanel = (props: AgentSharePanelProps) => {
         newAgentTypeCumulativeShares,
       );
     },
-    [props.update, props.gridSize],
+    [props.update, props.gridSize, props.agentTypeCumulativeShares],
   );
 
   return (
@@ -70,7 +69,7 @@ export const AgentSharePanel = (props: AgentSharePanelProps) => {
       >
         <PieChart style={{ marginTop: '8px', marginRight: '8px' }} />
         <SplitSlider
-          splitValues={agentTypeCumulativeShares}
+          splitValues={props.agentTypeCumulativeShares}
           onChange={onAgentTypeCumulativeSharesChange}
           rgbValues={rgbValues}
           valueLabelFormat={valueLabelFormat}

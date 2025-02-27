@@ -37,6 +37,7 @@ const PaddedPlayButton = styled(PlayButton)`
   padding: 2px 8px 2px 4px;
 `;
 const MainPlayButton = styled(PlayButton)``;
+
 export const PlayControllerPanel = (props: PlayControllerProps) => {
   const [speed, setSpeed] = useState<number>(props.speed);
   const [elapsed, setElapsed] = useState<number | null>(null);
@@ -53,14 +54,11 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
 
   const requestStop = useRef<boolean>(false);
 
-  const onSpeedChange = useCallback(
-    (_: Event, value: number[] | number) => {
-      setSpeed(value as number);
-    },
-    [setSpeed],
-  );
+  const onSpeedChange = useCallback((_: Event, value: number[] | number) => {
+    setSpeed(value as number);
+  }, []);
 
-  const start = () => {
+  const start = useCallback(() => {
     handleRef.current !== null && cancelAnimationFrame(handleRef.current);
     handleRef.current = null;
     requestStop.current = false;
@@ -91,7 +89,7 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
       }
     };
     handleRef.current = requestAnimationFrame(loop);
-  };
+  }, [speed, props.tick]);
 
   const pause = useCallback(() => {
     handleRef.current !== null && cancelAnimationFrame(handleRef.current);
@@ -103,7 +101,7 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
     }
   }, []);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     sessionStartedAt.current = 0;
     frameCountRef.current = 0;
     stepFrameCount.current = 0;
@@ -111,20 +109,20 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
     setFrameCount(0);
     setElapsed(null);
     setFps(null);
-  };
+  }, []);
 
-  const doStep = () => {
+  const doStep = useCallback(() => {
     frameCountRef.current++;
     setFrameCount(frameCountRef.current);
     stepFrameCount.current++;
     props.onStep();
-  };
+  }, [frameCountRef.current, stepFrameCount.current, props.onStep]);
 
-  const step = () => {
+  const step = useCallback(() => {
     props.tick();
-  };
+  }, [props.tick]);
 
-  const updateFPS = () => {
+  const updateFPS = useCallback(() => {
     if (sessionStartedAt.current && sessionStartedAt.current > 0) {
       const elapsedMsec =
         Date.now() - sessionStartedAt.current + timeTotal.current;
@@ -138,7 +136,7 @@ export const PlayControllerPanel = (props: PlayControllerProps) => {
       }
       setElapsed(Math.round(elapsedMsec / 1000));
     }
-  };
+  }, []);
 
   useEffect(() => {
     switch (props.state) {

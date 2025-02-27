@@ -1,14 +1,6 @@
-export class ASGPUSegregationKernelObject {
-  width: i32;
-  height: i32;
-  tolerance: f32;
-  EMPTY_VALUE: i32;
-  grid: Uint32Array;
-  movingAgentIndices: Uint32Array;
-  movingAgentIndicesLength: i32;
-  emptyCellIndices: Uint32Array;
-  emptyCellIndicesLength: i32;
+import { ASSegregationKernelObject } from './ASSegregationKernelObject';
 
+export class ASGPUSegregationKernelObject extends ASSegregationKernelObject {
   workgroupSize: i32;
   dispatchSize: i32;
   blockWidth: i32;
@@ -25,16 +17,7 @@ export class ASGPUSegregationKernelObject {
     EMPTY_VALUE: i32,
     workgroupSizeMax: i32,
   ) {
-    this.width = width;
-    this.height = height;
-    this.tolerance = tolerance;
-    this.EMPTY_VALUE = EMPTY_VALUE;
-    this.grid = new Uint32Array(width * height);
-    this.movingAgentIndices = new Uint32Array(width * height);
-    this.movingAgentIndicesLength = 0;
-    this.emptyCellIndices = new Uint32Array(width * height);
-    this.emptyCellIndicesLength = 0;
-
+    super(width, height, tolerance, EMPTY_VALUE);
     const workgroupSize = width < workgroupSizeMax ? width : workgroupSizeMax;
     const dispatchSize = height < workgroupSizeMax ? height : workgroupSizeMax;
     const blockWidth = i32(Math.ceil(f32(width) / f32(dispatchSize)));

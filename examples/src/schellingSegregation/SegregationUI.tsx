@@ -59,6 +59,13 @@ export function SegregationUI(
   const [focusedCell, setFocusedCell] = useState<[number, number]>([-1, -1]);
   const [selectedCell, setSelectedCell] = useState<[number, number]>([-1, -1]);
 
+  const updateAgentTypeCumulativeShares = useCallback(
+    (cumulativeSum: number[]) => {
+      setAgentTypeCumulativeShares(cumulativeSum);
+    },
+    [],
+  );
+
   const update = useCallback(
     async (
       playControllerState: PlayControllerState,
@@ -196,7 +203,7 @@ export function SegregationUI(
       gridSize,
       agentTypeCumulativeShares,
     );
-  }, [gridSize, agentTypeCumulativeShares]);
+  }, [update, gridSize, agentTypeCumulativeShares]);
 
   const onPause = useCallback(() => {
     setPlayControllerState(PlayControllerState.PAUSED);
@@ -355,7 +362,7 @@ export function SegregationUI(
 
         <AgentSharePanel
           agentTypeCumulativeShares={agentTypeCumulativeShares}
-          setAgentTypeCumulativeShares={setAgentTypeCumulativeShares}
+          setAgentTypeCumulativeShares={updateAgentTypeCumulativeShares}
           gridSize={gridSize}
           update={update}
         />

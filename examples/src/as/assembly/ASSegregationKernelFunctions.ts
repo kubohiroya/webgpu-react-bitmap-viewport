@@ -1,6 +1,7 @@
 import { ASSegregationKernelObject } from './ASSegregationKernelObject';
 
-// @inline
+// @ts-ignore
+@inline
 export function shuffleUint32Array(data: Uint32Array, length: i32): void {
   for (let i: i32 = 0; i < length; i++) {
     const j: i32 = Mathf.floor(Mathf.random() * f32(i + 1)) as i32;
@@ -10,7 +11,8 @@ export function shuffleUint32Array(data: Uint32Array, length: i32): void {
   }
 }
 
-// @inline
+// @ts-ignore
+@inline
 function getIndex(
   dx: i32,
   dy: i32,
@@ -24,7 +26,8 @@ function getIndex(
   return newY * width + newX;
 }
 
-// @inline
+// @ts-ignore
+@inline
 export function calcSimilarity(
   x: i32,
   y: i32,
@@ -101,14 +104,12 @@ export function createSegregationKernelObject(
   tolerance: f32,
   EMPTY_VALUE: i32,
 ): ASSegregationKernelObject {
-  const object = new ASSegregationKernelObject(
+  return new ASSegregationKernelObject(
     width,
     height,
     tolerance,
     EMPTY_VALUE,
   );
-  // __pin(object)
-  return object;
 }
 
 export function getGridPtr(target: ASSegregationKernelObject): usize {
@@ -202,7 +203,6 @@ function moveAgentAndSwapEmptyCell(target: ASSegregationKernelObject): void {
 }
 
 export function tick(target: ASSegregationKernelObject): i32 {
-  updateEmptyCellIndicesArray(target);
   updateMovingAgentIndicesArray(target);
   shuffleCellIndices(target);
   shuffleMovingAgents(target);

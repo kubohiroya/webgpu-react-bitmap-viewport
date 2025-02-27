@@ -32,7 +32,6 @@ const SplitSlider = (props: SplitSliderProps) => {
     () => ({
       '& .MuiSlider-thumb': props.rgbValues
         .map((rgbValue, index) => {
-          //rgb[0] = Math.floor(rgb[0]);
           return [
             `&[data-index='${index}']`,
             {

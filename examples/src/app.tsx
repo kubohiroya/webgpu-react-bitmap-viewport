@@ -5,6 +5,7 @@ import Segregation from './schellingSegregation/Segregation';
 import React, { useState } from 'react';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Box, Tab, Typography } from '@mui/material';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { SegregationModes } from './schellingSegregation/SegregationUIProps';
 import { WebGPUDeviceContextProvider } from 'webgpu-react-bitmap-viewport';
 
@@ -56,6 +57,9 @@ const SynchronizedViewportsOfDynamicImage = () => {
   return (
     <>
       <div>
+        <Helmet>
+          <title>Synchronized Viewports of Dynamic Image</title>
+        </Helmet>
         <h2>Synchronized Viewports of Dynamic Image</h2>
         <h3>RGBARandomGrid</h3>
         <RGBARandomGridExample
@@ -86,6 +90,9 @@ const SynchronizedViewportsOfDynamicImage = () => {
         />
       </div>
       <div>
+        <Helmet>
+          <title>Synchronized Viewports of HueGrid</title>
+        </Helmet>
         <h3>HueGrid</h3>
         <HueGridExample
           canvasSizes={[
@@ -154,79 +161,91 @@ export const App = () => {
 
   return (
     <>
-      <WebGPUDeviceContextProvider
-        loadingMessage={<p>Loading...</p>}
-        notSupportedMessage={<p>WebGPU is not supported on this browser.</p>}
-      >
-        <TabContext value={value}>
-          <Box sx={{ display: 'flex' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', width: '20%' }}>
-              <TabList
-                onChange={handleChange}
-                aria-label="webgpu-react-bitmap-viewport examples"
-                orientation={'vertical'}
+      <HelmetProvider>
+        <WebGPUDeviceContextProvider
+          loadingMessage={<p>Loading...</p>}
+          notSupportedMessage={<p>WebGPU is not supported on this browser.</p>}
+        >
+          <TabContext value={value}>
+            <Box sx={{ display: 'flex' }}>
+              <Box
+                sx={{ borderBottom: 1, borderColor: 'divider', width: '20%' }}
               >
-                <Tab
-                  label="Synchronized Viewports of Static Image"
-                  value="#1"
-                />
-                <Tab
-                  label="Synchronized Viewports of Dynamic Image"
-                  value="#2"
-                />
-                <Tab label="Viewport of Multi Agent Simulation" value="#3" />
-              </TabList>
-            </Box>
-
-            <TabPanel value="#1">
-              <SynchronizedHokusaiImage />
-            </TabPanel>
-
-            <TabPanel value="#2">
-              <SynchronizedViewportsOfDynamicImage />
-            </TabPanel>
-
-            <TabPanel value="#3">
-              <h2>
-                Viewport of Multi Agent Simulation: Schelling's model of
-                segregation
-              </h2>
-              {schellingApps.map((modes: SegregationModes[], index: number) => (
-                <div
-                  key={index}
-                  style={{
-                    background: '#ddd',
-                    padding: '8px',
-                    borderRadius: '8px',
-                  }}
+                <TabList
+                  onChange={handleChange}
+                  aria-label="webgpu-react-bitmap-viewport examples"
+                  orientation={'vertical'}
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      columnGap: '16px',
-                    }}
-                  >
-                    {modes.map((mode: SegregationModes, index: number) => (
+                  <Tab
+                    label="Synchronized Viewports of Static Image"
+                    value="#1"
+                  />
+                  <Tab
+                    label="Synchronized Viewports of Dynamic Image"
+                    value="#2"
+                  />
+                  <Tab label="Viewport of Multi Agent Simulation" value="#3" />
+                </TabList>
+              </Box>
+
+              <TabPanel value="#1">
+                <SynchronizedHokusaiImage />
+              </TabPanel>
+
+              <TabPanel value="#2">
+                <SynchronizedViewportsOfDynamicImage />
+              </TabPanel>
+
+              <TabPanel value="#3">
+                <Helmet>
+                  <title>
+                    WebGPU Multi-Agent Simulation: Schelling's model of
+                    segregation
+                  </title>
+                </Helmet>
+                <h2>
+                  WebGPU Multi-Agent Simulation: Schelling's model of
+                  segregation
+                </h2>
+                {schellingApps.map(
+                  (modes: SegregationModes[], index: number) => (
+                    <div
+                      key={index}
+                      style={{
+                        background: '#ddd',
+                        padding: '8px',
+                        borderRadius: '8px',
+                      }}
+                    >
                       <div
-                        key={index}
                         style={{
-                          background: '#eee',
-                          padding: '8px',
-                          borderRadius: '8px',
+                          display: 'flex',
+                          columnGap: '16px',
                         }}
                       >
-                        {mode && (
-                          <Schelling mode={mode} index={index}></Schelling>
-                        )}
+                        {modes.map((mode: SegregationModes, index: number) => (
+                          <div
+                            key={index}
+                            style={{
+                              background: '#eee',
+                              padding: '8px',
+                              borderRadius: '8px',
+                            }}
+                          >
+                            {mode && (
+                              <Schelling mode={mode} index={index}></Schelling>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </TabPanel>
-          </Box>
-        </TabContext>
-      </WebGPUDeviceContextProvider>
+                    </div>
+                  ),
+                )}
+              </TabPanel>
+            </Box>
+          </TabContext>
+        </WebGPUDeviceContextProvider>
+      </HelmetProvider>
     </>
   );
 };

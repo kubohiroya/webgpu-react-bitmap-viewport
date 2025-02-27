@@ -8,15 +8,13 @@ export function createSegregationKernelObject(
   EMPTY_VALUE: i32,
   workgroupSizeMax: i32,
 ): ASGPUSegregationKernelObject {
-  const object = new ASGPUSegregationKernelObject(
+  return new ASGPUSegregationKernelObject(
     width,
     height,
     tolerance,
     EMPTY_VALUE,
     workgroupSizeMax,
   );
-  // __pin(object);
-  return object;
 }
 
 export function getAgentIndicesPtr(
@@ -144,7 +142,6 @@ function moveAgentAndSwapEmptyCell(target: ASGPUSegregationKernelObject): void {
 }
 
 export function tick(target: ASGPUSegregationKernelObject): number {
-  updateEmptyCellIndicesArray(target);
   compactIndicesArray(target);
   shuffleCellIndices(target);
   shuffleMovingAgents(target);
