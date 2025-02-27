@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WebGPU Function Scope Array Test</title>
+</head>
+<body>
+<script type="module">
+  (async () => {
+    if (!navigator.gpu) {
+      console.error("WebGPU not supported in this browser.");
+      return;
+    }
+
+    // デバイス取得
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      console.error("Failed to get GPU adapter.");
+      return;
+    }
+    const device = await adapter.requestDevice();
+
+    // テスト用関数
+    async function canCompileShaderWithArraySize(size) {
+      // WGSLコードを動的に生成
+      const wgslSource = `@compute @workgroup_size(1)
+fn main() {
+  // 関数スコープに配列を宣言
+  var testArray: array<f32, ${size}>;
+  // 何もしない
+}`;
+      try {
+        const module = device.createShaderModule({ code: wgslSource });
+        // シェーダーモジュール作成時点では非同期のコンパイルが走ることが多いので、
+        // 一応 createComputePipelineAsync() などでもチェックするのが堅実。
+        const pipeline = await device.createComputePipelineAsync({
+          layout: "auto",
+          compute: {
+            module,
+            entryPoint: "main",
+          },
+        });
+        return true;
+      } catch (error) {
+        console.warn(`Failed to compile with size=${size}:`, error);
+        return false;
+      }
+    }
+
+    // 最大サイズをざっくり探る
+    // ここでは指数的に増やしていき、失敗したら一段階落として二分探索、なども考えられますが
+    // シンプルに「段階的に増やしていく」方式の例。
+    let maxPassed = 0;
+    let size = 1024;  // 適当にスタート
+
+    while (true) {
+      const ok = await canCompileShaderWithArraySize(size-1);
+      if (!ok) {
+        console.log(`Compilation failed at size = ${size}.`);
+        break;
+      } else {
+        console.log(`Compilation success at size = ${size}.`);
+        maxPassed = size;
+        size *= 2;  // 2倍にしてみる
+      }
+      // 安全のためのリミット設定 (無限ループ回避)
+      if (size > 1_000_000_000) {
+        console.log("Reached test limit without failure.");
+        break;
+      }
+    }
+
+    console.log("=======================================");
+    console.log(`Max size that compiled successfully: ${maxPassed}`);
+  })();
+</script>
+</body>
+</html>
