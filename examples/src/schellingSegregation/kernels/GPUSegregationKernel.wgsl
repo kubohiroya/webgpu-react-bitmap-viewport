@@ -18,8 +18,6 @@ struct Params {
 @group(0) @binding(1) var<storage, read> grid: array<u32>;
 @group(0) @binding(2) var<storage, read_write> agentIndices: array<u32>;
 @group(0) @binding(3) var<storage, read_write> agentIndicesLength: array<u32>;
-// @group(0) @binding(4) var<storage, read_write> emptyCellIndices: array<u32>;
-// @group(0) @binding(5) var<storage, read_write> movingAgentIndices: array<u32>;
 
 fn countSimilarNeighbor(
   rowCache: ptr<function, array<array<u32, blockWidthWithGhostZone>, mooreNeighborhoodSize>>,
@@ -85,7 +83,7 @@ fn countSimilarNeighbors(
 
 @compute @workgroup_size(workgroupSize)
 fn main0(@builtin(workgroup_id) workgroup_id: vec3<u32>, @builtin(local_invocation_id) local_id: vec3<u32>) {
-// CREATE AGENT IDICES ARRAY
+// CREATE AGENT INDICES ARRAY
     let workgroupIndex = workgroup_id.x;
     let threadIndex = local_id.x;
     let blockStartY = workgroupIndex * blockHeight;
@@ -149,7 +147,7 @@ fn main0(@builtin(workgroup_id) workgroup_id: vec3<u32>, @builtin(local_invocati
 
 @compute @workgroup_size(1)
 fn main1() {
-    // TOTALIZE AGENT IDICES LENGTH ARRAY
+    // TOTALIZE AGENT INDICES LENGTH ARRAY
     var total = 0u;
     for(var i = 0u; i < workgroupSize * dispatchSize; i++){
       let current = agentIndicesLength[i];
