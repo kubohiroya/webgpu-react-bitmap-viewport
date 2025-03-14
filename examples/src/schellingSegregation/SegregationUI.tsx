@@ -63,7 +63,7 @@ export function SegregationUI(
     (cumulativeSum: number[]) => {
       setAgentTypeCumulativeShares(cumulativeSum);
     },
-    [],
+    [gridSize],
   );
 
   const update = useCallback(

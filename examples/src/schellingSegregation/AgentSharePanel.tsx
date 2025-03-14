@@ -24,7 +24,7 @@ export const AgentSharePanel = (props: AgentSharePanelProps) => {
     (value: number, index: number) => {
       const format = (value: number) => `${(value * 100).toFixed(1)}%`;
       if (index === 0 || index === -1) {
-        return format(value); // 最初のサムはそのままの値を表示
+        return format(value);
       }
       return format(value - props.agentTypeCumulativeShares[index - 1]); // 直前の値との差を表示
     },

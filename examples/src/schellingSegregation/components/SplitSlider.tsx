@@ -64,15 +64,18 @@ const SplitSlider = (props: SplitSliderProps) => {
       setSplitValues(newValues);
       props.onChange(newValues);
     },
-    [],
+    [props.onChange],
   );
 
   // スライダーの値を変更したときの処理
-  const handleSliderChange = (event: Event, value: number | number[]) => {
-    const newValues = value as number[];
-    setSplitValues(newValues);
-    props.onChange(newValues);
-  };
+  const handleSliderChange = useCallback(
+    (event: Event, value: number | number[]) => {
+      const newValues = value as number[];
+      setSplitValues(newValues);
+      props.onChange(newValues);
+    },
+    [props.onChange],
+  );
 
   // スライダーの値を表示するための関数
   const valuetext = useCallback((value: number) => value.toFixed(2), []);
