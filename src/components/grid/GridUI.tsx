@@ -140,11 +140,11 @@ export const GridUI = forwardRef<GridHandles, GridUIProps>((props, ref) => {
   const webGpuDisplayContext = useWebGPUDisplayContext();
   const viewportContext = useViewportContext();
   const canvas = useCanvasRefContext();
-  const tickerRef = useRef<NodeJS.Timeout>();
+  const tickerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const prevFocusedCellPosition = useRef<CellPosition | null>(null);
   const prevClickedCellPosition = useRef<CellPosition | null>(null);
-  const rendererService = useRef<RenderService>();
+  const rendererService = useRef<RenderService | undefined>(undefined);
 
   useImperativeHandle(ref, () => ({
     refreshData: (sourceIndex: number) => {

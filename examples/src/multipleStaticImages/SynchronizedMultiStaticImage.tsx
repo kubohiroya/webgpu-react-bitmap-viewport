@@ -28,44 +28,69 @@ export const SynchronizedMultiStaticImage = (
     selectedStates: Uint32Array;
     viewportStates: Float32Array;
   }>();
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
-    (async () => {
-      const { data, width, height } = await loadImage(props.src);
-      const numColumns = width;
-      const numRows = height;
-      const focusedStates: Uint32Array = new Uint32Array([-1, -1]);
-      const selectedStates: Uint32Array = new Uint32Array(
-        Math.ceil((width * height) / 32),
-      );
-      const viewportStates: Float32Array = new Float32Array([
-        //0.0,0.0,1074.0,706.0,//
-        0,
-        0,
-        numColumns,
-        numRows, //// // viewport index 0: left, top, right, bottom
-        0,
-        0,
-        numColumns / 2,
-        numRows / 2, // viewport index 1: left, top, right, bottom
-        0.0,
-        20.0,
-        220.0,
-        220.0, // viewport index 2: left, top, right, bottom
-      ]);
+    let cancelled = false;
+    setState(undefined);
+    setError(undefined);
 
-      setState({
-        data,
-        width,
-        height,
-        numColumns,
-        numRows,
-        focusedStates,
-        selectedStates,
-        viewportStates,
-      });
+    void (async () => {
+      try {
+        const { data, width, height } = await loadImage(props.src);
+        const numColumns = width;
+        const numRows = height;
+        const focusedStates: Uint32Array = new Uint32Array([-1, -1]);
+        const selectedStates: Uint32Array = new Uint32Array(
+          Math.ceil((width * height) / 32),
+        );
+        const viewportStates: Float32Array = new Float32Array([
+          //0.0,0.0,1074.0,706.0,//
+          0,
+          0,
+          numColumns,
+          numRows, //// // viewport index 0: left, top, right, bottom
+          0,
+          0,
+          numColumns / 2,
+          numRows / 2, // viewport index 1: left, top, right, bottom
+          0.0,
+          20.0,
+          220.0,
+          220.0, // viewport index 2: left, top, right, bottom
+        ]);
+
+        if (!cancelled) {
+          setState({
+            data,
+            width,
+            height,
+            numColumns,
+            numRows,
+            focusedStates,
+            selectedStates,
+            viewportStates,
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : `Failed to load image: ${props.src}`,
+          );
+        }
+      }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [props.src]);
+
+  if (error) {
+    return <p role="alert">{error}</p>;
+  }
 
   if (!state) {
     return null;
