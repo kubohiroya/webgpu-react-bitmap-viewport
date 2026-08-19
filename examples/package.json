@@ -22,10 +22,9 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^6.1.8",
-    "@mui/lab": "6.0.0-beta.10",
-    "@mui/material": "^6.1.8",
-    "@mui/styled-engine": "^6.1.8",
+    "@mui/icons-material": "^9.3.1",
+    "@mui/lab": "9.0.0-beta.8",
+    "@mui/material": "^9.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-helmet-async": "^3.0.0",
