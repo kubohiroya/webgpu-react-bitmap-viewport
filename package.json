@@ -46,9 +46,9 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@emotion/babel-plugin": "11.11.0",
+    "@emotion/babel-plugin": "11.13.5",
     "@emotion/react": "^11.14.0",
-    "@swc-node/register": "~1.8.0",
+    "@swc-node/register": "~1.12.1",
     "@swc/cli": "^0.8.1",
     "@swc/core": "1.16.0",
     "@swc/helpers": "~0.5.23",
