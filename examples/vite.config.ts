@@ -17,6 +17,7 @@ export default defineConfig({
     alias: {
       'webgpu-react-bitmap-viewport': resolve(__dirname, '../src/index.ts'),
     },
+    dedupe: ['react', 'react-dom'],
   },
 
   plugins: [

@@ -1,17 +1,19 @@
-export async function loadImage(url: string): Promise<{data: Uint32Array, width: number, height: number}> {
+export async function loadImage(
+  url: string,
+): Promise<{ data: Uint32Array; width: number; height: number }> {
   // Load the image
   const image = new Image();
-  image.src = url;
-  await new Promise((resolve, reject) => {
-    image.onload = resolve;
-    image.onerror = reject;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+    image.src = url;
   });
 
   // Create a canvas and get the 2D context
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   if (!context) {
-    throw new Error("Could not get 2D context");
+    throw new Error('Could not get 2D context');
   }
 
   // Set canvas dimensions to image dimensions
@@ -35,8 +37,8 @@ export async function loadImage(url: string): Promise<{data: Uint32Array, width:
 
     // Combine RGBA into a single Uint32 value
     //bitmapData[i] = (r << 24) | (g << 16) | (b << 8) | a;
-    bitmapData[i] = r << 0 | g << 8 | b << 16 | a << 24;
+    bitmapData[i] = (r << 0) | (g << 8) | (b << 16) | (a << 24);
   }
 
-  return {data: bitmapData, width: image.width, height: image.height};
+  return { data: bitmapData, width: image.width, height: image.height };
 }

@@ -1,0 +1,16 @@
+allowBuilds:
+  '@swc/core': true
+  cypress: false
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@vitest/coverage-v8@4.1.11'
+  - '@vitest/pretty-format@4.1.11'
+  - '@vitest/utils@4.1.11'
+  - cypress@15.21.0
+  - '@vitest/expect@4.1.11'
+  - '@vitest/mocker@4.1.11'
+  - '@vitest/runner@4.1.11'
+  - '@vitest/snapshot@4.1.11'
+  - '@vitest/spy@4.1.11'
+  - vitest@4.1.11
+  - '@vitest/ui@4.1.11'
