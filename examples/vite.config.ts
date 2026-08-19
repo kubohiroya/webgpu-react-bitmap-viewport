@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
-import assemblyScriptPlugin from 'vite-plugin-assemblyscript-asc';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { assemblyScriptPlugin } from './vite-plugin-assemblyscript';
 
 export default defineConfig({
   root: __dirname,
@@ -23,14 +23,11 @@ export default defineConfig({
   plugins: [
     react(),
     assemblyScriptPlugin({
-      projectRoot: '.',
+      projectRoot: __dirname,
       configFile: 'asconfig.json',
-      srcMatch: 'src/as/assembly',
-      srcEntryFile: 'src/as/assembly/index.ts',
-      targetWasmFile:
-        'build/webgpu-react-bitmap-viewport/as/SegregationKernelFunctions.release/index.wasm',
-      distFolder: 'dist',
-    }) as any,
+      sourceDirectory: 'src/as/assembly',
+      entryFile: 'src/as/assembly/index.ts',
+    }),
   ],
   build: {
     target: 'esnext',

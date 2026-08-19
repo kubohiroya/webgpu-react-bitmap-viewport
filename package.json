@@ -34,6 +34,8 @@
     "clean": "node -e \"const fs=require('node:fs'); for (const path of ['dist/lib','dist/types','dist/tsconfig.tsbuildinfo']) fs.rmSync(path,{recursive:true,force:true})\"",
     "build-lib": "vite build",
     "build-types": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "audit:security": "pnpm audit",
     "build": "pnpm run clean && pnpm run build-lib && pnpm run build-types && pnpm typedoc",
     "test": "vitest run --passWithNoTests",
     "predeploy": "pnpm run build",
@@ -47,7 +49,7 @@
     "@emotion/babel-plugin": "11.11.0",
     "@emotion/react": "^11.14.0",
     "@swc-node/register": "~1.8.0",
-    "@swc/cli": "~0.1.65",
+    "@swc/cli": "^0.8.1",
     "@swc/core": "1.16.0",
     "@swc/helpers": "~0.5.23",
     "@testing-library/dom": "^10.4.1",
@@ -80,5 +82,6 @@
     "vite-plugin-glsl": "^1.6.1",
     "vite-plugin-wasm": "^3.6.0",
     "vitest": "^4.1.11"
-  }
+  },
+  "packageManager": "pnpm@10.33.0"
 }
