@@ -1,3 +1,6 @@
+packages:
+  - examples
+
 allowBuilds:
   '@swc/core': true
   cypress: false

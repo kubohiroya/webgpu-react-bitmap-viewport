@@ -1,6 +1,7 @@
 {
   "name": "webgpu-react-bitmap-viewport-examples",
   "version": "2.2.2",
+  "private": true,
   "description": "WebGPU React Bitmap Viewport Examples: A Set of Synchronized Viewports/Dynamic Viewport of Schelling's Segregation Model",
   "main": "src/main.tsx",
   "scripts": {
@@ -19,31 +20,27 @@
   "author": "hiroya@cuc.ac.jp",
   "license": "MIT",
   "dependencies": {
-    "@emotion/react": "^11.13.5",
-    "@emotion/styled": "^11.13.5",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^6.1.8",
     "@mui/lab": "6.0.0-beta.10",
     "@mui/material": "^6.1.8",
     "@mui/styled-engine": "^6.1.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-helmet-async": "^2.0.5",
+    "react-helmet-async": "^3.0.0",
     "seedrandom": "^3.0.5"
   },
   "devDependencies": {
-    "@types/node": "^22.9.3",
+    "@types/node": "^26.2.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "@vitejs/plugin-react": "4.3.3",
+    "@vitejs/plugin-react": "^6.0.5",
     "@types/seedrandom": "^3.0.8",
-    "@webgpu/types": "^0.1.51",
-    "as-type": "^2.0.0",
-    "assemblyscript": "^0.27.31",
-    "prettier": "^3.3.3",
+    "@webgpu/types": "^0.1.71",
+    "assemblyscript": "^0.28.20",
+    "prettier": "^3.9.6",
     "typescript": "^5.7.2",
-    "vite": "^5.4.12",
-    "vite-plugin-assemblyscript-asc": "^1.0.5",
-    "vite-plugin-glsl": "^1.3.0",
-    "vite-plugin-top-level-await": "^1.4.4"
+    "vite": "~8.2.1"
   }
 }
