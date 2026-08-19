@@ -7,7 +7,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite dev",
-    "deploy": "gh-pages -d dist/webgpu-react-bitmap-viewport -r git@github.com:kubohiroya/webgpu-react-bitmap-viewport.git"
+    "deploy": "gh-pages -d dist/webgpu-react-bitmap-viewport --nojekyll -r git@github.com:kubohiroya/webgpu-react-bitmap-viewport.git"
   },
   "keywords": [
     "Schelling's Segregation Model",
