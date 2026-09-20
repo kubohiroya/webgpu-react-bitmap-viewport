@@ -64,7 +64,7 @@
     "@vitest/ui": "^4.1.11",
     "@webgpu/types": "^0.1.71",
     "assemblyscript": "^0.28.20",
-    "cypress": "^15.21.0",
+    "cypress": "^16.1.0",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-cypress": "^6.4.4",
